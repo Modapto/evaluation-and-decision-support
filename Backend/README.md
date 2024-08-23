@@ -1,0 +1,87 @@
+# modapto-evaluation-and-decision-support
+
+## Overview
+
+Evaluation and Decision Support Backend repository of the Modular Production Toolkit of MODAPTO system.
+
+At the moment, this repository is consisted of a Spring Boot Application that handles the communication with Message Bus (Kafka Broker) and the Knowledge Repository (Elasticsearch) to fetch the customer's orders.
+
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Usage](#usage)
+3. [Deployment](#deployment)
+4. [License](#license)
+5. [Contributors](#contributors)
+
+### Installation
+
+1. Clone the repository:
+
+    ```sh
+    git clone https://github.com/yourusername/e2comation-energy-manager.git
+    cd e2comation-energy-manager
+    ```
+
+2. Install the dependencies:
+
+    ```sh
+    mvn install
+    ```
+
+### Usage
+
+1. Run the application:
+
+    ```sh
+    mvn spring-boot:run
+    ```
+
+2. The application will start on `http://localhost:8090`.
+
+3. Database URL is configured on: `http://localhost:9200`.
+
+4. Access the OpenAPI documentation at `http://localhost:8090/api/eds/swagger-ui/index.html`.
+
+### Deployment
+
+For local deployment Docker containers can be utilized to deploy the microservice with the following procedure:
+
+1. Ensure Docker is installed and running.
+
+2. Build the maven project:
+
+    ```sh
+    mvn package
+    ```
+
+3. Build the Docker container:
+
+    ```sh
+    docker build -t modapto-eds .
+    ```
+
+4. Run the Docker container:
+
+    ```sh
+    docker run -d -p 8090:8090 --name modapto-eds-container modapto-eds
+    ```
+
+5. To stop container run:
+
+    ```sh
+   docker stop modapto-eds-container
+    ```
+
+Along with the Spring Boot application docker container in the project repository there is a Docker Compose file to instantiate the a local instance of Elasticsearch and Kibana.
+
+## License
+
+This project is sponsored by EU and is licenced under MIT Licence.
+
+For more details, see the [LICENSE](LICENSE) file.
+
+## Contributors
+
+- Alkis Aznavouridis (<a.aznavouridis@atc.gr>)
+- Sotiria Antaranian (<s.antaranian@atc.gr>)
