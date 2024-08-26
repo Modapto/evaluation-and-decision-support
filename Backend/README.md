@@ -19,8 +19,8 @@ At the moment, this repository is consisted of a Spring Boot Application that ha
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/yourusername/e2comation-energy-manager.git
-    cd e2comation-energy-manager
+    git clone https://github.com/Modapto/evaluation-and-decision-support.git
+    cd evaluation-and-decision-support/Backend
     ```
 
 2. Install the dependencies:
@@ -77,9 +77,9 @@ Along with the Spring Boot application docker container in the project repositor
 
 ## License
 
-This project is sponsored by EU and is licenced under MIT Licence.
+This project has received funding from the European Union's Horizon 2022 research and innovation programm, under Grant Agreement 101091996.
 
-For more details, see the [LICENSE](LICENSE) file.
+For more details about the licence, see the [LICENSE](LICENSE) file.
 
 ## Contributors
 
