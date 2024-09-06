@@ -5,10 +5,12 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(indexName = "components")
@@ -18,7 +20,7 @@ public class Component {
     private String type;
 
     @Field(type = FieldType.Integer, name = "quantity")
-    private String quantity;
+    private Integer quantity;
 
     @Field(type = FieldType.Text, name = "pn")
     private String partNumber;

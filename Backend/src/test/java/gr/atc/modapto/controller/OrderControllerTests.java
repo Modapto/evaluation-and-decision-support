@@ -1,4 +1,4 @@
-package gr.atc.modapto;
+package gr.atc.modapto.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,7 +30,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import gr.atc.modapto.controller.ApiResponseInfo;
 import gr.atc.modapto.dto.OrderDto;
 import gr.atc.modapto.dto.PaginatedResultsDto;
 import gr.atc.modapto.enums.PilotCode;
@@ -39,7 +38,7 @@ import gr.atc.modapto.service.OrderService;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @TestInstance(Lifecycle.PER_CLASS)
-class OrderControllerIntegrationTests {
+class OrderControllerTests {
 
     @Autowired
     private TestRestTemplate testRestTemplate;
@@ -203,9 +202,8 @@ class OrderControllerIntegrationTests {
 
         // Assert Message
         assertNotNull(responseEntity.getBody(), "The response body should not be null");
-        assertFalse(responseEntity.getBody().getSuccess(), "Success flag should be true");
-        assertEquals("Invalid pilot code! Only CRF, ILTAR, FFT and SEW are acceptable!",
-                responseEntity.getBody().getErrors());
+        assertFalse(responseEntity.getBody().getSuccess(), "Success flag should be false");
+        assertEquals("Validation Error", responseEntity.getBody().getMessage());
     }
 
     @DisplayName("Retrieve paginated orders with Filters: Success")

@@ -19,7 +19,7 @@ public class AssemblyDto {
 
     @NotEmpty
     @JsonProperty("quantity")
-    private String quantity;
+    private Integer quantity;
 
     @NotEmpty
     @JsonProperty("pn")

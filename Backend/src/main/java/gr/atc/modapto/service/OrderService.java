@@ -37,6 +37,10 @@ public class OrderService {
 
     private final ElasticsearchOperations elasticSearchOperations;
 
+    private static final String CUSTOMER_STRING = "customer";
+    private static final String ORDER_OF_EXPECTED_DELIVERY_DATE_STRING = "orderof.expectedDeliveryDate";
+
+
     /**
      * Save a new Order in DB
      * 
@@ -46,6 +50,7 @@ public class OrderService {
     public boolean saveNewOrder(OrderDto orderDto) {
         Order order = modelMapper.map(orderDto, Order.class);
         Order savedOrder = orderRepository.save(order);
+
         return savedOrder != null;
     }
 
@@ -68,8 +73,10 @@ public class OrderService {
      * 
      * @param List<OrderDto>
      * @return true on success, false on error
+     * @throws OrderNotFoundException if the order with the given ID is not found
+     * @throws MappingException if there's an error mapping Order to OrderDto
      */
-    public OrderDto retrieveOrderById(String id) {
+    public OrderDto retrieveOrderById(String id) throws OrderNotFoundException{
         try {
             Optional<Order> optionalOrder = orderRepository.findById(id);
             if (optionalOrder.isPresent()) {
@@ -78,7 +85,7 @@ public class OrderService {
                 log.warn("Order with id {} not found", id);
                 throw new OrderNotFoundException(id);
             }
-        } catch (Exception e) {
+        } catch (MappingException e) {
             log.error("Unable to map Order to OrderDto! Error - {}", e.getMessage());
             return null;
         }
@@ -97,21 +104,21 @@ public class OrderService {
             // Set the criteria for filtering the data
             Criteria criteria;
             if (startDate == null && endDate == null)
-                criteria = new Criteria("customer").is(customer);
+                criteria = new Criteria(CUSTOMER_STRING).is(customer);
             else if (startDate == null)
-                criteria = new Criteria("customer").is(customer)
-                    .and("orderof.expectedDeliveryDate").lessThanEqual(endDate);
+                criteria = new Criteria(CUSTOMER_STRING).is(customer)
+                    .and(ORDER_OF_EXPECTED_DELIVERY_DATE_STRING).lessThanEqual(endDate);
             else if (endDate == null)
-                criteria = new Criteria("customer").is(customer)
-                    .and("orderof.expectedDeliveryDate").greaterThanEqual(startDate);
+                criteria = new Criteria(CUSTOMER_STRING).is(customer)
+                    .and(ORDER_OF_EXPECTED_DELIVERY_DATE_STRING).greaterThanEqual(startDate);
             else
-                criteria = new Criteria("customer").is(customer)
-                    .and("orderof.expectedDeliveryDate").between(startDate, endDate);
+                criteria = new Criteria(CUSTOMER_STRING).is(customer)
+                    .and(ORDER_OF_EXPECTED_DELIVERY_DATE_STRING).between(startDate, endDate);
 
             // Define the sorting in pagination
-            Sort sort = Sort.by(Sort.Direction.DESC, "orderof.expectedDeliveryDate");
+            Sort sort = Sort.by(Sort.Direction.DESC, ORDER_OF_EXPECTED_DELIVERY_DATE_STRING);
             Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-
+  
             // Implement the query with the pagination in DB
             CriteriaQuery query = new CriteriaQuery(criteria).setPageable(sortedPageable);
             SearchHits<Order> searchHits = elasticSearchOperations.search(query, Order.class);
@@ -130,7 +137,7 @@ public class OrderService {
             log.error("Invalid pagination parameters. Error: {}", e.getMessage());
             throw new PaginationException(e.getCause());
         } catch (Exception e) {
-            log.error("Unexpected error while retrieving orders. Error: {}", e.getMessage());
+            log.error("Unexpected error while retrieving orders. Error: {}", e.getCause());
             return null;
         }
     }
