@@ -1,6 +1,6 @@
 package gr.atc.modapto.service;
 
-import java.util.Date;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,7 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -99,7 +98,7 @@ public class OrderService {
      * @param pageableElem
      * @param endDate
      */
-    public Page<OrderDto> retrieveOrdersByCustomerFilteredByDates(String customer, Pageable pageable, Date startDate, Date endDate) {
+    public Page<OrderDto> retrieveOrdersByCustomerFilteredByDates(String customer, Pageable pageable, String startDate, String endDate) {
         try {
             // Set the criteria for filtering the data
             Criteria criteria;
@@ -116,12 +115,16 @@ public class OrderService {
                     .and(ORDER_OF_EXPECTED_DELIVERY_DATE_STRING).between(startDate, endDate);
 
             // Define the sorting in pagination
-            Sort sort = Sort.by(Sort.Direction.DESC, ORDER_OF_EXPECTED_DELIVERY_DATE_STRING);
-            Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+            Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
   
             // Implement the query with the pagination in DB
             CriteriaQuery query = new CriteriaQuery(criteria).setPageable(sortedPageable);
             SearchHits<Order> searchHits = elasticSearchOperations.search(query, Order.class);
+
+            // Check if searchHits are empty
+            if (searchHits == null || searchHits.isEmpty()) {
+                return new PageImpl<>(Collections.emptyList(), pageable, 0);
+            }
 
             // Retrieve the orders from the Search Hits of DB
             List<OrderDto> orderDtos = searchHits.getSearchHits().stream()

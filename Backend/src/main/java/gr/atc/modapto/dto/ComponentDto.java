@@ -1,5 +1,7 @@
 package gr.atc.modapto.dto;
 
+import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -28,5 +30,5 @@ public class ComponentDto {
     @NotEmpty
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonProperty("expectedDeliveryDate")
-    private String expectedDeliveryDate;
+    private LocalDate expectedDeliveryDate;
 }

@@ -1,14 +1,8 @@
 package gr.atc.modapto.service;
 
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
@@ -16,9 +10,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -68,14 +65,14 @@ class OrderServiceTests {
             .partNumber("PN1")
             .type("assembly")
             .quantity(1)
-            .expectedDeliveryDate("2024-01-01")
+            .expectedDeliveryDate(LocalDate.of(2024, 01, 01))
             .build();
         
         Component component = Component.builder()
             .partNumber("PN2")
             .type("component")
             .quantity(1)
-            .expectedDeliveryDate("2024-01-01")
+            .expectedDeliveryDate(LocalDate.of(2024, 01, 01))
             .build();
 
         order = Order.builder()
@@ -148,10 +145,8 @@ class OrderServiceTests {
     void givenValidCustomerAndDateRange_whenRetrieveOrdersByCustomerFilteredByDates_thenReturnOrderDtoPage() {
         // Given
         String customer = "CRF";
-        LocalDate localStartDate = LocalDate.of(2024, 1, 1);
-        Date startDate = Date.from(localStartDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        LocalDate localEndDate = LocalDate.of(2024, 1, 2);
-        Date endDate = Date.from(localEndDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        String startDate = "2024-01-01";
+        String endDate = "2024-01-01";
         Pageable pageable = PageRequest.of(0, 10);
 
         // Mock SearchHits and SearchHit

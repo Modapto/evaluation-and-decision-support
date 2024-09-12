@@ -1,5 +1,6 @@
 package gr.atc.modapto.repository;
 
+import java.time.LocalDate;
 import java.util.Collections;
 
 import org.assertj.core.api.Assertions;
@@ -32,14 +33,14 @@ class OrderRepositoryTests {
             .partNumber("PN1")
             .type("assembly")
             .quantity(1)
-            .expectedDeliveryDate("2024-01-01")
+            .expectedDeliveryDate(LocalDate.of(2024, 01, 01))
             .build();
         
         Component component = Component.builder()
             .partNumber("PN2")
             .type("component")
             .quantity(1)
-            .expectedDeliveryDate("2024-01-01")
+            .expectedDeliveryDate(LocalDate.of(2024, 01, 01))
             .build();
 
         this.order = Order.builder()

@@ -23,10 +23,10 @@ public class Order {
     @Id
     private String id;
 
-    @Field(type = FieldType.Text, name = "customer")
+    @Field(type = FieldType.Keyword, name = "customer")
     private PilotCode customer;
 
-    @Field(type = FieldType.Text, name = "documentNumber")
+    @Field(type = FieldType.Keyword, name = "documentNumber")
     private String documentNumber;
 
     @Field(type = FieldType.Nested, name = "orderof", includeInParent = true)

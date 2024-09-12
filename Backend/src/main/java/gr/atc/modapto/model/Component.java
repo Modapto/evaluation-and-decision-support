@@ -1,5 +1,7 @@
 package gr.atc.modapto.model;
 
+import java.time.LocalDate;
+
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -16,15 +18,15 @@ import lombok.NoArgsConstructor;
 @Document(indexName = "components")
 public class Component {
 
-    @Field(type = FieldType.Text, name = "type")
+    @Field(type = FieldType.Keyword, name = "type")
     private String type;
 
     @Field(type = FieldType.Integer, name = "quantity")
     private Integer quantity;
 
-    @Field(type = FieldType.Text, name = "pn")
+    @Field(type = FieldType.Keyword, name = "pn")
     private String partNumber;
 
-    @Field(type = FieldType.Text, name = "expectedDeliveryDate")
-    private String expectedDeliveryDate;
+    @Field(type = FieldType.Date, name = "expectedDeliveryDate", pattern = "yyyy-MM-dd")
+    private LocalDate expectedDeliveryDate;
 }   
