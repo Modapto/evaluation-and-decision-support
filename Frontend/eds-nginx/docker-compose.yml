@@ -1,0 +1,20 @@
+services:
+    nginx:
+        restart: always
+        image: nginx:latest
+        container_name: nginx
+        volumes:
+            - "./nginx/default.conf:/etc/nginx/conf.d/default.conf" #config for nginx - server runs under subdomain /server & eds under /eds
+        ports:
+            - "4200:80" #all services will be exposed at port 4200 of the browser;
+    fvt:
+        image: stellamarkop/eds:evaluation0
+        container_name: fvt
+        ports:
+            - "80"
+        environment:
+            - SERV_HOST=http://localhost:8090
+            - SOCKET_HOST=http://localhost:4200 #server base IP for Socket.io; adjust the IP url according your host environment. Server runs under nginx proxy pass(thats why port is 4200)- we have configured in Angular to request Socket under /server subdomain.
+            - KEYCLOAK_URL=https://fvt.aegisresearch.eu
+        volumes:
+            - ./nginx/fvt/nginx.conf:/etc/nginx/conf.d/default.conf #nginx config for eds running at /eds subfolder + refresh page settings
