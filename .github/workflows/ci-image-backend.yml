@@ -21,7 +21,7 @@ jobs:
         password: ${{ secrets.CI_ORG_TOKEN }}
 
     - name: Build the Docker image
-      run: docker build /Backend/. --file /Backend/Dockerfile --tag ghcr.io/modapto/eds-backend:latest
+      run: docker build ./Backend/. --file ./Backend/Dockerfile --tag ghcr.io/modapto/eds-backend:latest
 
     - name: Push the Docker image
       run: docker push ghcr.io/modapto/eds-backend:latest
