@@ -18,7 +18,7 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.CI_TOKEN }}
+        password: ${{ secrets.CI_ORG_TOKEN }}
 
     - name: Build the Docker image
       run: docker build /Backend/. --file /Backend/Dockerfile --tag ghcr.io/modapto/eds-backend:latest
