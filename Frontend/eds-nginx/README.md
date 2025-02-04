@@ -46,3 +46,14 @@ browser.
 
 Since the latest version is deployed on the cloud you can access <https://fvt.modapto.atc.gr/fvt/> in a web browser.
   
+---
+
+## License
+
+This project has received funding from the European Union's Horizon 2022 research and innovation programm, under Grant Agreement 101091996.
+
+For more details about the licence, see the [LICENSE](LICENSE) file.
+
+## Contributors
+
+- Stella Markopoulou (<s.markopoulou@aegisresearch.eu>)
