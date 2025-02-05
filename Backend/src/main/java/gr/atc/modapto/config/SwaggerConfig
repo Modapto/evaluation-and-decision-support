@@ -13,7 +13,7 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI openAPIDocumentation() {
         return new OpenAPI()
-                .info(new Info().title("User Manager API").version("1.0").description("API documentation for User Manager service"))
+                .info(new Info().title("Evaluation and Decision Support API").version("1.0").description("API documentation for EDS Services of MODAPTO project"))
                 .version("3.0.3");
     }
 }
