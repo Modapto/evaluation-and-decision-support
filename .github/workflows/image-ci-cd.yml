@@ -60,5 +60,5 @@ jobs:
             # Remove unused images
             docker image prune -f
 
-            # Loggout
+            # Logout
             docker logout ghcr.io
