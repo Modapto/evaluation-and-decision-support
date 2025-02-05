@@ -4,24 +4,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.oas.models.info.Info;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Configuration
 public class SwaggerConfig {
-    private static final Logger logger = LoggerFactory.getLogger(SwaggerConfig.class);
-
     @Bean
     public OpenAPI openAPIDocumentation() {
-        logger.info("SwaggerConfig loaded successfully!");
-
         return new OpenAPI()
+                .specVersion(SpecVersion.V30)
                 .info(new Info()
                     .title("Evaluation and Decision Support API")
                     .version("1.0")
-                    .description("API documentation for EDS Service of MODAPTO project"))
-                .version("3.0.3");
+                    .description("API documentation for EDS Service of MODAPTO project"));
     }
 }
