@@ -1,0 +1,9 @@
+docker-compose.yml
+/target
+.env
+.git
+.gitignore
+README.md
+/Data Collection
+HELP.md
+LICENSE
