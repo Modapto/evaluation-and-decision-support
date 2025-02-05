@@ -5,13 +5,18 @@ import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.security.SecurityScheme;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Configuration
 public class SwaggerConfig {
+    private static final Logger logger = LoggerFactory.getLogger(SwaggerConfig.class);
+
     @Bean
     public OpenAPI openAPIDocumentation() {
+        logger.info("SwaggerConfig loaded successfully!");
+
         return new OpenAPI()
                 .info(new Info()
                     .title("Evaluation and Decision Support API")
