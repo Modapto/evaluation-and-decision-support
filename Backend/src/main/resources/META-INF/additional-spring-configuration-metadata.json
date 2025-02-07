@@ -12,4 +12,9 @@
   "name": "spring.elasticsearch.rest.index-settings.number_of_replicas",
   "type": "java.lang.String",
   "description": "A description for 'spring.elasticsearch.rest.index-settings.number_of_replicas'"
+},
+{
+  "name": "build.version",
+  "type": "java.lang.String",
+  "description": "A description for 'build.version'"
 }]}

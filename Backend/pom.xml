@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>gr.atc</groupId>
 	<artifactId>modapto-evaluation-and-decision-support</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.5</version>
 	<name>modapto_evaluation_and_decision_support</name>
 	<description>Evaluation and Decision Support Component - Backend System</description>
 	<inceptionYear>2024</inceptionYear>
