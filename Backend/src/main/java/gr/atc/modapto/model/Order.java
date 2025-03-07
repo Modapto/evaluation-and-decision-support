@@ -7,7 +7,6 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import gr.atc.modapto.enums.PilotCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +23,7 @@ public class Order {
     private String id;
 
     @Field(type = FieldType.Keyword, name = "customer")
-    private PilotCode customer;
+    private String customer;
 
     @Field(type = FieldType.Keyword, name = "documentNumber")
     private String documentNumber;

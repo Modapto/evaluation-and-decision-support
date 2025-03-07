@@ -36,41 +36,37 @@ public class OrderService {
 
     private final ElasticsearchOperations elasticSearchOperations;
 
-    private static final String CUSTOMER_STRING = "customer";
+    private static final String PILOT_CODE = "pilotCode";
     private static final String ORDER_OF_EXPECTED_DELIVERY_DATE_STRING = "orderof.expectedDeliveryDate";
 
 
     /**
      * Save a new Order in DB
      * 
-     * @param orderDto
+     * @param orderDto   : Order Information
      * @return true on success, false on error
      */
     public boolean saveNewOrder(OrderDto orderDto) {
-        Order order = modelMapper.map(orderDto, Order.class);
-        Order savedOrder = orderRepository.save(order);
-
-        return savedOrder != null;
+        orderRepository.save(modelMapper.map(orderDto, Order.class));
+        return true;
     }
 
     /**
      * Save a list of new Orders in DB
      * 
-     * @param List<OrderDto>
+     * @param orders : List of Orders Information
      * @return true on success, false on error
      */
     public boolean saveListOfOrders(List<OrderDto> orders) {
         List<Order> newOrders = orders.stream().map(orderDto -> modelMapper.map(orderDto, Order.class)).toList();
-        List<Order> savedOrders = newOrders.stream()
-                .map(orderRepository::save)
-                .toList();
-        return !savedOrders.isEmpty();
+        orderRepository.saveAll(newOrders);
+        return true;
     }
 
     /**
      * Retrieve an order from DB by ID
-     * 
-     * @param List<OrderDto>
+     *
+     * @param id : ID of Order
      * @return true on success, false on error
      * @throws OrderNotFoundException if the order with the given ID is not found
      * @throws MappingException if there's an error mapping Order to OrderDto
@@ -81,7 +77,6 @@ public class OrderService {
             if (optionalOrder.isPresent()) {
                 return modelMapper.map(optionalOrder.get(), OrderDto.class);
             } else {
-                log.warn("Order with id {} not found", id);
                 throw new OrderNotFoundException(id);
             }
         } catch (MappingException e) {
@@ -91,27 +86,29 @@ public class OrderService {
     }
 
     /**
-     * Retrieve all paginated results for orders per customer given the pagination
+     * Retrieve all paginated results for orders per pilot code given the pagination
      * settings and optionally the date ranges
      * 
-     * @param pilotCode
-     * @param pageableElem
-     * @param endDate
+     * @param pilotCode    : Pilot Code
+     * @param pageable : Pagination parameters
+     * @param startDate    : Start date of Filtering
+     * @param endDate      : End date of filtering
+     * @return Page<OrderDto>
      */
-    public Page<OrderDto> retrieveOrdersByCustomerFilteredByDates(String customer, Pageable pageable, String startDate, String endDate) {
+    public Page<OrderDto> retrieveOrdersByCustomerFilteredByDates(String pilotCode, Pageable pageable, String startDate, String endDate) {
         try {
             // Set the criteria for filtering the data
             Criteria criteria;
             if (startDate == null && endDate == null)
-                criteria = new Criteria(CUSTOMER_STRING).is(customer);
+                criteria = new Criteria(PILOT_CODE).is(pilotCode);
             else if (startDate == null)
-                criteria = new Criteria(CUSTOMER_STRING).is(customer)
+                criteria = new Criteria(PILOT_CODE).is(pilotCode)
                     .and(ORDER_OF_EXPECTED_DELIVERY_DATE_STRING).lessThanEqual(endDate);
             else if (endDate == null)
-                criteria = new Criteria(CUSTOMER_STRING).is(customer)
+                criteria = new Criteria(PILOT_CODE).is(pilotCode)
                     .and(ORDER_OF_EXPECTED_DELIVERY_DATE_STRING).greaterThanEqual(startDate);
             else
-                criteria = new Criteria(CUSTOMER_STRING).is(customer)
+                criteria = new Criteria(PILOT_CODE).is(pilotCode)
                     .and(ORDER_OF_EXPECTED_DELIVERY_DATE_STRING).between(startDate, endDate);
 
             // Define the sorting in pagination

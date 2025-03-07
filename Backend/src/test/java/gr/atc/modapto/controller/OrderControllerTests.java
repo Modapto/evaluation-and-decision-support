@@ -1,5 +1,6 @@
 package gr.atc.modapto.controller;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,22 +8,46 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.web.servlet.function.RequestPredicates.contentType;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.atc.modapto.repository.OrderRepository;
+import gr.atc.modapto.util.JwtUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -32,248 +57,219 @@ import org.springframework.http.ResponseEntity;
 
 import gr.atc.modapto.dto.OrderDto;
 import gr.atc.modapto.dto.PaginatedResultsDto;
-import gr.atc.modapto.enums.PilotCode;
 import gr.atc.modapto.service.OrderService;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@AutoConfigureMockMvc
-@TestInstance(Lifecycle.PER_CLASS)
+@WebMvcTest(OrderController.class)
 class OrderControllerTests {
 
     @Autowired
-    private TestRestTemplate testRestTemplate;
+    private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private OrderService orderService;
 
-    @LocalServerPort
-    private Integer port;
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private static Jwt jwt;
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public ElasticsearchOperations elasticsearchTemplate() {
+            return mock(ElasticsearchOperations.class);
+        }
+
+        @Bean
+        public CacheManager cacheManager() {
+            return new ConcurrentMapCacheManager();
+        }
+    }
+
+    @BeforeAll
+    @SuppressWarnings("unused")
+    static void setup() {
+        String tokenValue = "mock.jwt.token";
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("realm_access", Map.of("roles", List.of("SUPER_ADMIN")));
+        claims.put("resource_access", Map.of("modapto", Map.of("roles", List.of("SUPER_ADMIN"))));
+        claims.put("sid", "user");
+        claims.put("pilot_code", List.of("CRF"));
+        claims.put("user_role", List.of("TEST"));
+        claims.put("pilot_role", List.of("SUPER_ADMIN"));
+
+        jwt = Jwt.withTokenValue(tokenValue).headers(header -> header.put("alg", "HS256")).claims(claim -> claim.putAll(claims)).build();
+    }
 
     /*
      * Creation of new Orders
      */
     @DisplayName("Create a new Order: Success")
     @Test
-    void createNewOrder_Success() {
-        Mockito.when(orderService.saveNewOrder(any(OrderDto.class))).thenReturn(true);
+    void givenValidJwt_whenCreateNewOrder_thenSuccess() throws Exception {
+        //Given
+        OrderDto request = OrderDto.builder().customer("CRF").documentNumber("Test").comments("Test Object").build();
 
-        // Set request Body
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        // Mock JWT authentication
+        JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
+        SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
 
-        OrderDto request = OrderDto.builder()
-                .customer(PilotCode.CRF)
-                .documentNumber("Test")
-                .comments("Test Object")
-                .build();
+        // When
+        when(orderService.saveNewOrder(any(OrderDto.class))).thenReturn(true);
 
-        HttpEntity<OrderDto> requestEntity = new HttpEntity<>(request, headers);
+        ResultActions response = mockMvc.perform(post("/api/eds/createOrder").with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)).content(objectMapper.writeValueAsString(request)).contentType(MediaType.APPLICATION_JSON));
 
-        ResponseEntity<ApiResponseInfo<String>> responseEntity = testRestTemplate.exchange(
-                "http://localhost:" + port + "/api/eds/createOrder",
-                HttpMethod.POST,
-                requestEntity,
-                new ParameterizedTypeReference<ApiResponseInfo<String>>() {
-                });
+        // Then
+        response.andExpect(status().isCreated()).andExpect(jsonPath("$.success", is(true))).andExpect(jsonPath("$.message", is("Order created successfully")));
 
-        // Assert Response
-        assertNotNull(responseEntity, "The response entity should not be null");
-        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
-
-        // Assert Message
-        assertNotNull(responseEntity.getBody(), "The response body should not be null");
-        assertTrue(responseEntity.getBody().getSuccess(), "Success flag should be true");
-        assertEquals("Order created successfully!", responseEntity.getBody().getData());
+        // Verify
+        verify(orderService, times(1)).saveNewOrder(any(OrderDto.class));
     }
 
     @DisplayName("Create a new Order: Error on Server")
     @Test
-    void createNewOrder_ErrorOnServer() {
-        Mockito.when(orderService.saveNewOrder(any(OrderDto.class))).thenReturn(false);
+    void givenValidJwt_whenCreateNewOrder_thenErrorOnServer() throws Exception {
+        // Given
+        OrderDto request = OrderDto.builder().customer("CRF").documentNumber("Test").comments("Test Object").build();
 
-        // Set request Body
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        // Mock JWT authentication
+        JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
+        SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
 
-        OrderDto request = OrderDto.builder()
-                .customer(PilotCode.CRF)
-                .documentNumber("Test")
-                .comments("Test Object")
-                .build();
+        // When
+        when(orderService.saveNewOrder(any(OrderDto.class))).thenReturn(false);
 
-        HttpEntity<OrderDto> requestEntity = new HttpEntity<>(request, headers);
+        ResultActions response = mockMvc.perform(post("/api/eds/createOrder").with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)).content(objectMapper.writeValueAsString(request)).contentType(MediaType.APPLICATION_JSON));
 
-        ResponseEntity<ApiResponseInfo<String>> responseEntity = testRestTemplate.exchange(
-                "http://localhost:" + port + "/api/eds/createOrder",
-                HttpMethod.POST,
-                requestEntity,
-                new ParameterizedTypeReference<ApiResponseInfo<String>>() {
-                });
+        // Then
+        response.andExpect(status().isInternalServerError()).andExpect(jsonPath("$.success", is(false))).andExpect(jsonPath("$.message", is("Unable to create new order in DB")));
 
-        // Assert Response
-        assertNotNull(responseEntity, "The response entity should not be null");
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-
-        // Assert Message
-        assertNotNull(responseEntity.getBody(), "The response body should not be null");
-        assertFalse(responseEntity.getBody().getSuccess(), "Success flag should be true");
-
+        // Verify
+        verify(orderService, times(1)).saveNewOrder(any(OrderDto.class));
     }
 
     @DisplayName("Create multiple Orders: Success")
     @Test
-    void createMultipleOrders_Success() {
-        Mockito.when(orderService.saveListOfOrders(anyList())).thenReturn(true);
-
-        // Set request Body
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        OrderDto request = OrderDto.builder()
-                .customer(PilotCode.CRF)
-                .documentNumber("Test")
-                .comments("Test Object")
-                .build();
+    void givenValidJwt_whenCreateMultipleOrders_thenSuccess() throws Exception {
+        // Given
+        OrderDto request = OrderDto.builder().customer("CRF").documentNumber("Test").comments("Test Object").build();
         List<OrderDto> requestList = List.of(request);
 
-        HttpEntity<List<OrderDto>> requestEntity = new HttpEntity<>(requestList, headers);
+        // When
+        when(orderService.saveListOfOrders(anyList())).thenReturn(true);
 
-        ResponseEntity<ApiResponseInfo<String>> responseEntity = testRestTemplate.exchange(
-                "http://localhost:" + port + "/api/eds/createOrders",
-                HttpMethod.POST,
-                requestEntity,
-                new ParameterizedTypeReference<ApiResponseInfo<String>>() {
-                });
+        ResultActions response = mockMvc.perform(post("/api/eds/createOrders").with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)).content(objectMapper.writeValueAsString(requestList)).contentType(MediaType.APPLICATION_JSON));
 
-        // Assert Response
-        assertNotNull(responseEntity, "The response entity should not be null");
-        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
+        // Then
+        response.andExpect(status().isCreated()).andExpect(jsonPath("$.success", is(true))).andExpect(jsonPath("$.message", is("Orders created successfully")));
 
-        // Assert Message
-        assertNotNull(responseEntity.getBody(), "The response body should not be null");
-        assertTrue(responseEntity.getBody().getSuccess(), "Success flag should be true");
-        assertEquals("Orders created successfully!", responseEntity.getBody().getData());
+        // Verify
+        verify(orderService, times(1)).saveListOfOrders(anyList());
     }
 
-    /*
-     * Retrieval of Orders
-     */
     @DisplayName("Retrieve an order By ID: Success")
     @Test
-    void retrieveOrderById_Success() {
-        OrderDto mockOrderDto = OrderDto.builder()
-                .customer(PilotCode.CRF)
-                .documentNumber("Test")
-                .comments("Test Object")
-                .build();
+    void givenValidJwt_whenRetrieveOrderById_thenSuccess() throws Exception {
+        // Given
+        OrderDto mockOrderDto = OrderDto.builder().customer("CRF").documentNumber("Test").comments("Test Object").build();
 
-        Mockito.when(orderService.retrieveOrderById(anyString())).thenReturn(mockOrderDto);
+        when(orderService.retrieveOrderById(anyString())).thenReturn(mockOrderDto);
 
-        ResponseEntity<ApiResponseInfo<OrderDto>> responseEntity = testRestTemplate.exchange(
-                "http://localhost:" + port + "/api/eds/pilot/CRF/orders/1",
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<ApiResponseInfo<OrderDto>>() {
-                });
+        // When
+        ResultActions response = mockMvc.perform(get("/api/eds/pilot/CRF/orders/1").with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)).contentType(MediaType.APPLICATION_JSON));
 
-        // Assert Response
-        assertNotNull(responseEntity, "The response entity should not be null");
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        // Then
+        response.andExpect(status().isOk()).andExpect(jsonPath("$.success", is(true))).andExpect(jsonPath("$.data.documentNumber", is(mockOrderDto.getDocumentNumber())));
 
-        // Assert Message
-        assertNotNull(responseEntity.getBody(), "The response body should not be null");
-        assertTrue(responseEntity.getBody().getSuccess(), "Success flag should be true");
-        assertEquals(mockOrderDto.getDocumentNumber(), responseEntity.getBody().getData().getDocumentNumber());
+        // Verify
+        verify(orderService, times(1)).retrieveOrderById(anyString());
     }
 
-    @DisplayName("Retrieve an order By ID: Invalid Pilot Code")
+    @DisplayName("Retrieve paginated orders: Success")
     @Test
-    void retrieveOrderById_InvalidPilotCode() {
-        ResponseEntity<ApiResponseInfo<OrderDto>> responseEntity = testRestTemplate.exchange(
-                "http://localhost:" + port + "/api/eds/pilot/INVALID/orders/1",
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<ApiResponseInfo<OrderDto>>() {
-                });
+    void givenPaginationAndJwtToken_whenRetrievePaginatedOrders_thenSuccess() throws Exception {
+        try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
+            // Given
+            String pilotCode = "TEST_PILOT";
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<OrderDto> orderPage = new PageImpl<>(List.of(new OrderDto()), pageable, 1);
 
-        // Assert Response
-        assertNotNull(responseEntity, "The response entity should not be null");
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+            // Mock JWT authentication
+            JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
+            SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
 
-        // Assert Message
-        assertNotNull(responseEntity.getBody(), "The response body should not be null");
-        assertFalse(responseEntity.getBody().getSuccess(), "Success flag should be false");
-        assertEquals("Validation Error", responseEntity.getBody().getMessage());
+            // When
+            when(JwtUtils.extractPilotCode(any(Jwt.class))).thenReturn(pilotCode);
+            when(orderService.retrieveOrdersByCustomerFilteredByDates(anyString(), any(), any(), any())).thenReturn(orderPage);
+
+            mockMvc.perform(get("/api/eds/pilot/{pilotCode}/orders", pilotCode)
+                            .param("startDate", "2025-01-01").param("endDate", "2025-01-31")
+                            .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)))
+                    // Then
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Orders retrieved successfully"));
+
+        }
     }
 
-    @DisplayName("Retrieve paginated orders with Filters: Success")
+    @DisplayName("Retrieve paginated orders: Invalid Pilot Code request/Forbidden")
     @Test
-    void retrievePaginatedOrders_Success() {
-        @SuppressWarnings("unchecked")
-        Page<OrderDto> mockPage = Mockito.mock(Page.class);
-        Mockito.when(orderService.retrieveOrdersByCustomerFilteredByDates(anyString(), any(), any(), any()))
-                .thenReturn(mockPage);
+    void givenPaginationAndJwtToken_whenRetrievePaginatedOrders_thenForbidden() throws Exception {
+        try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
+            // Mock static method
+            mockedJwtUtils.when(() -> JwtUtils.extractPilotCode(any(Jwt.class))).thenReturn("DIFFERENT_PILOT");
 
-        // Request Parameters
-        String pageParam = "0";
-        String sizeParam = "10";
-        String startDateParam = "2024-01-01";
-        String endDateParam = "2024-02-01";
+            // Mock JWT authentication
+            JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+            SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
 
-        // URL
-        String url = "http://localhost:" + port + "/api/eds/pilot/CRF/orders" +
-                "?page=" + pageParam +
-                "&size=" + sizeParam +
-                "&startDate=" + startDateParam +
-                "&endDate=" + endDateParam;
-
-        ResponseEntity<ApiResponseInfo<PaginatedResultsDto<OrderDto>>> responseEntity = testRestTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<ApiResponseInfo<PaginatedResultsDto<OrderDto>>>() {
-                });
-
-        // Assert Response
-        assertNotNull(responseEntity, "The response entity should not be null");
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-
-        // Assert Message
-        assertNotNull(responseEntity.getBody(), "The response body should not be null!");
-        assertTrue(responseEntity.getBody().getSuccess(), "Success flag should be true!");
-        assertNotNull(responseEntity.getBody().getData(), "Data should not be null!");
+            // Perform request and validate response
+            mockMvc.perform(get("/api/eds/pilot/{pilotCode}/orders", "TEST_PILOT")
+                            .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.message").value("You can only retrieve information within your organization"));
+        }
     }
 
-    @DisplayName("Retrieve paginated orders with Filters: Invalid Dates")
+
+    @DisplayName("Retrieve paginated orders: Invalid Date Format")
     @Test
-    void retrievePaginatedOrders_InvalidDates() {
-        // Request Parameters
-        String pageParam = "0";
-        String sizeParam = "10";
-        String startDateParam = "2024-02-01";
-        String endDateParam = "2024-01-01";
+    void givenPaginationAndJwtToken_whenRetrievePaginatedOrders_thenInvalidDataFormat() throws Exception {
+        try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
+            mockedJwtUtils.when(() -> JwtUtils.extractPilotCode(any(Jwt.class))).thenReturn("TEST_PILOT");
 
-        // URL
-        String url = "http://localhost:" + port + "/api/eds/pilot/CRF/orders" +
-                "?page=" + pageParam +
-                "&size=" + sizeParam +
-                "&startDate=" + startDateParam +
-                "&endDate=" + endDateParam;
+            mockMvc.perform(get("/api/eds/pilot/{pilotCode}/orders", "TEST_PILOT")
+                    .param("startDate", "invalid-date")
+                    .param("endDate", "2025-01-31")
+                    .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").value("Unable to parse given dates"));
+        }
+    }
 
-        ResponseEntity<ApiResponseInfo<PaginatedResultsDto<OrderDto>>> responseEntity = testRestTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<ApiResponseInfo<PaginatedResultsDto<OrderDto>>>() {
-                });
+    @DisplayName("Retrieve paginated orders: No Orders Found")
+    @Test
+    void givenPaginationAndJwtToken_whenRetrievePaginatedOrders_noOrdersFound() throws Exception {
+        try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
+            String pilotCode = "TEST_PILOT";
+            Pageable pageable = PageRequest.of(0, 10);
 
-        // Assert Response
-        assertNotNull(responseEntity, "The response entity should not be null");
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+            mockedJwtUtils.when(() -> JwtUtils.extractPilotCode(any(Jwt.class))).thenReturn(pilotCode);
+            when(orderService.retrieveOrdersByCustomerFilteredByDates(eq(pilotCode), any(), any(), any()))
+                    .thenReturn(Page.empty(pageable));
 
-        // Assert Message
-        assertNotNull(responseEntity.getBody(), "The response body should not be null!");
-        assertFalse(responseEntity.getBody().getSuccess(), "Success flag should be true!");
-        assertEquals("Start date must be before or equal to end date!", responseEntity.getBody().getErrors());
+            mockMvc.perform(get("/api/eds/pilot/{pilotCode}/orders", pilotCode)
+                            .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("No orders found for the given search parameters"));
+        }
     }
 }

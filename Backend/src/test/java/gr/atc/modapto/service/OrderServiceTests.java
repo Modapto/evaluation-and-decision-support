@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -27,7 +28,6 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 
 import gr.atc.modapto.dto.OrderDto;
-import gr.atc.modapto.enums.PilotCode;
 import gr.atc.modapto.exception.CustomExceptions.OrderNotFoundException;
 import gr.atc.modapto.model.Assembly;
 import gr.atc.modapto.model.Component;
@@ -78,7 +78,7 @@ class OrderServiceTests {
         order = Order.builder()
             .assemblies(Collections.singletonList(assembly))
             .components(Collections.singletonList(component))
-            .customer(PilotCode.valueOf(TEST_PILOT))
+            .customer(TEST_PILOT)
             .documentNumber("123456")
             .comments("Test comments")
             .build();
@@ -98,19 +98,6 @@ class OrderServiceTests {
         Assertions.assertThat(isSuccess).isTrue();
     }
 
-    @DisplayName("Save new order: Error")
-    @Test
-    void givenOrderRepositorySaveFailure_whenSaveNewOrder_thenReturnFalse() {
-        // Given
-        BDDMockito.given(modelMapper.map(orderDto, Order.class)).willReturn(order);
-        BDDMockito.given(orderRepository.save(order)).willReturn(null);
-
-        // When
-        boolean isSuccess = orderService.saveNewOrder(orderDto);
-
-        // Then
-        Assertions.assertThat(isSuccess).isFalse();
-    }
 
     @DisplayName("Retrieve an order by ID: Success")
     @Test

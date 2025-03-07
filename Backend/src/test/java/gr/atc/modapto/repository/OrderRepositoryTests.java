@@ -12,7 +12,6 @@ import org.springframework.boot.test.autoconfigure.data.elasticsearch.DataElasti
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import gr.atc.modapto.enums.PilotCode;
 import gr.atc.modapto.model.Assembly;
 import gr.atc.modapto.model.Component;
 import gr.atc.modapto.model.Order;
@@ -46,7 +45,7 @@ class OrderRepositoryTests {
         this.order = Order.builder()
             .assemblies(Collections.singletonList(assembly))
             .components(Collections.singletonList(component))
-            .customer(PilotCode.valueOf(TEST_PILOT))
+            .customer(TEST_PILOT)
             .documentNumber("123456")
             .comments("Test comments")
             .build();

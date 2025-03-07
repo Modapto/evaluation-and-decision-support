@@ -29,6 +29,20 @@ At the moment, this repository is consisted of a Spring Boot Application that ha
     mvn install
     ```
 
+3. Configure the following properties in file /src/main/resources/application.properties
+
+    ```sh
+    spring.elasticsearch.uris=..
+    spring.elasticsearch.username=..
+    spring.elasticsearch.password=..
+    spring.security.oauth2.resourceserver.jwt.issuer-uri=..
+    spring.security.cors.domains=..
+    keycloak.client=..
+    keycloak.client.secret=..
+    spring.kafka.bootstrap-servers=..
+    kafka.topics=..
+    ```
+
 ### Usage
 
 1. Run the application:
@@ -39,9 +53,7 @@ At the moment, this repository is consisted of a Spring Boot Application that ha
 
 2. The application will start on `http://localhost:8090`.
 
-3. Database URL is configured on: `http://localhost:9200`.
-
-4. Access the OpenAPI documentation at `http://localhost:8090/api/eds/swagger-ui/index.html`.
+3. Access the OpenAPI documentation at `http://localhost:8090/api/eds/swagger-ui/index.html`.
 
 ### Deployment
 
@@ -49,25 +61,27 @@ For local deployment Docker containers can be utilized to deploy the microservic
 
 1. Ensure Docker is installed and running.
 
-2. Build the maven project:
+2. Configure the ENV Variables of Docker Image according to the specified name of the application.properties file.
+
+3. Build the maven project:
 
     ```sh
     mvn package
     ```
 
-3. Build the Docker container:
+4. Build the Docker container:
 
     ```sh
     docker build -t modapto-eds .
     ```
 
-4. Run the Docker container:
+5. Run the Docker container (Include also the env variables):
 
     ```sh
-    docker run -d -p 8090:8090 --name modapto-eds-container modapto-eds
+    docker run -d -p 8090:8090 --name modapto-eds-container modapto-eds --env ...
     ```
 
-5. To stop container run:
+6. To stop container run:
 
     ```sh
    docker stop modapto-eds-container

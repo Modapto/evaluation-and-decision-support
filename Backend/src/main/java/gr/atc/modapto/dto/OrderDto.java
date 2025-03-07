@@ -5,7 +5,6 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import gr.atc.modapto.enums.PilotCode;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,7 +23,7 @@ public class OrderDto {
     
     @NotEmpty
     @JsonProperty("customer")
-    private PilotCode customer;
+    private String customer;
 
     @NotEmpty
     @JsonProperty("documentNumber")
