@@ -51,7 +51,9 @@ jobs:
         context: ./Backend/.
         file: ./Backend/Dockerfile
         push: true
-        tags: ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:latest,ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }}
+        tags: |
+          ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:latest
+          ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:0.5
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
