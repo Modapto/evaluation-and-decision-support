@@ -82,7 +82,6 @@ jobs:
 
             # Deploy new Image for FFT Environment
             cd /root/modapto/fft-deployment
-            docker compose pull ${{ env.DOCKER_IMAGE }}
             docker compose up -d --no-deps ${{ env.FFT_CONTAINER }}
 
             # Remove unused images
