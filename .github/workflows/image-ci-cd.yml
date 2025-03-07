@@ -48,7 +48,7 @@ jobs:
     - name: Build and Push Image with Cache
       uses: docker/build-push-action@v6
       with:
-        context: .
+        context: ./Backend/.
         file: Dockerfile
         push: true
         tags: ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:latest,ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }}
