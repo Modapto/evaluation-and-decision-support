@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import gr.atc.modapto.util.JwtUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.CacheControl;
@@ -38,7 +39,8 @@ import lombok.AllArgsConstructor;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/eds")
+@RequestMapping("/api/eds/orders")
+@Tag(name = "Orders Controller", description = "API Controller for managing Orders")
 public class OrderController {
 
         private final OrderService orderService;
@@ -103,7 +105,7 @@ public class OrderController {
                 @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
                 @ApiResponse(responseCode = "403", description = "You can only retrieve information within your organization"),
         })
-        @GetMapping("/pilot/{pilotCode}/orders/{id}")
+        @GetMapping("/{id}/pilot/{pilotCode}")
         public ResponseEntity<BaseResponse<OrderDto>> retrieveOrderById(
                         @AuthenticationPrincipal Jwt jwt,
                         @PathVariable String pilotCode,
@@ -142,7 +144,7 @@ public class OrderController {
                 @ApiResponse(responseCode = "403", description = "You can only retrieve information within your organization"),
                 @ApiResponse(responseCode = "500", description = "Unable to retrieve orders from DB!")
         })
-        @GetMapping("/pilot/{pilotCode}/orders")
+        @GetMapping("/pilot/{pilotCode}")
         public ResponseEntity<BaseResponse<PaginatedResultsDto<OrderDto>>> retrievePaginatedOrders(@AuthenticationPrincipal Jwt jwt,
                         @PathVariable String pilotCode, Pageable pageableElem,
                         @RequestParam(name = "startDate", required = false) String startDate,

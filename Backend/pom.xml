@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.3</version>
+		<version>3.5.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>gr.atc</groupId>
 	<artifactId>modapto-evaluation-and-decision-support</artifactId>
-	<version>0.5</version>
+	<version>v0.6-SNAPSHOT</version>
 	<name>modapto_evaluation_and_decision_support</name>
 	<description>Evaluation and Decision Support Component - Backend System</description>
 	<inceptionYear>2024</inceptionYear>
@@ -91,6 +91,25 @@
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-jsr310</artifactId>
 		</dependency>
+		<!-- Excel Handling -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.4.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>5.4.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>1.26.0</version>
+		</dependency>
+
 		<!-- Open API -->
 		<dependency>
 			<groupId>org.springdoc</groupId>

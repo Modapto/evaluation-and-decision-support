@@ -1,10 +1,40 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS build
+# Build stage
+FROM eclipse-temurin:21-jdk-alpine AS build
 
-COPY . /usr/src/app
 WORKDIR /usr/src/app
-RUN mvn -B -Dmaven.test.skip -f pom.xml clean package
+COPY pom.xml .
+COPY src ./src
 
-FROM openjdk:21-jdk
+# Cache dependencies
+RUN apk add --no-cache maven && \
+    mvn dependency:go-offline -B && \
+    mvn -B -Dmaven.test.skip package && \
+    rm -rf /root/.m2
+
+# Runtime stage
+FROM eclipse-temurin:21-jre-alpine
+
+LABEL org.opencontainers.image.title="MODAPTO Evaluation and Decision Support" \
+      org.opencontainers.image.description="Service managing Smart Service operations and Data uploading" \
+      org.opencontainers.image.version="v0.6" \
+      org.opencontainers.image.vendor="Athens Technology Center (ATC)"
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
 COPY --from=build /usr/src/app/target/*.jar app.jar
 
-ENTRYPOINT ["java","-jar","/app.jar"]
+# JVM tuning
+ENTRYPOINT ["java", \
+            "-XX:+UseContainerSupport", \
+            "-XX:MaxRAMPercentage=75.0", \
+            "-XX:+UseG1GC", \
+            "-XX:MaxGCPauseMillis=100", \
+            "-XX:+ParallelRefProcEnabled", \
+            "-XX:+HeapDumpOnOutOfMemoryError", \
+            "-XX:+DisableExplicitGC", \
+            "-Djava.security.egd=file:/dev/./urandom", \
+            "-jar", "/app/app.jar"]

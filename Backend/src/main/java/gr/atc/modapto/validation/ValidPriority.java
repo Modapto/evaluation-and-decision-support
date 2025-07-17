@@ -1,5 +1,6 @@
 package gr.atc.modapto.validation;
 
+import gr.atc.modapto.validation.validators.PriorityValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 

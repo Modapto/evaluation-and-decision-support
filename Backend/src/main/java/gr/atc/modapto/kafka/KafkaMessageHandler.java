@@ -3,6 +3,12 @@ package gr.atc.modapto.kafka;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import gr.atc.modapto.dto.BaseEventResultsDto;
+import gr.atc.modapto.dto.serviceResults.CrfOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.CrfSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.SewOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.SewSimulationResultsDto;
+import gr.atc.modapto.enums.WebSocketTopics;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -40,20 +46,35 @@ public class KafkaMessageHandler {
     @KafkaListener(topics = "#{'${kafka.topics}'.split(',')}", groupId = "${spring.kafka.consumer.group-id}")
     public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic){
         // Validate that same essential variables are present
-        if (event.getPriority() == null || event.getProductionModule() == null){
-            log.error("Either priority or production module is missing from the event. Message is discarded!");
+        if (event.getPriority() == null || event.getProductionModule() == null || event.getTopic() == null){
+            log.error("Either priority, topic or production module are missing from the event. Message is discarded!");
             return;
         }
 
         // Check if received message on MQTT Topic in Kafka and change the topic to the internal one
-        if (topic.equalsIgnoreCase("modapto-mqtt-topics") && event.getTopic() != null)
+        if (topic.equalsIgnoreCase("modapto-mqtt-topics"))
             topic = event.getTopic();
 
+        String webSocketTopic;
         try {
+            // Check the instance of the Results
+            BaseEventResultsDto result = objectMapper.treeToValue(event.getResults(), BaseEventResultsDto.class);
+
+            switch (result){
+                case CrfSimulationResultsDto ignored -> webSocketTopic = WebSocketTopics.CRF_SIMULATION_RESULTS.toString();
+                case CrfOptimizationResultsDto ignored -> webSocketTopic = WebSocketTopics.CRF_OPTIMIZATION_RESULTS.toString();
+                case SewSimulationResultsDto ignored -> webSocketTopic = WebSocketTopics.SEW_SIMULATION_RESULTS.toString();
+                case SewOptimizationResultsDto ignored -> webSocketTopic = WebSocketTopics.SEW_OPTIMIZATION_RESULTS.toString();
+                default -> {
+                    log.error("Unknown results data format provided. Results are discarded");
+                    return;
+                }
+            }
+
             // Route Topic Message to WebSocket message
-            webSocketService.notifyInWebSocketTopic(objectMapper.writeValueAsString(event), topic);
+            webSocketService.notifyInWebSocketTopic(objectMapper.writeValueAsString(result), webSocketTopic);
         } catch (JsonProcessingException e){
-            log.error("Unable to parse Event to String Object");
+            log.error("Unable to parse Event JSON or Results JSON to String Object - Error: {}", e.getMessage());
         }
     }
 

@@ -1,22 +1,33 @@
 package gr.atc.modapto.controller;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Data
 @Builder
 public class BaseResponse<T> {
-    private Boolean success;
-    private String message;
+    @Schema(description = "Response data", type = "object")
     private T data;
+
+    @Schema(description = "Error details", type = "object")
     private Object errors;
+
+    @Schema(description = "Response message", type = "string")
+    private String message;
+
+    @Schema(description = "Success/Failure Flag", type = "boolean")
+    private boolean success;
+
+    @Schema(description = "Timestamp", type = "string", format = "date-time", example = "yyyy-MM-dd'T'HH:mm:ss'Z'")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     @Builder.Default
-    private ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
+    private OffsetDateTime timestamp = OffsetDateTime.now(ZoneOffset.UTC).withNano(0);
+
 
     public static <T> BaseResponse<T> success(T data) {
         return BaseResponse.<T>builder()

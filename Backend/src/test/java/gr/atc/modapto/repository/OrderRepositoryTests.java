@@ -3,6 +3,7 @@ package gr.atc.modapto.repository;
 import java.time.LocalDate;
 import java.util.Collections;
 
+import gr.atc.modapto.config.SetupTestContainersEnvironment;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,9 +16,11 @@ import org.springframework.data.domain.Pageable;
 import gr.atc.modapto.model.Assembly;
 import gr.atc.modapto.model.Component;
 import gr.atc.modapto.model.Order;
+import org.springframework.test.context.ActiveProfiles;
 
 @DataElasticsearchTest
-class OrderRepositoryTests {
+@ActiveProfiles("test")
+class OrderRepositoryTests extends SetupTestContainersEnvironment {
 
     @Autowired
     private OrderRepository orderRepository;

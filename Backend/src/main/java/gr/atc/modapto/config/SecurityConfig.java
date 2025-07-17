@@ -59,7 +59,7 @@ public class SecurityConfig {
                 .exceptionHandling(exc -> exc.authenticationEntryPoint(entryPoint))
                 // HTTP Requests authorization properties on URLs
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers("/api/eds/**").permitAll() // Permit Swagger and OpenAPI Docs
+                        .requestMatchers("/api/eds/swagger", "/api/eds/swagger-ui/**", "/api/eds/v3/api-docs/**", "/eds/websocket/**").permitAll()
                         .anyRequest().authenticated())
                 // JWT Authentication Configuration
                 .oauth2ResourceServer(oauth2ResourceServerCustomizer -> oauth2ResourceServerCustomizer

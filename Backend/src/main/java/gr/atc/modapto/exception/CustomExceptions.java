@@ -18,4 +18,18 @@ public class CustomExceptions{
             super("Invalid pagination parameters were given. Cause: {}", cause);
         }
     }
+
+    public static class FileHandlingException extends RuntimeException{
+        public FileHandlingException(String message){
+            super(message);
+        }
+    }
+
+    public static class ModelMappingException extends RuntimeException{
+        public ModelMappingException(String message) {super(message);}
+    }
+
+    public static class ResourceNotFoundException extends RuntimeException{
+        public ResourceNotFoundException(String message) {super(message);}
+    }
 }
