@@ -2,6 +2,7 @@ name: Docker Image CI/CD - EDS Backend
 
 env:
   DOCKER_IMAGE: eds-backend
+  FFT_CONTAINER: eds-backend-fft
 
 on:
   push:
@@ -23,19 +24,41 @@ jobs:
     - name: Check out repository
       uses: actions/checkout@v4
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver: docker-container
+        buildkitd-config-inline: |
+          [registry."ghcr.io"]
+            mirrors = ["ghcr.io"]
+
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v2
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.CI_ORG_TOKEN }}
+        
+    - name: Extract version from pom.xml
+      id: get_version
+      run: |
+        VERSION=$(mvn help:evaluate -Dexpression="project.version" -q -DforceStdout)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-    - name: Build the Docker image
-      run: docker build ./Backend/. --file ./Backend/Dockerfile --tag ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:latest
-
-    - name: Push the Docker image
-      run: docker push ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:latest
-
+    - name: Build and Push Image with Cache
+      uses: docker/build-push-action@v6
+      with:
+        context: ./Backend/.
+        file: ./Backend/Dockerfile
+        push: true
+        tags: |
+          ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:latest
+          ghcr.io/modapto/${{ env.DOCKER_IMAGE }}:${{ env.VERSION }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+          
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push-image
@@ -52,10 +75,14 @@ jobs:
             # Login to GitHub Container Registry
             echo "${{ secrets.CI_ORG_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            # Deploy new Image
+            # Deploy new Image for Dev Environment
             cd /root/modapto/system-deployment
             docker compose pull ${{ env.DOCKER_IMAGE }}
             docker compose up -d --no-deps ${{ env.DOCKER_IMAGE }}
+
+            # Deploy new Image for FFT Environment
+            cd /root/modapto/fft-deployment
+            docker compose up -d --no-deps ${{ env.FFT_CONTAINER }}
 
             # Remove unused images
             docker image prune -f
