@@ -1,12 +1,13 @@
 package gr.atc.modapto.controller;
 
-import gr.atc.modapto.dto.serviceResults.CrfSimulationResultsDto;
-import gr.atc.modapto.dto.serviceResults.SewSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.service.interfaces.ISimulationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/eds/simulation")
+@Tag(name = "Simulation Controller", description = "Handles simulation functionalities amongst Pilot Cases")
 public class SimulationController {
 
     private final ISimulationService<CrfSimulationResultsDto> crfSimulationService;

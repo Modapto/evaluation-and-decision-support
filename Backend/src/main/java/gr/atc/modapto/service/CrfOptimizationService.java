@@ -1,6 +1,7 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.dto.serviceResults.CrfOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.model.serviceResults.CrfOptimizationResults;
 import gr.atc.modapto.repository.CrfOptimizationResultsRepository;
@@ -69,5 +70,10 @@ public class CrfOptimizationService implements IOptimizationService<CrfOptimizat
             log.error(MAPPING_ERROR + "for Module {} - {}", productionModule, e.getMessage());
             throw new ModelMappingException("Unable to parse CRF Optimization Results to DTO for Module: " + productionModule + " - Error: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void uploadProductionSchedule(SewProductionScheduleDto schedule) {
+        // Do nothing
     }
 }

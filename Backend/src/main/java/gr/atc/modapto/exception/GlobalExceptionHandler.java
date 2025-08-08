@@ -3,18 +3,16 @@ package gr.atc.modapto.exception;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.ConstraintViolationException;
-import org.modelmapper.MappingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.NonNull;
-import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -25,6 +23,7 @@ import static gr.atc.modapto.exception.CustomExceptions.*;
 
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /*
  * Exception Handling Responses
@@ -47,10 +46,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    /*
+     * Used for Request Body Validations in Requests
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<BaseResponse<Map<String, String>>> handleDtoValidationExceptions(@NotNull MethodArgumentNotValidException ex) {
+    public ResponseEntity<BaseResponse<Map<String, String>>> validationExceptionHandler(
+            @NotNull org.springframework.web.bind.MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
-        Objects.requireNonNull(ex.getBindingResult()).getAllErrors().forEach(error -> {
+        ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
@@ -123,5 +126,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<BaseResponse<String>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         BaseResponse<String> response = BaseResponse.error("Resource not found", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(SmartServiceInvocationException.class)
+    public ResponseEntity<BaseResponse<String>> handleSmartServiceInvocationException(SmartServiceInvocationException ex) {
+        BaseResponse<String> response = BaseResponse.error("Unable to invoke designated smart service", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<BaseResponse<String>> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex){
+        BaseResponse<String> response = BaseResponse.error("Invalid input datetime format", "Format expected is 'YYYY-MM-DDThh:mm:ss'");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }

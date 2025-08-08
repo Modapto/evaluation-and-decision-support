@@ -4,10 +4,11 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import gr.atc.modapto.dto.BaseEventResultsDto;
-import gr.atc.modapto.dto.serviceResults.CrfOptimizationResultsDto;
-import gr.atc.modapto.dto.serviceResults.CrfSimulationResultsDto;
-import gr.atc.modapto.dto.serviceResults.SewOptimizationResultsDto;
-import gr.atc.modapto.dto.serviceResults.SewSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.enums.WebSocketTopics;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -44,9 +45,9 @@ public class KafkaMessageHandler {
      * @param event: Event occurred in MODAPTO
      */
     @KafkaListener(topics = "#{'${kafka.topics}'.split(',')}", groupId = "${spring.kafka.consumer.group-id}")
-    public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic){
+    public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
         // Validate that same essential variables are present
-        if (event.getPriority() == null || event.getProductionModule() == null || event.getTopic() == null){
+        if (event.getPriority() == null || event.getProductionModule() == null || event.getTopic() == null) {
             log.error("Either priority, topic or production module are missing from the event. Message is discarded!");
             return;
         }
@@ -60,11 +61,17 @@ public class KafkaMessageHandler {
             // Check the instance of the Results
             BaseEventResultsDto result = objectMapper.treeToValue(event.getResults(), BaseEventResultsDto.class);
 
-            switch (result){
-                case CrfSimulationResultsDto ignored -> webSocketTopic = WebSocketTopics.CRF_SIMULATION_RESULTS.toString();
-                case CrfOptimizationResultsDto ignored -> webSocketTopic = WebSocketTopics.CRF_OPTIMIZATION_RESULTS.toString();
-                case SewSimulationResultsDto ignored -> webSocketTopic = WebSocketTopics.SEW_SIMULATION_RESULTS.toString();
-                case SewOptimizationResultsDto ignored -> webSocketTopic = WebSocketTopics.SEW_OPTIMIZATION_RESULTS.toString();
+            switch (result) {
+                case CrfSimulationResultsDto ignored ->
+                        webSocketTopic = WebSocketTopics.CRF_SIMULATION_RESULTS.toString();
+                case CrfOptimizationResultsDto ignored ->
+                        webSocketTopic = WebSocketTopics.CRF_OPTIMIZATION_RESULTS.toString();
+                case SewSimulationResultsDto ignored ->
+                        webSocketTopic = WebSocketTopics.SEW_SIMULATION_RESULTS.toString();
+                case SewOptimizationResultsDto ignored ->
+                        webSocketTopic = WebSocketTopics.SEW_OPTIMIZATION_RESULTS.toString();
+                case SewGroupingPredictiveMaintenanceOutputDto ignored ->
+                        webSocketTopic = WebSocketTopics.SEW_GROUPING_PREDICTIVE_MAINTENANCE.toString();
                 default -> {
                     log.error("Unknown results data format provided. Results are discarded");
                     return;
@@ -73,10 +80,8 @@ public class KafkaMessageHandler {
 
             // Route Topic Message to WebSocket message
             webSocketService.notifyInWebSocketTopic(objectMapper.writeValueAsString(result), webSocketTopic);
-        } catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             log.error("Unable to parse Event JSON or Results JSON to String Object - Error: {}", e.getMessage());
         }
     }
-
-
 }

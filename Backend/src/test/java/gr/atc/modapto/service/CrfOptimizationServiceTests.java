@@ -1,6 +1,6 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.dto.serviceResults.CrfOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.model.serviceResults.CrfOptimizationResults;
 import gr.atc.modapto.repository.CrfOptimizationResultsRepository;

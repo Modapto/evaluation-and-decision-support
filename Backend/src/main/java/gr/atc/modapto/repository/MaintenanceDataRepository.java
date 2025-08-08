@@ -5,6 +5,9 @@ import org.springframework.data.elasticsearch.repository.ElasticsearchRepository
 
 import java.util.List;
 
+import org.springframework.stereotype.Repository;
+
+@Repository
 public interface MaintenanceDataRepository extends ElasticsearchRepository<MaintenanceData, String> {
     List<MaintenanceData> findByTsRequestCreationBetween(String startDate, String endDate);
 

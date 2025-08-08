@@ -1,16 +1,14 @@
 package gr.atc.modapto.util;
 
-import gr.atc.modapto.dto.files.MaintenanceDataDto;
+import gr.atc.modapto.dto.sew.MaintenanceDataDto;
 import gr.atc.modapto.enums.CorimFileHeaders;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -24,7 +22,7 @@ public class ExcelFilesUtils {
     private static final Logger logger = LoggerFactory.getLogger(ExcelFilesUtils.class);
 
     private static final DateTimeFormatter STORED_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-    private static final DateTimeFormatter ISO_DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter ISO_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     // Timezones
     private static final ZoneId SYSTEM_TIMEZONE = ZoneId.systemDefault();
@@ -167,7 +165,6 @@ public class ExcelFilesUtils {
 
     private static void processCell(MaintenanceDataDto rowData, CorimFileHeaders header, Cell cell) {
         switch (CorimFileHeaders.fromHeader(header.getHeader())) {
-            case REQUEST_ID, RECIPIENT, EQUIPMENT_ID, INTERVENTION_ID, INTERVENTION_STATUS:
             case null:
                 break;
             case STAGE:
@@ -176,11 +173,20 @@ public class ExcelFilesUtils {
             case CELL:
                 rowData.setCell(getCellValueAsString(cell));
                 break;
+            case FAILURE_ELEMENT_ID:
+                rowData.setFaultyElementId(getCellValueAsString(cell));
+                break;
             case MODULE:
                 rowData.setModule(getCellValueAsString(cell));
                 break;
             case COMPONENT:
                 rowData.setComponent(getCellValueAsString(cell));
+                break;
+            case MODULE_ID:
+                rowData.setModuleId(getCellValueAsString(cell));
+                break;
+            case COMPONENT_ID:
+                rowData.setComponentId(getCellValueAsString(cell));
                 break;
             case FAILURE_TYPE:
                 rowData.setFailureType(getCellValueAsString(cell));
@@ -194,41 +200,17 @@ public class ExcelFilesUtils {
             case COMPONENT_REPLACEMENT:
                 rowData.setComponentReplacement(getCellValueAsString(cell));
                 break;
-            case COMPONENT_NAME:
-                rowData.setComponentName(getCellValueAsString(cell));
+            case WORKER_NAME:
+                rowData.setWorkerName(getCellValueAsString(cell));
                 break;
             case TS_REQUEST_CREATION:
-                rowData.setTsRequestCreation(getCellValueAsString(cell));
-                break;
-            case TS_REQUEST_ACKNOWLEDGED:
-                rowData.setTsRequestAcknowledged(getCellValueAsString(cell));
+                rowData.setTsRequestCreation(getCellValueAsLocalDateTime(cell));
                 break;
             case TS_INTERVENTION_STARTED:
-                rowData.setTsInterventionStarted(getCellValueAsString(cell));
+                rowData.setTsInterventionStarted(getCellValueAsLocalDateTime(cell));
                 break;
             case TS_INTERVENTION_FINISHED:
-                rowData.setTsInterventionFinished(getCellValueAsString(cell));
-                break;
-            case MTBF:
-                rowData.setMtbf(getCellValueAsString(cell));
-                break;
-            case MTBF_STAGE_LEVEL:
-                rowData.setMtbfStageLevel(getCellValueAsString(cell));
-                break;
-            case DURATION_CREATION_TO_ACKNOWLEDGED:
-                rowData.setDurationCreationToAcknowledged(getCellValueAsString(cell));
-                break;
-            case DURATION_CREATION_TO_INTERVENTION_START:
-                rowData.setDurationCreationToInterventionStart(getCellValueAsString(cell));
-                break;
-            case DURATION_INTERVENTION_STARTED_TO_FINISHED:
-                rowData.setDurationInterventionStartedToFinished(getCellValueAsString(cell));
-                break;
-            case TOTAL_DURATION_CREATION_TO_FINISHED:
-                rowData.setTotalDurationCreationToFinished(getCellValueAsString(cell));
-                break;
-            case TOTAL_MAINTENANCE_TIME_ALLOCATED:
-                rowData.setTotalMaintenanceTimeAllocated(getCellValueAsString(cell));
+                rowData.setTsInterventionFinished(getCellValueAsLocalDateTime(cell));
                 break;
         }
     }
@@ -242,21 +224,8 @@ public class ExcelFilesUtils {
     private static String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
         return switch (cell.getCellType()) {
-            case STRING -> {
-                String stringValue = cell.getStringCellValue().trim();
-                // Ensure that String is not a Date value otherwise convert it to ISO format
-                yield convertCustomDateStringToISO(stringValue);
-            }
+            case STRING -> cell.getStringCellValue().trim();
             case NUMERIC -> {
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    // Handle date cells - Convert to ISO format
-                    Date date = cell.getDateCellValue();
-                    LocalDateTime localDateTime = date.toInstant()
-                            .atZone(SYSTEM_TIMEZONE)
-                            .toLocalDateTime();
-
-                    yield localDateTime.format(ISO_DATETIME_FORMAT);
-                } else {
                     // Handle numeric cells
                     double numValue = cell.getNumericCellValue();
                     if (numValue == (long) numValue) {
@@ -264,7 +233,6 @@ public class ExcelFilesUtils {
                     } else {
                         yield String.valueOf(numValue);
                     }
-                }
             }
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
             default -> "";
@@ -272,23 +240,47 @@ public class ExcelFilesUtils {
     }
 
     /**
-     * Convert custom date string (dd/MM/yyyy HH:mm:ss) to ISO format in France timezone
+     * Convert cell value to LocalDateTime
      */
-    private static String convertCustomDateStringToISO(String dateString) {
+    private static LocalDateTime getCellValueAsLocalDateTime(Cell cell) {
+        if (cell == null) return null;
+
+        return switch (cell.getCellType()) {
+            case STRING -> {
+                String stringValue = cell.getStringCellValue().trim();
+                if (stringValue.isEmpty()) {
+                    yield null;
+                }
+                yield parseStringToLocalDateTime(stringValue);
+            }
+            case NUMERIC -> {
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    Date date = cell.getDateCellValue();
+                    yield date.toInstant()
+                            .atZone(SYSTEM_TIMEZONE)
+                            .toLocalDateTime();
+                } else {
+                    yield null;
+                }
+            }
+            default -> null;
+        };
+    }
+
+    private static LocalDateTime parseStringToLocalDateTime(String dateString) {
         if (dateString == null || dateString.trim().isEmpty()) {
-            return "";
+            return null;
         }
 
         try {
-            // Parse the custom format (dd/MM/yyyy HH:mm:ss)
-            LocalDateTime excelDatetime = LocalDateTime.parse(dateString, STORED_FORMAT);
-
-            // Convert to ISO format
-            return excelDatetime.format(ISO_DATETIME_FORMAT);
-
-        } catch (DateTimeParseException e) {
-            // If not a date string, return as-is
-            return dateString;
+            return LocalDateTime.parse(dateString, STORED_FORMAT);
+        } catch (DateTimeParseException e1) {
+            try {
+                return LocalDateTime.parse(dateString, ISO_FORMAT);
+            } catch (DateTimeParseException e2) {
+                logger.warn("Could not parse date string: {} with either format", dateString, e2);
+                return null;
+            }
         }
     }
 

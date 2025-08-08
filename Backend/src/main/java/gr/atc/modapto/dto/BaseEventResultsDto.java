@@ -2,10 +2,10 @@ package gr.atc.modapto.dto;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import gr.atc.modapto.dto.serviceResults.CrfOptimizationResultsDto;
-import gr.atc.modapto.dto.serviceResults.CrfSimulationResultsDto;
-import gr.atc.modapto.dto.serviceResults.SewOptimizationResultsDto;
-import gr.atc.modapto.dto.serviceResults.SewSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
 @JsonSubTypes({

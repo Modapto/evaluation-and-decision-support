@@ -1,6 +1,6 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.dto.serviceResults.SewOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.model.serviceResults.SewOptimizationResults;
 import gr.atc.modapto.repository.SewOptimizationResultsRepository;

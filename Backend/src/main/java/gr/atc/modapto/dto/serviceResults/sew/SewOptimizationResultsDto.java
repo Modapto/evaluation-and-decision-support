@@ -1,5 +1,6 @@
-package gr.atc.modapto.dto.serviceResults;
+package gr.atc.modapto.dto.serviceResults.sew;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,6 +21,7 @@ public class SewOptimizationResultsDto extends BaseEventResultsDto {
 
     private String id;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @JsonProperty("timestamp")
     private String timestamp;
 

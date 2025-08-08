@@ -1,9 +1,24 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.dto.files.MaintenanceDataDto;
+import gr.atc.modapto.dto.dt.DtInputDto;
+import gr.atc.modapto.dto.dt.DtResponseDto;
+import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
+import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintenanceOutputDto;
+import gr.atc.modapto.dto.sew.MaintenanceDataDto;
+import gr.atc.modapto.dto.sew.SewComponentInfoDto;
+import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.model.MaintenanceData;
+import gr.atc.modapto.model.SewComponentInfo;
 import gr.atc.modapto.repository.MaintenanceDataRepository;
+import gr.atc.modapto.repository.SewComponentInfoRepository;
+import gr.atc.modapto.repository.SewGroupingBasedPredictiveMaintenanceRepository;
+import gr.atc.modapto.repository.SewThresholdBasedPredictiveMaintenanceRepository;
+import gr.atc.modapto.service.processors.NoOpResponseProcessor;
+import gr.atc.modapto.service.processors.ThresholdBasedMaintenanceResponseProcessor;
 import gr.atc.modapto.exception.CustomExceptions.FileHandlingException;
+import gr.atc.modapto.exception.CustomExceptions.ModelMappingException;
+import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
 import gr.atc.modapto.util.ExcelFilesUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,7 +29,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.spi.ErrorMessage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -22,11 +39,16 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -38,12 +60,30 @@ class PredictiveMaintenanceServiceTests {
 
     @Mock
     private MaintenanceDataRepository maintenanceDataRepository;
+    
+    @Mock
+    private SewComponentInfoRepository componentInfoRepository;
 
     @Mock
     private ModelMapper modelMapper;
 
     @Mock
     private ElasticsearchOperations elasticsearchOperations;
+    
+    @Mock
+    private SmartServicesInvocationService smartServicesInvocationService;
+    
+    @Mock
+    private ThresholdBasedMaintenanceResponseProcessor thresholdMaintenanceResponseProcessor;
+    
+    @Mock
+    private NoOpResponseProcessor noOpResponseProcessor;
+
+    @Mock
+    private SewGroupingBasedPredictiveMaintenanceRepository sewGroupingBasedPredictiveMaintenanceRepository;
+
+    @Mock
+    private SewThresholdBasedPredictiveMaintenanceRepository sewThresholdBasedPredictiveMaintenanceRepository;
 
     @Mock
     private MultipartFile multipartFile;
@@ -64,7 +104,7 @@ class PredictiveMaintenanceServiceTests {
                 .cell("TestCell")
                 .component("TestComponent")
                 .failureType("TestFailureType")
-                .tsRequestCreation("2024-01-15 10:30:00")
+                .tsRequestCreation(LocalDateTime.parse("2024-01-15T10:30:00", DateTimeFormatter.ISO_DATE_TIME))
                 .build();
 
         sampleEntity = new MaintenanceData();
@@ -73,26 +113,26 @@ class PredictiveMaintenanceServiceTests {
         sampleEntity.setCell("TestCell");
         sampleEntity.setComponent("TestComponent");
         sampleEntity.setFailureType("TestFailureType");
-        sampleEntity.setTsRequestCreation("2024-01-15 10:30:00");
+        sampleEntity.setTsRequestCreation(LocalDateTime.parse("2024-01-15T10:30:00", DateTimeFormatter.ISO_DATE_TIME));
 
         sampleDtoList = Arrays.asList(
                 MaintenanceDataDto.builder()
                         .stage("Stage1")
                         .cell("Cell1")
                         .component("Component1")
-                        .tsRequestCreation("2024-01-15 10:30:00")
+                        .tsRequestCreation(LocalDateTime.parse("2024-01-15T10:30:00", DateTimeFormatter.ISO_DATE_TIME))
                         .build(),
                 MaintenanceDataDto.builder()
                         .stage("Stage2")
                         .cell("Cell2")
                         .component("Component2")
-                        .tsRequestCreation("2024-01-16 11:30:00")
+                        .tsRequestCreation(LocalDateTime.parse("2024-01-16T11:30:00", DateTimeFormatter.ISO_DATE_TIME))
                         .build()
         );
 
         sampleEntityList = Arrays.asList(
-                createMaintenanceData("1", "Stage1", "Cell1", "Component1", "2024-01-15 10:30:00"),
-                createMaintenanceData("2", "Stage2", "Cell2", "Component2", "2024-01-16 11:30:00")
+                createMaintenanceData("1", "Stage1", "Cell1", "Component1", "2024-01-15T10:30:00"),
+                createMaintenanceData("2", "Stage2", "Cell2", "Component2", "2024-01-16T11:30:00")
         );
     }
 
@@ -421,7 +461,7 @@ class PredictiveMaintenanceServiceTests {
         @DisplayName("Retrieve maintenance data : Large result set performance")
         void givenLargeResultSet_whenRetrieveMaintenanceData_thenProcessesEfficiently() {
             // Given
-            List<MaintenanceData> largeDataset = createLargeMaintenanceDataset(5000);
+            List<MaintenanceData> largeDataset = createLargeMaintenanceDataset();
             SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(largeDataset);
             when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
                     .thenReturn(mockSearchHits);
@@ -523,6 +563,479 @@ class PredictiveMaintenanceServiceTests {
         }
     }
 
+    @Nested
+    @DisplayName("Invoke Threshold-Based Predictive Maintenance")
+    class InvokeThresholdBasedPredictiveMaintenance {
+
+        @Test
+        @DisplayName("Invoke threshold-based maintenance : Success")
+        void givenValidInput_whenInvokeThresholdMaintenance_thenReturnsResult() {
+            // Given
+            SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("THRESHOLD_SERVICE")
+                    .build();
+
+            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
+            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
+                    .thenReturn(sampleDto);
+
+            ResponseEntity<DtResponseDto> mockResponse = new ResponseEntity<>(new DtResponseDto(), HttpStatus.OK);
+            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
+                    .thenReturn(mockResponse);
+
+            SewThresholdBasedPredictiveMaintenanceOutputDto expectedOutput = SewThresholdBasedPredictiveMaintenanceOutputDto.builder()
+                    .id("test-id")
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("THRESHOLD_SERVICE")
+                    .build();
+            when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
+                    .thenReturn(expectedOutput);
+
+            // When
+            SewThresholdBasedPredictiveMaintenanceOutputDto result = predictiveMaintenanceService
+                    .invokeThresholdBasedPredictiveMaintenance(inputData);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getModuleId()).isEqualTo("TEST_MODULE");
+            assertThat(result.getSmartServiceId()).isEqualTo("THRESHOLD_SERVICE");
+            verify(maintenanceDataRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService).invokeSmartService(eq("THRESHOLD_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
+            verify(thresholdMaintenanceResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "THRESHOLD_SERVICE");
+        }
+
+        @Test
+        @DisplayName("Invoke threshold-based maintenance : Mapping exception")
+        void givenMappingError_whenInvokeThresholdMaintenance_thenThrowsModelMappingException() {
+            // Given
+            SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("THRESHOLD_SERVICE")
+                    .build();
+
+            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
+            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
+                    .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService.invokeThresholdBasedPredictiveMaintenance(inputData))
+                    .isInstanceOf(ModelMappingException.class)
+                    .hasMessageContaining("Exception occurred while mapping Threshold Based Predictive Maintenance Entity to DTO");
+
+            verify(maintenanceDataRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService, never()).invokeSmartService(anyString(), anyString(), any(), any());
+        }
+
+        @Test
+        @DisplayName("Invoke threshold-based maintenance : Empty maintenance data")
+        void givenEmptyMaintenanceData_whenInvokeThresholdMaintenance_thenProceedsSuccessfully() {
+            // Given
+            SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("THRESHOLD_SERVICE")
+                    .build();
+
+            Page<MaintenanceData> emptyPage = new PageImpl<>(Collections.emptyList());
+            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+
+            ResponseEntity<DtResponseDto> mockResponse = new ResponseEntity<>(new DtResponseDto(), HttpStatus.OK);
+            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
+                    .thenReturn(mockResponse);
+
+            SewThresholdBasedPredictiveMaintenanceOutputDto expectedOutput = SewThresholdBasedPredictiveMaintenanceOutputDto.builder()
+                    .id("test-id")
+                    .build();
+            when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
+                    .thenReturn(expectedOutput);
+
+            // When
+            SewThresholdBasedPredictiveMaintenanceOutputDto result = predictiveMaintenanceService
+                    .invokeThresholdBasedPredictiveMaintenance(inputData);
+
+            // Then
+            assertThat(result).isNotNull();
+            verify(maintenanceDataRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService).invokeSmartService(eq("THRESHOLD_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
+            verify(thresholdMaintenanceResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "THRESHOLD_SERVICE");
+        }
+    }
+
+    @Nested
+    @DisplayName("Invoke Grouping Predictive Maintenance")
+    class InvokeGroupingPredictiveMaintenance {
+
+        @Test
+        @DisplayName("Invoke grouping maintenance : Success")
+        void givenValidInput_whenInvokeGroupingMaintenance_thenInvokesSuccessfully() {
+            // Given
+            SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("GROUPING_SERVICE")
+                    .setupCost(500.0)
+                    .downtimeCostRate(150.0)
+                    .noRepairmen(3)
+                    .build();
+
+            List<SewComponentInfo> componentEntities = Arrays.asList(
+                    createSewComponentInfo("1", "Stage1", "Cell1", "Module1", "MOD1"),
+                    createSewComponentInfo("2", "Stage2", "Cell2", "Module2", "MOD2")
+            );
+            Page<SewComponentInfo> mockPage = new PageImpl<>(componentEntities);
+            when(componentInfoRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+
+            SewComponentInfoDto componentDto = SewComponentInfoDto.builder()
+                    .stage("Stage1")
+                    .cell("Cell1")
+                    .module("Module1")
+                    .moduleId("MOD1")
+                    .build();
+            when(modelMapper.map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class)))
+                    .thenReturn(componentDto);
+
+            ResponseEntity<DtResponseDto> mockResponse = new ResponseEntity<>(new DtResponseDto(), HttpStatus.OK);
+            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
+                    .thenReturn(mockResponse);
+
+            when(noOpResponseProcessor.processResponse(any(), anyString(), anyString()))
+                    .thenReturn(null);
+
+            // When
+            predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData);
+
+            // Then
+            verify(componentInfoRepository).findAll(any(Pageable.class));
+            verify(modelMapper, times(2)).map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class));
+            verify(smartServicesInvocationService).invokeSmartService(eq("GROUPING_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
+            verify(noOpResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "GROUPING_SERVICE");
+            
+            // Verify component list was set
+            assertThat(inputData.getComponentList()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("Invoke grouping maintenance : Component mapping exception")
+        void givenComponentMappingError_whenInvokeGroupingMaintenance_thenThrowsModelMappingException() {
+            // Given
+            SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("GROUPING_SERVICE")
+                    .build();
+
+            List<SewComponentInfo> componentEntities = List.of(createSewComponentInfo("1", "Stage1", "Cell1", "Module1", "MOD1"));
+            Page<SewComponentInfo> mockPage = new PageImpl<>(componentEntities);
+            when(componentInfoRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+
+            when(modelMapper.map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class)))
+                    .thenThrow(new MappingException(List.of(new ErrorMessage("Component mapping error"))));
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData))
+                    .isInstanceOf(ModelMappingException.class)
+                    .hasMessageContaining("Exception occurred while mapping Grouping Predictive Maintenance Entity to DTO");
+
+            verify(componentInfoRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService, never()).invokeSmartService(anyString(), anyString(), any(), any());
+        }
+
+        @Test
+        @DisplayName("Invoke grouping maintenance : Empty component list")
+        void givenEmptyComponentList_whenInvokeGroupingMaintenance_thenProceedsSuccessfully() {
+            // Given
+            SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("GROUPING_SERVICE")
+                    .build();
+
+            Page<SewComponentInfo> emptyPage = new PageImpl<>(Collections.emptyList());
+            when(componentInfoRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+
+            ResponseEntity<DtResponseDto> mockResponse = new ResponseEntity<>(new DtResponseDto(), HttpStatus.OK);
+            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
+                    .thenReturn(mockResponse);
+
+            when(noOpResponseProcessor.processResponse(any(), anyString(), anyString()))
+                    .thenReturn(null);
+
+            // When
+            predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData);
+
+            // Then
+            verify(componentInfoRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService).invokeSmartService(eq("GROUPING_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
+            verify(noOpResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "GROUPING_SERVICE");
+            
+            // Verify empty component list was set
+            assertThat(inputData.getComponentList()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Process Drift Management")
+    class ProcessDriftManagement {
+
+        @Test
+        @DisplayName("Declare process drift : Success with timestamps set automatically")
+        void givenValidProcessDriftData_whenDeclareProcessDrift_thenReturnsId() {
+            // Given
+            MaintenanceDataDto inputData = MaintenanceDataDto.builder()
+                    .stage("TestStage")
+                    .cell("TestCell")
+                    .module("TestModule")
+                    .moduleId("MOD001")
+                    .component("TestComponent")
+                    .failureType("ProcessDrift")
+                    .build();
+
+            MaintenanceData savedEntity = new MaintenanceData();
+            savedEntity.setId("generated-id");
+            savedEntity.setStage("TestStage");
+            savedEntity.setCell("TestCell");
+            savedEntity.setModule("TestModule");
+            savedEntity.setModuleId("MOD001");
+            savedEntity.setComponent("TestComponent");
+            savedEntity.setFailureType("ProcessDrift");
+
+            when(modelMapper.map(any(MaintenanceDataDto.class), eq(MaintenanceData.class)))
+                    .thenReturn(savedEntity);
+            when(maintenanceDataRepository.save(any(MaintenanceData.class)))
+                    .thenReturn(savedEntity);
+
+            // When
+            String result = predictiveMaintenanceService.declareProcessDrift(inputData);
+
+            // Then
+            assertThat(result).isEqualTo("generated-id");
+            verify(modelMapper).map(any(MaintenanceDataDto.class), eq(MaintenanceData.class));
+            verify(maintenanceDataRepository).save(any(MaintenanceData.class));
+        }
+
+        @Test
+        @DisplayName("Declare process drift : Success with pre-existing timestamps")
+        void givenProcessDriftDataWithTimestamps_whenDeclareProcessDrift_thenPreservesTimestamps() {
+            // Given
+            LocalDateTime existingTimestamp = LocalDateTime.now().minusHours(1);
+            MaintenanceDataDto inputData = MaintenanceDataDto.builder()
+                    .stage("TestStage")
+                    .cell("TestCell")
+                    .component("TestComponent")
+                    .failureType("ProcessDrift")
+                    .tsRequestCreation(existingTimestamp)
+                    .tsInterventionStarted(existingTimestamp)
+                    .build();
+
+            MaintenanceData savedEntity = new MaintenanceData();
+            savedEntity.setId("generated-id");
+
+            when(modelMapper.map(any(MaintenanceDataDto.class), eq(MaintenanceData.class)))
+                    .thenReturn(savedEntity);
+            when(maintenanceDataRepository.save(any(MaintenanceData.class)))
+                    .thenReturn(savedEntity);
+
+            // When
+            String result = predictiveMaintenanceService.declareProcessDrift(inputData);
+
+            // Then
+            assertThat(result).isEqualTo("generated-id");
+            assertThat(inputData.getTsRequestCreation()).isEqualTo(existingTimestamp);
+            assertThat(inputData.getTsInterventionStarted()).isEqualTo(existingTimestamp);
+            verify(maintenanceDataRepository).save(any(MaintenanceData.class));
+        }
+
+        @Test
+        @DisplayName("Declare process drift : Mapping exception")
+        void givenMappingError_whenDeclareProcessDrift_thenThrowsModelMappingException() {
+            // Given
+            MaintenanceDataDto inputData = MaintenanceDataDto.builder()
+                    .stage("TestStage")
+                    .cell("TestCell")
+                    .component("TestComponent")
+                    .build();
+
+            when(modelMapper.map(any(MaintenanceDataDto.class), eq(MaintenanceData.class)))
+                    .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService.declareProcessDrift(inputData))
+                    .isInstanceOf(ModelMappingException.class)
+                    .hasMessageContaining("Unable to parse SEW Predictive Maintenance Results to DTO or vice-versa");
+
+            verify(modelMapper).map(any(MaintenanceDataDto.class), eq(MaintenanceData.class));
+            verify(maintenanceDataRepository, never()).save(any(MaintenanceData.class));
+        }
+
+        @Test
+        @DisplayName("Retrieve process drift by ID : Success")
+        void givenValidProcessDriftId_whenRetrieveProcessDriftById_thenReturnsDto() {
+            // Given
+            String driftId = "test-drift-id";
+            MaintenanceData entity = new MaintenanceData();
+            entity.setId(driftId);
+            entity.setStage("TestStage");
+            entity.setCell("TestCell");
+            entity.setComponent("TestComponent");
+            entity.setFailureType("ProcessDrift");
+
+            MaintenanceDataDto expectedDto = MaintenanceDataDto.builder()
+                    .stage("TestStage")
+                    .cell("TestCell")
+                    .component("TestComponent")
+                    .failureType("ProcessDrift")
+                    .build();
+
+            when(maintenanceDataRepository.findById(driftId))
+                    .thenReturn(Optional.of(entity));
+            when(modelMapper.map(entity, MaintenanceDataDto.class))
+                    .thenReturn(expectedDto);
+
+            // When
+            MaintenanceDataDto result = predictiveMaintenanceService.retrieveProcessDriftById(driftId);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getStage()).isEqualTo("TestStage");
+            assertThat(result.getCell()).isEqualTo("TestCell");
+            assertThat(result.getComponent()).isEqualTo("TestComponent");
+            assertThat(result.getFailureType()).isEqualTo("ProcessDrift");
+            verify(maintenanceDataRepository).findById(driftId);
+            verify(modelMapper).map(entity, MaintenanceDataDto.class);
+        }
+
+        @Test
+        @DisplayName("Retrieve process drift by ID : Not found")
+        void givenNonExistentId_whenRetrieveProcessDriftById_thenThrowsResourceNotFoundException() {
+            // Given
+            String driftId = "non-existent-id";
+            when(maintenanceDataRepository.findById(driftId))
+                    .thenReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService.retrieveProcessDriftById(driftId))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Process drift with ID = 'non-existent-id' not found in PKB");
+
+            verify(maintenanceDataRepository).findById(driftId);
+            verify(modelMapper, never()).map(any(), eq(MaintenanceDataDto.class));
+        }
+
+        @Test
+        @DisplayName("Retrieve process drift by ID : Mapping exception")
+        void givenMappingError_whenRetrieveProcessDriftById_thenThrowsModelMappingException() {
+            // Given
+            String driftId = "test-drift-id";
+            MaintenanceData entity = new MaintenanceData();
+            entity.setId(driftId);
+
+            when(maintenanceDataRepository.findById(driftId))
+                    .thenReturn(Optional.of(entity));
+            when(modelMapper.map(entity, MaintenanceDataDto.class))
+                    .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService.retrieveProcessDriftById(driftId))
+                    .isInstanceOf(ModelMappingException.class)
+                    .hasMessageContaining("Unable to parse SEW Predictive Maintenance Results to DTO or vice-versa");
+
+            verify(maintenanceDataRepository).findById(driftId);
+            verify(modelMapper).map(entity, MaintenanceDataDto.class);
+        }
+
+        @Test
+        @DisplayName("Complete process drift : Success")
+        void givenValidIdAndEndTime_whenCompleteProcessDrift_thenUpdatesEntity() {
+            // Given
+            String driftId = "test-drift-id";
+            LocalDateTime endTime = LocalDateTime.now();
+            MaintenanceData entity = new MaintenanceData();
+            entity.setId(driftId);
+            entity.setStage("TestStage");
+
+            when(maintenanceDataRepository.findById(driftId))
+                    .thenReturn(Optional.of(entity));
+            when(maintenanceDataRepository.save(any(MaintenanceData.class)))
+                    .thenReturn(entity);
+
+            // When
+            predictiveMaintenanceService.completeProcessDrift(driftId, endTime);
+
+            // Then
+            verify(maintenanceDataRepository).findById(driftId);
+            verify(maintenanceDataRepository).save(any(MaintenanceData.class));
+        }
+
+        @Test
+        @DisplayName("Complete process drift : Not found")
+        void givenNonExistentId_whenCompleteProcessDrift_thenThrowsResourceNotFoundException() {
+            // Given
+            String driftId = "non-existent-id";
+            LocalDateTime endTime = LocalDateTime.now();
+            when(maintenanceDataRepository.findById(driftId))
+                    .thenReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService.completeProcessDrift(driftId, endTime))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Process drift with ID = 'non-existent-id' not found in PKB");
+
+            verify(maintenanceDataRepository).findById(driftId);
+            verify(maintenanceDataRepository, never()).save(any(MaintenanceData.class));
+        }
+
+        @Test
+        @DisplayName("Retrieve paginated uncompleted process drifts : Success")
+        void givenValidPageable_whenRetrievePaginatedUncompletedProcessDrifts_thenReturnsPagedResults() {
+            // Given
+            Pageable pageable = Pageable.ofSize(10);
+            List<MaintenanceData> entities = Arrays.asList(
+                    createMaintenanceData("1", "Stage1", "Cell1", "Component1", "2024-01-15T10:30:00"),
+                    createMaintenanceData("2", "Stage2", "Cell2", "Component2", "2024-01-16T11:30:00")
+            );
+
+            SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(entities);
+            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
+                    .thenReturn(mockSearchHits);
+            when(mockSearchHits.getTotalHits()).thenReturn(2L);
+
+            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
+                    .thenReturn(sampleDto);
+
+            // When
+            Page<MaintenanceDataDto> result = predictiveMaintenanceService
+                    .retrievePaginatedUncompletedProcessDrifts(pageable);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getContent()).hasSize(2);
+            assertThat(result.getTotalElements()).isEqualTo(2L);
+            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
+            verify(modelMapper, times(2)).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
+        }
+
+        @Test
+        @DisplayName("Retrieve paginated uncompleted process drifts : Empty result")
+        void givenNoUncompletedDrifts_whenRetrievePaginatedUncompletedProcessDrifts_thenReturnsEmptyPage() {
+            // Given
+            Pageable pageable = Pageable.ofSize(10);
+            SearchHits<MaintenanceData> emptySearchHits = createMockSearchHits(Collections.emptyList());
+            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
+                    .thenReturn(emptySearchHits);
+            when(emptySearchHits.getTotalHits()).thenReturn(0L);
+
+            // When
+            Page<MaintenanceDataDto> result = predictiveMaintenanceService
+                    .retrievePaginatedUncompletedProcessDrifts(pageable);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getContent()).isEmpty();
+            assertThat(result.getTotalElements()).isEqualTo(0L);
+            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
+            verify(modelMapper, never()).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
+        }
+    }
+
     // Helper methods
 
     private MaintenanceData createMaintenanceData(String id, String stage, String cell, String component, String tsRequestCreation) {
@@ -531,7 +1044,7 @@ class PredictiveMaintenanceServiceTests {
         data.setStage(stage);
         data.setCell(cell);
         data.setComponent(component);
-        data.setTsRequestCreation(tsRequestCreation);
+        data.setTsRequestCreation(LocalDateTime.parse(tsRequestCreation));
         return data;
     }
 
@@ -541,19 +1054,19 @@ class PredictiveMaintenanceServiceTests {
                         .stage("Stage" + i)
                         .cell("Cell" + i)
                         .component("Component" + i)
-                        .tsRequestCreation("2024-01-15 10:30:00")
+                        .tsRequestCreation(LocalDateTime.parse("2024-01-15T10:30:00", DateTimeFormatter.ISO_DATE_TIME))
                         .build())
                 .toList();
     }
 
-    private List<MaintenanceData> createLargeMaintenanceDataset(int size) {
-        return java.util.stream.IntStream.range(0, size)
+    private List<MaintenanceData> createLargeMaintenanceDataset() {
+        return java.util.stream.IntStream.range(0, 5000)
                 .mapToObj(i -> createMaintenanceData(
                         String.valueOf(i),
                         "Stage" + i,
                         "Cell" + i,
                         "Component" + i,
-                        "2024-01-15 10:30:00"))
+                        "2024-01-15T10:30:00"))
                 .toList();
     }
 
@@ -570,5 +1083,15 @@ class PredictiveMaintenanceServiceTests {
         
         when(searchHits.getSearchHits()).thenReturn(searchHitList);
         return searchHits;
+    }
+
+    private SewComponentInfo createSewComponentInfo(String id, String stage, String cell, String module, String moduleId) {
+        SewComponentInfo componentInfo = new SewComponentInfo();
+        componentInfo.setId(id);
+        componentInfo.setStage(stage);
+        componentInfo.setCell(cell);
+        componentInfo.setModule(module);
+        componentInfo.setModuleId(moduleId);
+        return componentInfo;
     }
 }

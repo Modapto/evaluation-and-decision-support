@@ -1,7 +1,7 @@
 package gr.atc.modapto.controller;
 
-import gr.atc.modapto.dto.serviceResults.CrfSimulationResultsDto;
-import gr.atc.modapto.dto.serviceResults.SewSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.service.interfaces.ISimulationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,7 +18,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(SimulationController.class)
+@WebMvcTest(value = SimulationController.class)
 @ActiveProfiles("test")
 @DisplayName("SimulationController Tests")
 class SimulationControllerTests {

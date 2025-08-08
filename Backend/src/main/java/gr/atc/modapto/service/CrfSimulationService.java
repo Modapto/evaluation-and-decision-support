@@ -1,9 +1,7 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.dto.serviceResults.CrfSimulationResultsDto;
-import gr.atc.modapto.dto.serviceResults.CrfSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
-import gr.atc.modapto.model.serviceResults.CrfSimulationResults;
 import gr.atc.modapto.model.serviceResults.CrfSimulationResults;
 import gr.atc.modapto.repository.CrfSimulationResultsRepository;
 import gr.atc.modapto.service.interfaces.ISimulationService;

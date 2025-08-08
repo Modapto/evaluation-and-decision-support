@@ -1,7 +1,13 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.dto.serviceResults.SewOptimizationResultsDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
+import gr.atc.modapto.model.ProductionSchedule;
 import gr.atc.modapto.model.serviceResults.SewOptimizationResults;
+import gr.atc.modapto.repository.ProductionScheduleRepository;
 import gr.atc.modapto.repository.SewOptimizationResultsRepository;
 import gr.atc.modapto.service.interfaces.IOptimizationService;
 import org.modelmapper.MappingException;
@@ -22,10 +28,13 @@ public class SewOptimizationService implements IOptimizationService<SewOptimizat
 
     private final SewOptimizationResultsRepository sewOptimizationResultsRepository;
 
+    private final ProductionScheduleRepository productionScheduleRepository;
+
     private final ModelMapper modelMapper;
 
-    public SewOptimizationService(SewOptimizationResultsRepository sewOptimizationResultsRepository, ModelMapper modelMapper){
+    public SewOptimizationService(SewOptimizationResultsRepository sewOptimizationResultsRepository, ProductionScheduleRepository productionScheduleRepository,  ModelMapper modelMapper){
         this.sewOptimizationResultsRepository = sewOptimizationResultsRepository;
+        this.productionScheduleRepository = productionScheduleRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -67,6 +76,17 @@ public class SewOptimizationService implements IOptimizationService<SewOptimizat
         } catch (MappingException e){
             log.error(MAPPING_ERROR + "for Module {} - {}", productionModule, e.getMessage());
             throw new ModelMappingException("Unable to parse SEW Optimization Results to DTO for Module: " + productionModule + " - Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void uploadProductionSchedule(SewProductionScheduleDto scheduleDto) {
+        try{
+            ProductionSchedule schedule = modelMapper.map(scheduleDto, ProductionSchedule.class);
+            productionScheduleRepository.save(schedule);
+        } catch (MappingException e){
+            log.error("Unable to store SEW production schedule in PKB - {}", e.getMessage());
+            throw new ModelMappingException("Unable to parse and store SEW Production Schedule - Error: " + e.getMessage());
         }
     }
 }

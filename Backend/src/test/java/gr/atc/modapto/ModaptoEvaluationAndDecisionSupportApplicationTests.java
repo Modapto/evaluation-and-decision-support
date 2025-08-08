@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.elasticsearch.client.elc.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -37,6 +38,18 @@ class ModaptoEvaluationAndDecisionSupportApplicationTests {
 
 	@MockitoBean
 	private SewSimulationResultsRepository sewSimulationResultsRepository;
+
+	@MockitoBean
+	private ModaptoModuleRepository modaptoModuleRepository;
+
+	@MockitoBean
+	private SewComponentInfoRepository sewComponentInfoRepository;
+
+	@MockitoBean
+	private SewGroupingBasedPredictiveMaintenanceRepository sewGroupingBasedPredictiveMaintenanceRepository;
+
+	@MockitoBean
+	private SewThresholdBasedPredictiveMaintenanceRepository sewThresholdBasedPredictiveMaintenanceRepository;
 
 	@Test
 	void contextLoads() {

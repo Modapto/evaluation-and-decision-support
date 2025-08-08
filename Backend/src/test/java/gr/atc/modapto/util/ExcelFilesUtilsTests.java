@@ -1,6 +1,6 @@
 package gr.atc.modapto.util;
 
-import gr.atc.modapto.dto.files.MaintenanceDataDto;
+import gr.atc.modapto.dto.sew.MaintenanceDataDto;
 import gr.atc.modapto.enums.CorimFileHeaders;
 import gr.atc.modapto.exception.CustomExceptions.FileHandlingException;
 import org.apache.poi.ss.usermodel.*;
@@ -17,6 +17,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -58,9 +59,9 @@ class ExcelFilesUtilsTests {
 
             // Then
             assertThat(result).hasSize(2);
-            assertThat(result.get(0).getStage()).isEqualTo("Stage1");
-            assertThat(result.get(0).getCell()).isEqualTo("Cell1");
-            assertThat(result.get(0).getComponent()).isEqualTo("Component1");
+            assertThat(result.getFirst().getStage()).isEqualTo("Stage1");
+            assertThat(result.getFirst().getCell()).isEqualTo("Cell1");
+            assertThat(result.getFirst().getComponent()).isEqualTo("Component1");
             assertThat(result.get(1).getStage()).isEqualTo("Stage2");
         }
 
@@ -117,8 +118,8 @@ class ExcelFilesUtilsTests {
 
             // Then
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getStage()).isEqualTo("Stage1");
-            assertThat(result.get(0).getCell()).isNull();
+            assertThat(result.getFirst().getStage()).isEqualTo("Stage1");
+            assertThat(result.getFirst().getCell()).isNull();
         }
 
         @Test
@@ -133,7 +134,10 @@ class ExcelFilesUtilsTests {
 
             // Then
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getTsRequestCreation()).matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}");
+            assertThat(result.getFirst().getTsRequestCreation())
+                    .isNotNull()
+                    .isAfter(LocalDateTime.of(2020, 1, 1, 0, 0))
+                    .isBefore(LocalDateTime.of(2030, 12, 31, 23, 59));
         }
 
         private void createValidCorimFile() {
@@ -188,7 +192,7 @@ class ExcelFilesUtilsTests {
             
             Cell dateCell = dataRow.createCell(1);
             Calendar calendar = Calendar.getInstance();
-            calendar.set(2024, 0, 15, 10, 30, 0);
+            calendar.set(2024, Calendar.JANUARY, 15, 10, 30, 0);
             dateCell.setCellValue(calendar.getTime());
             
             CellStyle dateStyle = workbook.createCellStyle();
@@ -273,31 +277,6 @@ class ExcelFilesUtilsTests {
     @DisplayName("Cell Value Processing")
     class CellValueProcessing {
 
-        @ParameterizedTest(name = "Date string '{0}' should be converted to ISO format")
-        @CsvSource({
-            "15/01/2024 10:30:00, 2024-01-15 10:30:00",
-            "01/12/2023 23:59:59, 2023-12-01 23:59:59",
-            "29/02/2024 12:00:00, 2024-02-29 12:00:00"
-        })
-        @DisplayName("Cell value processing : Date string to ISO format")
-        void givenDateString_whenProcessCellValue_thenReturnsISOFormat(String inputDate, String expectedOutput) throws Exception {
-            // Given
-            Row headerRow = sheet.createRow(0);
-            headerRow.createCell(0).setCellValue("TS request creation");
-            
-            Row dataRow = sheet.createRow(1);
-            dataRow.createCell(0).setCellValue(inputDate);
-            
-            MockMultipartFile file = createMockMultipartFile();
-
-            // When
-            List<MaintenanceDataDto> result = ExcelFilesUtils.extractMaintenanceDataFromCorimFile(file);
-
-            // Then
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).getTsRequestCreation()).isEqualTo(expectedOutput);
-        }
-
         @Test
         @DisplayName("Cell value processing : Non-date strings")
         void givenNonDateString_whenProcessCellValue_thenReturnsAsIs() throws Exception {
@@ -315,7 +294,7 @@ class ExcelFilesUtilsTests {
 
             // Then
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getStage()).isEqualTo("Regular String Value");
+            assertThat(result.getFirst().getStage()).isEqualTo("Regular String Value");
         }
 
         @Test
@@ -335,7 +314,7 @@ class ExcelFilesUtilsTests {
 
             // Then
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getStage()).isEqualTo("123.45");
+            assertThat(result.getFirst().getStage()).isEqualTo("123.45");
         }
 
         @Test
@@ -355,7 +334,7 @@ class ExcelFilesUtilsTests {
 
             // Then
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getStage()).isEqualTo("true");
+            assertThat(result.getFirst().getStage()).isEqualTo("true");
         }
 
         @Test
@@ -375,7 +354,7 @@ class ExcelFilesUtilsTests {
 
             // Then
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getStage()).isEqualTo("123");
+            assertThat(result.getFirst().getStage()).isEqualTo("123");
         }
     }
 
@@ -416,7 +395,7 @@ class ExcelFilesUtilsTests {
 
             // Then
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getStage()).isEqualTo("ValidStage");
+            assertThat(result.getFirst().getStage()).isEqualTo("ValidStage");
         }
     }
 

@@ -1,7 +1,7 @@
 package gr.atc.modapto.controller;
 
-import gr.atc.modapto.dto.serviceResults.CrfOptimizationResultsDto;
-import gr.atc.modapto.dto.serviceResults.SewOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import gr.atc.modapto.service.interfaces.IOptimizationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

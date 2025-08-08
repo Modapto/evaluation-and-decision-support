@@ -8,31 +8,21 @@ import lombok.Setter;
  */
 @Getter
 public enum CorimFileHeaders {
-    REQUEST_ID("Request ID"),
-    INTERVENTION_ID("Intervention ID"),
-    EQUIPMENT_ID("Equipment ID"),
-    RECIPIENT("Recipient"),
     STAGE("Stage"),
     CELL("Cell"),
-    MODULE("Module"),
+    FAILURE_ELEMENT_ID("ID"),
+    MODULE("Module description"),
+    MODULE_ID("Module ID"),
     COMPONENT("Component"),
+    COMPONENT_ID("Component ID"),
     FAILURE_TYPE("Failure Type"),
     FAILURE_DESCRIPTION("Failure description"),
     MAINTENANCE_ACTION_PERFORMED("Maintenance Action performed"),
     COMPONENT_REPLACEMENT("component replacement (yes/no)"),
-    COMPONENT_NAME("Name"),
+    WORKER_NAME("Name"),
     TS_REQUEST_CREATION("TS request creation"),
-    TS_REQUEST_ACKNOWLEDGED("TS request acknowledged"),
     TS_INTERVENTION_STARTED("TS Intervention started"),
-    TS_INTERVENTION_FINISHED("TS intervention finished"),
-    INTERVENTION_STATUS("Intervention status"),
-    MTBF("MTBF"),
-    MTBF_STAGE_LEVEL("MTBF stage level"),
-    DURATION_CREATION_TO_ACKNOWLEDGED("Duration creation - acknowledged"),
-    DURATION_CREATION_TO_INTERVENTION_START("Duration creation -  intervention start"),
-    DURATION_INTERVENTION_STARTED_TO_FINISHED("Duration intervention started- finished"),
-    TOTAL_DURATION_CREATION_TO_FINISHED("Total duration creation-finished"),
-    TOTAL_MAINTENANCE_TIME_ALLOCATED("Total maintenance time allocated");
+    TS_INTERVENTION_FINISHED("TS intervention finished");
 
     private final String header;
 

@@ -22,7 +22,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     public RateLimitingFilter() {
         this.bucket = Bucket.builder()
-                .addLimit(limit -> limit.capacity(50).refillGreedy(10, Duration.ofMinutes(1)))
+                .addLimit(limit -> limit.capacity(200).refillGreedy(10, Duration.ofMinutes(1)))
                 .build();
     }
 

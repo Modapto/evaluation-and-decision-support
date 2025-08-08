@@ -1,6 +1,6 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.dto.serviceResults.SewSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.model.serviceResults.SewSimulationResults;
 import gr.atc.modapto.repository.SewSimulationResultsRepository;

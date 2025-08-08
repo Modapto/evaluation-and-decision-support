@@ -1,4 +1,4 @@
-package gr.atc.modapto.dto.serviceResults;
+package gr.atc.modapto.dto.serviceResults.crf;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

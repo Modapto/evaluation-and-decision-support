@@ -1,7 +1,7 @@
 package gr.atc.modapto.exception;
 
 /*
- * Custom Exceptions class according to the errors occuring in the EDS
+ * Custom Exceptions class according to the errors occurring in the EDS
  */
 public class CustomExceptions{
     
@@ -32,4 +32,17 @@ public class CustomExceptions{
     public static class ResourceNotFoundException extends RuntimeException{
         public ResourceNotFoundException(String message) {super(message);}
     }
+
+    public static class DtmClientErrorException extends RuntimeException{
+        public DtmClientErrorException(String message) {super(message);}
+    }
+
+    public static class DtmServerErrorException extends RuntimeException{
+        public DtmServerErrorException(String message) {super(message);}
+    }
+
+    public static class SmartServiceInvocationException extends RuntimeException{
+        public SmartServiceInvocationException(String message) {super(message);}
+    }
+
 }
