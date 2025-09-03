@@ -1,5 +1,7 @@
 package gr.atc.modapto.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
@@ -9,11 +11,8 @@ import gr.atc.modapto.dto.sew.MaintenanceDataDto;
 import gr.atc.modapto.dto.sew.SewComponentInfoDto;
 import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.model.MaintenanceData;
-import gr.atc.modapto.model.SewComponentInfo;
-import gr.atc.modapto.repository.MaintenanceDataRepository;
-import gr.atc.modapto.repository.SewComponentInfoRepository;
-import gr.atc.modapto.repository.SewGroupingBasedPredictiveMaintenanceRepository;
-import gr.atc.modapto.repository.SewThresholdBasedPredictiveMaintenanceRepository;
+import gr.atc.modapto.model.sew.SewComponentInfo;
+import gr.atc.modapto.repository.*;
 import gr.atc.modapto.service.processors.NoOpResponseProcessor;
 import gr.atc.modapto.service.processors.ThresholdBasedMaintenanceResponseProcessor;
 import gr.atc.modapto.exception.CustomExceptions.FileHandlingException;
@@ -42,6 +41,7 @@ import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -87,6 +87,12 @@ class PredictiveMaintenanceServiceTests {
 
     @Mock
     private MultipartFile multipartFile;
+
+    @Mock
+    private ObjectMapper objectMapper;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private PredictiveMaintenanceService predictiveMaintenanceService;
@@ -569,7 +575,7 @@ class PredictiveMaintenanceServiceTests {
 
         @Test
         @DisplayName("Invoke threshold-based maintenance : Success")
-        void givenValidInput_whenInvokeThresholdMaintenance_thenReturnsResult() {
+        void givenValidInput_whenInvokeThresholdMaintenance_thenReturnsResult() throws JsonProcessingException {
             // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
@@ -592,6 +598,10 @@ class PredictiveMaintenanceServiceTests {
                     .build();
             when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
                     .thenReturn(expectedOutput);
+
+            // Mock ObjectMapper to return valid JSON string
+            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
+
 
             // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = predictiveMaintenanceService
@@ -631,7 +641,7 @@ class PredictiveMaintenanceServiceTests {
 
         @Test
         @DisplayName("Invoke threshold-based maintenance : Empty maintenance data")
-        void givenEmptyMaintenanceData_whenInvokeThresholdMaintenance_thenProceedsSuccessfully() {
+        void givenEmptyMaintenanceData_whenInvokeThresholdMaintenance_thenProceedsSuccessfully() throws JsonProcessingException {
             // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
@@ -650,6 +660,8 @@ class PredictiveMaintenanceServiceTests {
                     .build();
             when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
                     .thenReturn(expectedOutput);
+            // Mock ObjectMapper to return valid JSON string
+            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
 
             // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = predictiveMaintenanceService
@@ -669,7 +681,7 @@ class PredictiveMaintenanceServiceTests {
 
         @Test
         @DisplayName("Invoke grouping maintenance : Success")
-        void givenValidInput_whenInvokeGroupingMaintenance_thenInvokesSuccessfully() {
+        void givenValidInput_whenInvokeGroupingMaintenance_thenInvokesSuccessfully() throws JsonProcessingException {
             // Given
             SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
@@ -701,6 +713,9 @@ class PredictiveMaintenanceServiceTests {
 
             when(noOpResponseProcessor.processResponse(any(), anyString(), anyString()))
                     .thenReturn(null);
+
+            // Mock ObjectMapper to return valid JSON string
+            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
 
             // When
             predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData);
@@ -742,7 +757,7 @@ class PredictiveMaintenanceServiceTests {
 
         @Test
         @DisplayName("Invoke grouping maintenance : Empty component list")
-        void givenEmptyComponentList_whenInvokeGroupingMaintenance_thenProceedsSuccessfully() {
+        void givenEmptyComponentList_whenInvokeGroupingMaintenance_thenProceedsSuccessfully() throws JsonProcessingException {
             // Given
             SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
@@ -758,6 +773,9 @@ class PredictiveMaintenanceServiceTests {
 
             when(noOpResponseProcessor.processResponse(any(), anyString(), anyString()))
                     .thenReturn(null);
+
+            // Mock ObjectMapper to return valid JSON string
+            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
 
             // When
             predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData);
@@ -1033,6 +1051,318 @@ class PredictiveMaintenanceServiceTests {
             assertThat(result.getTotalElements()).isEqualTo(0L);
             verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
             verify(modelMapper, never()).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Invoke and Register Threshold-Based Predictive Maintenance")
+    class InvokeAndRegisterThresholdBasedPredictiveMaintenance {
+
+        @Test
+        @DisplayName("Invoke and register threshold maintenance : Success")
+        void givenValidInput_whenInvokeAndRegisterThresholdMaintenance_thenReturnsResultAndRegistersTask() throws JsonProcessingException {
+            // Given
+            SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("THRESHOLD_SERVICE")
+                    .frequencyType(gr.atc.modapto.enums.FrequencyType.HOURS)
+                    .frequencyValue(24)
+                    .build();
+
+            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
+            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
+                    .thenReturn(sampleDto);
+
+            ResponseEntity<DtResponseDto> mockResponse = new ResponseEntity<>(new DtResponseDto(), HttpStatus.OK);
+            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
+                    .thenReturn(mockResponse);
+
+            SewThresholdBasedPredictiveMaintenanceOutputDto expectedOutput = SewThresholdBasedPredictiveMaintenanceOutputDto.builder()
+                    .id("test-id")
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("THRESHOLD_SERVICE")
+                    .build();
+            when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
+                    .thenReturn(expectedOutput);
+
+            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
+
+            // When
+            SewThresholdBasedPredictiveMaintenanceOutputDto result = predictiveMaintenanceService
+                    .invokeAndRegisterThresholdBasedPredictiveMaintenance(inputData);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getModuleId()).isEqualTo("TEST_MODULE");
+            assertThat(result.getSmartServiceId()).isEqualTo("THRESHOLD_SERVICE");
+            verify(maintenanceDataRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService).invokeSmartService(eq("THRESHOLD_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
+            verify(thresholdMaintenanceResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "THRESHOLD_SERVICE");
+            verify(eventPublisher).publishEvent(any());
+            
+            // Verify that events were cleared from input data
+            assertThat(inputData.getEvents()).isNull();
+        }
+
+        @Test
+        @DisplayName("Invoke and register threshold maintenance : Service invocation failure")
+        void givenServiceInvocationFailure_whenInvokeAndRegisterThresholdMaintenance_thenThrowsExceptionWithoutRegistering() {
+            // Given
+            SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("THRESHOLD_SERVICE")
+                    .frequencyType(gr.atc.modapto.enums.FrequencyType.HOURS)
+                    .frequencyValue(24)
+                    .build();
+
+            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
+            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
+                    .thenReturn(sampleDto);
+
+            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
+                    .thenThrow(new RuntimeException("Service invocation failed"));
+
+            try {
+                when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
+            } catch (JsonProcessingException e) {
+                // This won't happen in this test case
+            }
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService
+                    .invokeAndRegisterThresholdBasedPredictiveMaintenance(inputData))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Service invocation failed");
+
+            verify(maintenanceDataRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService).invokeSmartService(eq("THRESHOLD_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
+            verify(thresholdMaintenanceResponseProcessor, never()).processResponse(any(), anyString(), anyString());
+            verify(eventPublisher, never()).publishEvent(any());
+        }
+
+        @Test
+        @DisplayName("Invoke and register threshold maintenance : Processing failure")
+        void givenProcessingFailure_whenInvokeAndRegisterThresholdMaintenance_thenThrowsExceptionWithoutRegistering() {
+            // Given
+            SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("THRESHOLD_SERVICE")
+                    .frequencyType(gr.atc.modapto.enums.FrequencyType.HOURS)
+                    .frequencyValue(24)
+                    .build();
+
+            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
+            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
+                    .thenReturn(sampleDto);
+
+            ResponseEntity<DtResponseDto> mockResponse = new ResponseEntity<>(new DtResponseDto(), HttpStatus.OK);
+            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
+                    .thenReturn(mockResponse);
+
+            when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
+                    .thenThrow(new RuntimeException("Processing failed"));
+
+            try {
+                when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
+            } catch (JsonProcessingException e) {
+                // This won't happen in this test case
+            }
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService
+                    .invokeAndRegisterThresholdBasedPredictiveMaintenance(inputData))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Processing failed");
+
+            verify(maintenanceDataRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService).invokeSmartService(eq("THRESHOLD_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
+            verify(thresholdMaintenanceResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "THRESHOLD_SERVICE");
+            verify(eventPublisher, never()).publishEvent(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Store Components List Data")
+    class StoreComponentsListData {
+
+        @Test
+        @DisplayName("Store components list : Success")
+        void givenValidComponentsList_whenStoreComponentsListData_thenStoresSuccessfully() {
+            // Given
+            List<SewComponentInfoDto> componentsList = Arrays.asList(
+                    SewComponentInfoDto.builder()
+                            .stage("Stage1")
+                            .cell("Cell1")
+                            .module("Module1")
+                            .moduleId("MOD1")
+                            .build(),
+                    SewComponentInfoDto.builder()
+                            .stage("Stage2")
+                            .cell("Cell2")
+                            .module("Module2")
+                            .moduleId("MOD2")
+                            .build()
+            );
+
+            SewComponentInfo mappedComponent = new SewComponentInfo();
+            mappedComponent.setStage("Stage1");
+            mappedComponent.setCell("Cell1");
+            mappedComponent.setModule("Module1");
+            mappedComponent.setModuleId("MOD1");
+
+            when(modelMapper.map(any(SewComponentInfoDto.class), eq(SewComponentInfo.class)))
+                    .thenReturn(mappedComponent);
+            when(componentInfoRepository.saveAll(anyList()))
+                    .thenReturn(Arrays.asList(mappedComponent));
+
+            // When
+            predictiveMaintenanceService.storeComponentsListData(componentsList);
+
+            // Then
+            verify(componentInfoRepository).deleteAll();
+            verify(modelMapper, times(2)).map(any(SewComponentInfoDto.class), eq(SewComponentInfo.class));
+            verify(componentInfoRepository).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("Store components list : Empty list")
+        void givenEmptyComponentsList_whenStoreComponentsListData_thenHandlesGracefully() {
+            // Given
+            List<SewComponentInfoDto> emptyList = Collections.emptyList();
+            when(componentInfoRepository.saveAll(anyList()))
+                    .thenReturn(Collections.emptyList());
+
+            // When
+            predictiveMaintenanceService.storeComponentsListData(emptyList);
+
+            // Then
+            verify(componentInfoRepository).deleteAll();
+            verify(modelMapper, never()).map(any(SewComponentInfoDto.class), eq(SewComponentInfo.class));
+            verify(componentInfoRepository).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("Store components list : Mapping exception")
+        void givenMappingError_whenStoreComponentsListData_thenThrowsModelMappingException() {
+            // Given
+            List<SewComponentInfoDto> componentsList = Arrays.asList(
+                    SewComponentInfoDto.builder()
+                            .stage("Stage1")
+                            .cell("Cell1")
+                            .module("Module1")
+                            .moduleId("MOD1")
+                            .build()
+            );
+
+            when(modelMapper.map(any(SewComponentInfoDto.class), eq(SewComponentInfo.class)))
+                    .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService.storeComponentsListData(componentsList))
+                    .isInstanceOf(ModelMappingException.class)
+                    .hasMessageContaining("Unable to parse DTO SewComponentInfo to Model");
+
+            verify(componentInfoRepository).deleteAll();
+            verify(modelMapper).map(any(SewComponentInfoDto.class), eq(SewComponentInfo.class));
+            verify(componentInfoRepository, never()).saveAll(anyList());
+        }
+    }
+
+    @Nested
+    @DisplayName("Retrieve Component List Given Filter Attributes")
+    class RetrieveComponentListGivenFilterAttributes {
+
+        @Test
+        @DisplayName("Retrieve component list : Success")
+        void givenValidFilterAttributes_whenRetrieveComponentList_thenReturnsFilteredComponents() {
+            // Given
+            String stage = "Stage1";
+            String cell = "Cell1";
+            String module = "Module1";
+            String moduleId = "MOD1";
+
+            List<SewComponentInfo> entities = Arrays.asList(
+                    createSewComponentInfo("1", stage, cell, module, moduleId),
+                    createSewComponentInfo("2", stage, cell, module, moduleId)
+            );
+
+            SewComponentInfoDto expectedDto = SewComponentInfoDto.builder()
+                    .stage(stage)
+                    .cell(cell)
+                    .module(module)
+                    .moduleId(moduleId)
+                    .build();
+
+            when(componentInfoRepository.findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId))
+                    .thenReturn(entities);
+            when(modelMapper.map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class)))
+                    .thenReturn(expectedDto);
+
+            // When
+            List<SewComponentInfoDto> result = predictiveMaintenanceService
+                    .retrieveComponentListGivenFilterAttributes(stage, cell, module, moduleId);
+
+            // Then
+            assertThat(result).hasSize(2);
+            assertThat(result.get(0).getStage()).isEqualTo(stage);
+            assertThat(result.get(0).getCell()).isEqualTo(cell);
+            assertThat(result.get(0).getModule()).isEqualTo(module);
+            assertThat(result.get(0).getModuleId()).isEqualTo(moduleId);
+            verify(componentInfoRepository).findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId);
+            verify(modelMapper, times(2)).map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class));
+        }
+
+        @Test
+        @DisplayName("Retrieve component list : Empty result")
+        void givenNoMatchingComponents_whenRetrieveComponentList_thenReturnsEmptyList() {
+            // Given
+            String stage = "NonExistentStage";
+            String cell = "NonExistentCell";
+            String module = "NonExistentModule";
+            String moduleId = "NON_EXISTENT";
+
+            when(componentInfoRepository.findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId))
+                    .thenReturn(Collections.emptyList());
+
+            // When
+            List<SewComponentInfoDto> result = predictiveMaintenanceService
+                    .retrieveComponentListGivenFilterAttributes(stage, cell, module, moduleId);
+
+            // Then
+            assertThat(result).isEmpty();
+            verify(componentInfoRepository).findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId);
+            verify(modelMapper, never()).map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class));
+        }
+
+        @Test
+        @DisplayName("Retrieve component list : Mapping exception")
+        void givenMappingError_whenRetrieveComponentList_thenThrowsModelMappingException() {
+            // Given
+            String stage = "Stage1";
+            String cell = "Cell1";
+            String module = "Module1";
+            String moduleId = "MOD1";
+
+            List<SewComponentInfo> entities = Arrays.asList(
+                    createSewComponentInfo("1", stage, cell, module, moduleId)
+            );
+
+            when(componentInfoRepository.findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId))
+                    .thenReturn(entities);
+            when(modelMapper.map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class)))
+                    .thenThrow(new MappingException(List.of(new ErrorMessage("Component mapping error"))));
+
+            // When & Then
+            assertThatThrownBy(() -> predictiveMaintenanceService
+                    .retrieveComponentListGivenFilterAttributes(stage, cell, module, moduleId))
+                    .isInstanceOf(ModelMappingException.class)
+                    .hasMessageContaining("Unable to parse DTO SewComponentInfo to Model or vice-versa");
+
+            verify(componentInfoRepository).findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId);
+            verify(modelMapper).map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class));
         }
     }
 

@@ -45,4 +45,12 @@ public class CustomExceptions{
         public SmartServiceInvocationException(String message) {super(message);}
     }
 
+    public static class DatabaseException extends RuntimeException{
+        public DatabaseException(String message) { super(message); }
+    }
+
+    public static class ServiceOperationException extends RuntimeException{
+        public ServiceOperationException(String message) { super(message); }
+    }
+
 }

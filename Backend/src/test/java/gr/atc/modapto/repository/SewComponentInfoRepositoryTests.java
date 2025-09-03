@@ -1,7 +1,7 @@
 package gr.atc.modapto.repository;
 
 import gr.atc.modapto.config.SetupTestContainersEnvironment;
-import gr.atc.modapto.model.SewComponentInfo;
+import gr.atc.modapto.model.sew.SewComponentInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

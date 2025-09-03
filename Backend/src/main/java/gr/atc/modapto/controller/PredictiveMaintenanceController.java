@@ -1,6 +1,7 @@
 package gr.atc.modapto.controller;
 
 import gr.atc.modapto.dto.PaginatedResultsDto;
+import gr.atc.modapto.dto.ScheduledTaskDto;
 import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintenanceOutputDto;
@@ -8,6 +9,7 @@ import gr.atc.modapto.dto.sew.MaintenanceDataDto;
 import gr.atc.modapto.dto.sew.SewComponentInfoDto;
 import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
 import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
+import gr.atc.modapto.service.interfaces.IScheduledTaskService;
 import gr.atc.modapto.validation.ValidExcelFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,8 +42,13 @@ public class PredictiveMaintenanceController {
 
     private final IPredictiveMaintenanceService predictiveMaintenanceService;
 
-    public PredictiveMaintenanceController(IPredictiveMaintenanceService predictiveMaintenanceService) {
+    private final IScheduledTaskService scheduledTaskService;
+
+    private static final String THRESHOLD_BASED_TYPE = "THRESHOLD_BASED_PREDICTIVE_MAINTENANCE";
+
+    public PredictiveMaintenanceController(IPredictiveMaintenanceService predictiveMaintenanceService, IScheduledTaskService scheduledTaskService) {
         this.predictiveMaintenanceService = predictiveMaintenanceService;
+        this.scheduledTaskService = scheduledTaskService;
     }
 
     /**
@@ -124,7 +131,7 @@ public class PredictiveMaintenanceController {
     })
     @PostMapping("/predict/threshold-based-maintenance")
     public ResponseEntity<BaseResponse<SewThresholdBasedPredictiveMaintenanceOutputDto>> invokeThresholdBasedPredictiveMaintenance(@Valid @RequestBody SewThresholdBasedMaintenanceInputDataDto invocationData) {
-        SewThresholdBasedPredictiveMaintenanceOutputDto output = predictiveMaintenanceService.invokeThresholdBasedPredictiveMaintenance(invocationData);
+        SewThresholdBasedPredictiveMaintenanceOutputDto output = predictiveMaintenanceService.invokeAndRegisterThresholdBasedPredictiveMaintenance(invocationData);
         return new ResponseEntity<>(
                 BaseResponse.success(output, "Predictive Maintenance service for Threshold-Based Maintenance completed successfully"),
                 HttpStatus.OK);
@@ -159,7 +166,7 @@ public class PredictiveMaintenanceController {
      * @param moduleId : Module ID
      * @return SewThresholdBasedPredictiveMaintenanceOutputDto
      */
-    @Operation(summary = "Retrieve the latest threshold-based  predictive maintenance results for a specific Module[PdM2]", security = @SecurityRequirement(name = "bearerToken"))
+    @Operation(summary = "Retrieve the latest threshold-based  predictive maintenance results for a specific Module [PdM2]", security = @SecurityRequirement(name = "bearerToken"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Threshold-Based Predictive Maintenance latest results retrieved successfully"),
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
@@ -173,6 +180,72 @@ public class PredictiveMaintenanceController {
                 BaseResponse.success(
                         predictiveMaintenanceService.retrieveLatestThresholdBasedMaintenanceResults(moduleId),
                         "Threshold-Based Predictive Maintenance latest results retrieved successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Retrieve paginated all scheduled tasks registered for Threshold-Based Predictive Maintenance [PdM2]
+     *
+     * @param page : Page Size
+     * @param size : Size of elements per page
+     * @param sortAttribute : Sort Attribute of Scheduled Task
+     * @param isAscending : Order of sorting
+     * @return PaginatedResultsDto<ScheduledTaskDto>>
+     */
+    @Operation(summary = "Retrieve paginated all scheduled tasks registered for Threshold-Based Predictive Maintenance [PdM2]", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Threshold-Based Scheduled Tasks retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination sort attributes"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/predict/threshold-based-maintenance/scheduled-tasks")
+    public ResponseEntity<BaseResponse<PaginatedResultsDto<ScheduledTaskDto>>> retrieveThresholdBasedMaintenanceScheduledTasks(@RequestParam(required = false, defaultValue = "0") int page,
+                                                                                                                                                              @RequestParam(required = false, defaultValue = "10") int size,
+                                                                                                                                                              @RequestParam(required = false, defaultValue = "createdAt") String sortAttribute,
+                                                                                                                                                              @RequestParam(required = false, defaultValue = "false") boolean isAscending) {
+
+        // Fix the pagination parameters
+        Pageable pageable = createPaginationParameters(page, size, sortAttribute, isAscending, ScheduledTaskDto.class);
+        if (pageable == null)
+            return new ResponseEntity<>(BaseResponse.error("Invalid pagination sort attributes"), HttpStatus.BAD_REQUEST);
+
+        // Retrieve stored results in pages
+        Page<ScheduledTaskDto> output = scheduledTaskService.retrieveScheduledTaskBySmartServiceType(pageable, THRESHOLD_BASED_TYPE);
+
+        // Fix the pagination class object
+        PaginatedResultsDto<ScheduledTaskDto> results = new PaginatedResultsDto<>(
+                output.getContent(),
+                output.getTotalPages(),
+                (int) output.getTotalElements(),
+                output.isLast());
+
+        return new ResponseEntity<>(
+                BaseResponse.success(
+                        results,
+                        "Threshold-Based Scheduled Tasks retrieved successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Delete a Threshold-Based Scheduled Task by taskId [PdM2]
+     *
+     * @param taskId : Task ID
+     * @return String
+     */
+    @Operation(summary = "Delete a Threshold-Based Scheduled Task by taskId [PdM2]", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Threshold-Based Predictive Maintenance latest results retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Resource not found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @DeleteMapping("/predict/threshold-based-maintenance/scheduled-tasks/{taskId}")
+    public ResponseEntity<BaseResponse<String>> deleteThresholdBasedScheduledTask(
+            @PathVariable String taskId) {
+        scheduledTaskService.deleteScheduledTaskById(taskId);
+        return new ResponseEntity<>(
+                BaseResponse.success(null,"Threshold-Based Predictive Maintenance Scheduled Task deleted successfully"),
                 HttpStatus.OK);
     }
 
@@ -258,13 +331,13 @@ public class PredictiveMaintenanceController {
             @ApiResponse(responseCode = "404", description = "Invalid pagination sort attributes")
     })
     @GetMapping("/process-drifts")
-    public ResponseEntity<BaseResponse<PaginatedResultsDto<MaintenanceDataDto>>> retrievePaginatedUncompletedProcessDrifts( @RequestParam(required = false, defaultValue = "0") int page,
+    public ResponseEntity<BaseResponse<PaginatedResultsDto<MaintenanceDataDto>>> retrievePaginatedUncompletedProcessDrifts(@RequestParam(required = false, defaultValue = "0") int page,
                                                                                                              @RequestParam(required = false, defaultValue = "10") int size,
                                                                                                              @RequestParam(required = false, defaultValue = "tsInterventionStarted") String sortAttribute,
                                                                                                              @RequestParam(required = false, defaultValue = "false") boolean isAscending) {
 
         // Fix the pagination parameters
-        Pageable pageable = createPaginationParameters(page, size, sortAttribute, isAscending);
+        Pageable pageable = createPaginationParameters(page, size, sortAttribute, isAscending, MaintenanceDataDto.class);
         if (pageable == null)
             return new ResponseEntity<>(BaseResponse.error("Invalid pagination sort attributes"), HttpStatus.BAD_REQUEST);
 
@@ -316,9 +389,9 @@ public class PredictiveMaintenanceController {
      * @param isAscending : Sort order
      * @return pageable : Pagination Object
      */
-    private Pageable createPaginationParameters(int page, int size, String sortAttribute, boolean isAscending){
+    private Pageable createPaginationParameters(int page, int size, String sortAttribute, boolean isAscending, Class<?> targetClass){
         // Check if sort attribute is valid
-        boolean isValidField = Arrays.stream(MaintenanceDataDto.class.getDeclaredFields())
+        boolean isValidField = Arrays.stream(targetClass.getDeclaredFields())
                 .anyMatch(field -> field.getName().equals(sortAttribute));
 
         // If not valid, return null

@@ -8,9 +8,8 @@ public enum WebSocketTopics {
     CRF_OPTIMIZATION_RESULTS("crf-optimization-results"),
     SEW_SIMULATION_RESULTS("sew-simulation-results"),
     SEW_OPTIMIZATION_RESULTS("sew-optimization-results"),
-    SEW_THRESHOLD_BASED_PREDICTIVE_MAINTENANCE("sew-threshold-based-predictive-maintenance"),
     SEW_GROUPING_PREDICTIVE_MAINTENANCE("sew-grouping-predictive-maintenance"),
-    SEW_SELF_AWARENESS("sew-self-awareness"),
+    SEW_SELF_AWARENESS_MONITORING_KPIS("sew-self-awareness-monitoring-kpis"),
     CRF_SELF_AWARENESS("crf-self-awareness");
 
     private final String topic;

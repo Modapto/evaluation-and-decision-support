@@ -1,13 +1,12 @@
 package gr.atc.modapto.service.interfaces;
 
+import gr.atc.modapto.dto.ScheduledTaskDto;
 import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintenanceOutputDto;
 import gr.atc.modapto.dto.sew.MaintenanceDataDto;
 import gr.atc.modapto.dto.sew.SewComponentInfoDto;
 import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +26,8 @@ public interface IPredictiveMaintenanceService {
     void locateLastMaintenanceActionForStoredComponents();
 
     void invokeGroupingPredictiveMaintenance(SewGroupingPredictiveMaintenanceInputDataDto invocationData);
+
+    SewThresholdBasedPredictiveMaintenanceOutputDto invokeAndRegisterThresholdBasedPredictiveMaintenance(SewThresholdBasedMaintenanceInputDataDto invocationData);
 
     SewThresholdBasedPredictiveMaintenanceOutputDto invokeThresholdBasedPredictiveMaintenance(SewThresholdBasedMaintenanceInputDataDto invocationData);
 

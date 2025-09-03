@@ -9,6 +9,10 @@ import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintena
 import gr.atc.modapto.dto.sew.MaintenanceDataDto;
 import gr.atc.modapto.dto.sew.SewComponentInfoDto;
 import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
+import gr.atc.modapto.service.interfaces.IScheduledTaskService;
+import gr.atc.modapto.dto.ScheduledTaskDto;
+import gr.atc.modapto.dto.PaginatedResultsDto;
+import gr.atc.modapto.enums.FrequencyType;
 import gr.atc.modapto.exception.CustomExceptions.FileHandlingException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,6 +54,9 @@ class PredictiveMaintenanceControllerTests {
 
     @MockitoBean
     private IPredictiveMaintenanceService predictiveMaintenanceService;
+
+    @MockitoBean
+    private IScheduledTaskService scheduledTaskService;
 
     @Nested
     @DisplayName("Upload CORIM File")
@@ -721,6 +728,8 @@ class PredictiveMaintenanceControllerTests {
                             .inspectionThreshold(5)
                             .replacementThreshold(10)
                             .build())
+                    .frequencyType(FrequencyType.MINUTES)
+                    .frequencyValue(10)
                     .build();
 
             SewThresholdBasedPredictiveMaintenanceOutputDto expectedOutput = SewThresholdBasedPredictiveMaintenanceOutputDto.builder()
@@ -731,7 +740,7 @@ class PredictiveMaintenanceControllerTests {
                     .details("Vibration levels exceeded threshold")
                     .build();
 
-            when(predictiveMaintenanceService.invokeThresholdBasedPredictiveMaintenance(any()))
+            when(predictiveMaintenanceService.invokeAndRegisterThresholdBasedPredictiveMaintenance(any()))
                     .thenReturn(expectedOutput);
 
             // When & Then
@@ -747,7 +756,7 @@ class PredictiveMaintenanceControllerTests {
                     .andExpect(jsonPath("$.data.recommendation").value("Replace bearing in motor unit within 72 hours"))
                     .andExpect(jsonPath("$.message").value("Predictive Maintenance service for Threshold-Based Maintenance completed successfully"));
 
-            verify(predictiveMaintenanceService).invokeThresholdBasedPredictiveMaintenance(any(SewThresholdBasedMaintenanceInputDataDto.class));
+            verify(predictiveMaintenanceService).invokeAndRegisterThresholdBasedPredictiveMaintenance(any(SewThresholdBasedMaintenanceInputDataDto.class));
         }
 
         @Test
@@ -767,7 +776,7 @@ class PredictiveMaintenanceControllerTests {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false));
 
-            verify(predictiveMaintenanceService, never()).invokeThresholdBasedPredictiveMaintenance(any());
+            verify(predictiveMaintenanceService, never()).invokeAndRegisterThresholdBasedPredictiveMaintenance(any());
         }
 
         @Test
@@ -788,7 +797,7 @@ class PredictiveMaintenanceControllerTests {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false));
 
-            verify(predictiveMaintenanceService, never()).invokeThresholdBasedPredictiveMaintenance(any());
+            verify(predictiveMaintenanceService, never()).invokeAndRegisterThresholdBasedPredictiveMaintenance(any());
         }
 
         @Test
@@ -808,7 +817,7 @@ class PredictiveMaintenanceControllerTests {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false));
 
-            verify(predictiveMaintenanceService, never()).invokeThresholdBasedPredictiveMaintenance(any());
+            verify(predictiveMaintenanceService, never()).invokeAndRegisterThresholdBasedPredictiveMaintenance(any());
         }
 
         @Test
@@ -827,7 +836,7 @@ class PredictiveMaintenanceControllerTests {
                     .with(csrf()))
                     .andExpect(status().isUnauthorized());
 
-            verify(predictiveMaintenanceService, never()).invokeThresholdBasedPredictiveMaintenance(any());
+            verify(predictiveMaintenanceService, never()).invokeAndRegisterThresholdBasedPredictiveMaintenance(any());
         }
     }
 
@@ -956,7 +965,7 @@ class PredictiveMaintenanceControllerTests {
                     .with(csrf()))
                     .andExpect(status().isBadRequest());
 
-            verify(predictiveMaintenanceService, never()).invokeThresholdBasedPredictiveMaintenance(any());
+            verify(predictiveMaintenanceService, never()).invokeAndRegisterThresholdBasedPredictiveMaintenance(any());
         }
 
         @Test
@@ -1291,6 +1300,155 @@ class PredictiveMaintenanceControllerTests {
                     .andExpect(status().isUnauthorized());
 
             verify(predictiveMaintenanceService, never()).retrievePaginatedUncompletedProcessDrifts(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Scheduled Task Management")
+    class ScheduledTaskManagement {
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Retrieve threshold-based scheduled tasks : Success")
+        void givenValidPagination_whenRetrieveScheduledTasks_thenReturnsPagedResults() throws Exception {
+            // Given
+            List<ScheduledTaskDto> mockTasks = Arrays.asList(
+                    ScheduledTaskDto.builder()
+                            .id("task-1")
+                            .moduleId("MODULE_1")
+                            .smartServiceId("THRESHOLD_SERVICE")
+                            .smartServiceType("THRESHOLD_BASED_PREDICTIVE_MAINTENANCE")
+                            .frequencyType(FrequencyType.HOURS)
+                            .frequencyValue(24)
+                            .createdAt(LocalDateTime.parse("2024-01-15T10:30:00"))
+                            .nextExecutionTime(LocalDateTime.parse("2024-01-16T10:30:00"))
+                            .build(),
+                    ScheduledTaskDto.builder()
+                            .id("task-2")
+                            .moduleId("MODULE_2")
+                            .smartServiceId("THRESHOLD_SERVICE")
+                            .smartServiceType("THRESHOLD_BASED_PREDICTIVE_MAINTENANCE")
+                            .frequencyType(FrequencyType.DAYS)
+                            .frequencyValue(7)
+                            .createdAt(LocalDateTime.parse("2024-01-16T10:30:00"))
+                            .nextExecutionTime(LocalDateTime.parse("2024-01-23T10:30:00"))
+                            .build()
+            );
+
+            Page<ScheduledTaskDto> mockPage = new PageImpl<>(mockTasks);
+            when(scheduledTaskService.retrieveScheduledTaskBySmartServiceType(any(), eq("THRESHOLD_BASED_PREDICTIVE_MAINTENANCE")))
+                    .thenReturn(mockPage);
+
+            // When & Then
+            mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks")
+                    .param("page", "0")
+                    .param("size", "10")
+                    .param("sortAttribute", "createdAt")
+                    .param("isAscending", "false"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.results").isArray())
+                    .andExpect(jsonPath("$.data.results").isNotEmpty())
+                    .andExpect(jsonPath("$.data.results[0].id").value("task-1"))
+                    .andExpect(jsonPath("$.data.results[0].moduleId").value("MODULE_1"))
+                    .andExpect(jsonPath("$.data.results[1].id").value("task-2"))
+                    .andExpect(jsonPath("$.message").value("Threshold-Based Scheduled Tasks retrieved successfully"));
+
+            verify(scheduledTaskService).retrieveScheduledTaskBySmartServiceType(any(), eq("THRESHOLD_BASED_PREDICTIVE_MAINTENANCE"));
+        }
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Retrieve scheduled tasks : Default parameters")
+        void givenDefaultParams_whenRetrieveScheduledTasks_thenUsesDefaults() throws Exception {
+            // Given
+            Page<ScheduledTaskDto> emptyPage = new PageImpl<>(Collections.emptyList());
+            when(scheduledTaskService.retrieveScheduledTaskBySmartServiceType(any(), eq("THRESHOLD_BASED_PREDICTIVE_MAINTENANCE")))
+                    .thenReturn(emptyPage);
+
+            // When & Then
+            mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.results").isArray())
+                    .andExpect(jsonPath("$.data.results").isEmpty())
+                    .andExpect(jsonPath("$.message").value("Threshold-Based Scheduled Tasks retrieved successfully"));
+
+            verify(scheduledTaskService).retrieveScheduledTaskBySmartServiceType(any(), eq("THRESHOLD_BASED_PREDICTIVE_MAINTENANCE"));
+        }
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Retrieve scheduled tasks : Invalid sort attribute")
+        void givenInvalidSortAttribute_whenRetrieveScheduledTasks_thenReturnsBadRequest() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks")
+                    .param("sortAttribute", "invalidAttribute"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.message").value("Invalid pagination sort attributes"));
+
+            verify(scheduledTaskService, never()).retrieveScheduledTaskBySmartServiceType(any(), any());
+        }
+
+        @Test
+        @DisplayName("Retrieve scheduled tasks : Unauthorized")
+        void givenNoAuthentication_whenRetrieveScheduledTasks_thenReturnsUnauthorized() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks"))
+                    .andExpect(status().isUnauthorized());
+
+            verify(scheduledTaskService, never()).retrieveScheduledTaskBySmartServiceType(any(), any());
+        }
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Delete scheduled task : Success")
+        void givenValidTaskId_whenDeleteScheduledTask_thenReturnsSuccess() throws Exception {
+            // Given
+            String taskId = "task-id-123";
+            doNothing().when(scheduledTaskService).deleteScheduledTaskById(taskId);
+
+            // When & Then
+            mockMvc.perform(delete("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks/{taskId}", taskId)
+                    .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Threshold-Based Predictive Maintenance Scheduled Task deleted successfully"));
+
+            verify(scheduledTaskService).deleteScheduledTaskById(taskId);
+        }
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Delete scheduled task : Task not found")
+        void givenNonExistentTaskId_whenDeleteScheduledTask_thenReturnsNotFound() throws Exception {
+            // Given
+            String taskId = "non-existent-task";
+            doThrow(new gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException("Scheduled task not found"))
+                    .when(scheduledTaskService).deleteScheduledTaskById(taskId);
+
+            // When & Then
+            mockMvc.perform(delete("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks/{taskId}", taskId)
+                    .with(csrf()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.success").value(false));
+
+            verify(scheduledTaskService).deleteScheduledTaskById(taskId);
+        }
+
+        @Test
+        @DisplayName("Delete scheduled task : Unauthorized")
+        void givenNoAuthentication_whenDeleteScheduledTask_thenReturnsUnauthorized() throws Exception {
+            // Given
+            String taskId = "task-id-123";
+
+            // When & Then
+            mockMvc.perform(delete("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks/{taskId}", taskId)
+                    .with(csrf()))
+                    .andExpect(status().isUnauthorized());
+
+            verify(scheduledTaskService, never()).deleteScheduledTaskById(any());
         }
     }
 

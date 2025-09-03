@@ -139,4 +139,16 @@ public class GlobalExceptionHandler {
         BaseResponse<String> response = BaseResponse.error("Invalid input datetime format", "Format expected is 'YYYY-MM-DDThh:mm:ss'");
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(DatabaseException.class)
+    public ResponseEntity<BaseResponse<String>> handleDatabaseException(DatabaseException ex) {
+        BaseResponse<String> response = BaseResponse.error("Database internal exception occurred", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(ServiceOperationException.class)
+    public ResponseEntity<BaseResponse<String>> handleServiceOperationException(ServiceOperationException ex) {
+        BaseResponse<String> response = BaseResponse.error("Internal service operation exception", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 }

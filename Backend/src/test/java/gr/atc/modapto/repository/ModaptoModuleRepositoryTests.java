@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @ActiveProfiles("test")
 @Testcontainers
+@DataElasticsearchTest
 @DisplayName("ModaptoModuleRepository Tests")
 class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
 

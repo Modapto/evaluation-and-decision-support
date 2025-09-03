@@ -1,8 +1,8 @@
 package gr.atc.modapto.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.atc.modapto.dto.ScheduledTaskDto;
 import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.dt.SmartServiceRequest;
@@ -13,8 +13,9 @@ import gr.atc.modapto.dto.sew.MaintenanceDataDto;
 import gr.atc.modapto.dto.sew.SewComponentInfoDto;
 import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
 import gr.atc.modapto.enums.ModaptoHeader;
+import gr.atc.modapto.events.ScheduledTaskRegistrationEvent;
 import gr.atc.modapto.model.MaintenanceData;
-import gr.atc.modapto.model.SewComponentInfo;
+import gr.atc.modapto.model.sew.SewComponentInfo;
 import gr.atc.modapto.model.serviceResults.SewGroupingPredictiveMaintenanceResult;
 import gr.atc.modapto.model.serviceResults.SewThresholdBasedPredictiveMaintenanceResult;
 import gr.atc.modapto.repository.MaintenanceDataRepository;
@@ -29,6 +30,7 @@ import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -45,7 +47,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import gr.atc.modapto.exception.CustomExceptions.*;
 
@@ -67,16 +68,20 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
     private final SmartServicesInvocationService smartServicesInvocationService;
 
     private final ThresholdBasedMaintenanceResponseProcessor thresholdMaintenanceResponseProcessor;
-    
+
     private final NoOpResponseProcessor noOpResponseProcessor;
 
     private final ModelMapper modelMapper;
 
     private final ObjectMapper objectMapper;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     private static final String COMPONENT_MAPPING_ERROR = "Unable to parse DTO SewComponentInfo to Model or vice-versa - Error: ";
 
     private static final String MAPPING_ERROR = "Unable to parse SEW Predictive Maintenance Results to DTO or vice-versa - Error: ";
+
+    private static final String THRESHOLD_BASED_TYPE = "THRESHOLD_BASED_PREDICTIVE_MAINTENANCE";
 
     private static final int BATCH_SIZE = 1000; // Batch Size
 
@@ -89,7 +94,8 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
                                         SewThresholdBasedPredictiveMaintenanceRepository sewThresholdBasedPredictiveMaintenanceRepository,
                                         ThresholdBasedMaintenanceResponseProcessor thresholdBasedMaintenanceResponseProcessor,
                                         NoOpResponseProcessor noOpResponseProcessor,
-                                        ObjectMapper objectMapper) {
+                                        ObjectMapper objectMapper,
+                                        ApplicationEventPublisher eventPublisher) {
         this.maintenanceDataRepository = maintenanceDataRepository;
         this.modelMapper = modelMapper;
         this.elasticsearchOperations = elasticsearchOperations;
@@ -100,6 +106,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         this.thresholdMaintenanceResponseProcessor = thresholdBasedMaintenanceResponseProcessor;
         this.noOpResponseProcessor = noOpResponseProcessor;
         this.objectMapper = objectMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -136,7 +143,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
             // Save new data
             List<SewComponentInfo> componentData = componentInfoList.stream().map(componentInfoDto -> modelMapper.map(componentInfoDto, SewComponentInfo.class)).toList();
             componentInfoRepository.saveAll(componentData);
-        } catch (MappingException e){
+        } catch (MappingException e) {
             throw new ModelMappingException("Unable to parse DTO SewComponentInfo to Model - Error: " + e.getMessage());
         }
     }
@@ -152,7 +159,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
                 List<MaintenanceData> batch = dtoBatch.stream().map(maintenanceDataDto -> modelMapper.map(maintenanceDataDto, MaintenanceData.class)).toList();
                 maintenanceDataRepository.saveAll(batch);
             }
-        } catch (MappingException e){
+        } catch (MappingException e) {
             logger.error(MAPPING_ERROR + "{}", e.getMessage());
             throw new ModelMappingException(MAPPING_ERROR + e.getMessage());
         }
@@ -162,52 +169,52 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
      * Retrieve all maintenance data for SEW plant, optionally filtered by date range
      *
      * @param startDate : Start date of the maintenance
-     * @param endDate : Finish data of the maintenance
+     * @param endDate   : Finish data of the maintenance
      * @return List<MaintenanceData>
      */
     @Override
-    public List<MaintenanceDataDto> retrieveMaintenanceDataByDateRange(String startDate, String endDate){
-            CriteriaQuery query;
+    public List<MaintenanceDataDto> retrieveMaintenanceDataByDateRange(String startDate, String endDate) {
+        CriteriaQuery query;
 
-            if (startDate != null && endDate != null) {
-                query = new CriteriaQuery(
-                        new Criteria("tsInterventionStarted").greaterThanEqual(startDate)
-                                .and(new Criteria("tsInterventionFinished").lessThanEqual(endDate)), Pageable.unpaged()
-                );
-            } else if (startDate != null) {
-                query = new CriteriaQuery(
-                        new Criteria("tsInterventionStarted").greaterThanEqual(startDate), Pageable.unpaged()
-                );
-            } else if (endDate != null) {
-                query = new CriteriaQuery(
-                        new Criteria("tsInterventionFinished").lessThanEqual(endDate), Pageable.unpaged()
-                );
-            } else {
-                return maintenanceDataRepository.findAll(Pageable.unpaged())
-                        .getContent()
-                        .stream()
-                        .map(data -> modelMapper.map(data,MaintenanceDataDto.class))
-                        .toList();
-            }
-
-            SearchHits<MaintenanceData> searchHits = elasticsearchOperations.search(query, MaintenanceData.class);
-            try {
-                return searchHits.getSearchHits()
-                        .stream()
-                        .map(SearchHit::getContent)
-                        .map(data -> modelMapper.map(data,MaintenanceDataDto.class))
-                        .toList();
-            } catch (MappingException e){
-                throw new ModelMappingException("Unable to parse Maintenance Data to DTO - Error: " + e.getMessage());
-            }
+        if (startDate != null && endDate != null) {
+            query = new CriteriaQuery(
+                    new Criteria("tsInterventionStarted").greaterThanEqual(startDate)
+                            .and(new Criteria("tsInterventionFinished").lessThanEqual(endDate)), Pageable.unpaged()
+            );
+        } else if (startDate != null) {
+            query = new CriteriaQuery(
+                    new Criteria("tsInterventionStarted").greaterThanEqual(startDate), Pageable.unpaged()
+            );
+        } else if (endDate != null) {
+            query = new CriteriaQuery(
+                    new Criteria("tsInterventionFinished").lessThanEqual(endDate), Pageable.unpaged()
+            );
+        } else {
+            return maintenanceDataRepository.findAll(Pageable.unpaged())
+                    .getContent()
+                    .stream()
+                    .map(data -> modelMapper.map(data, MaintenanceDataDto.class))
+                    .toList();
         }
+
+        SearchHits<MaintenanceData> searchHits = elasticsearchOperations.search(query, MaintenanceData.class);
+        try {
+            return searchHits.getSearchHits()
+                    .stream()
+                    .map(SearchHit::getContent)
+                    .map(data -> modelMapper.map(data, MaintenanceDataDto.class))
+                    .toList();
+        } catch (MappingException e) {
+            throw new ModelMappingException("Unable to parse Maintenance Data to DTO - Error: " + e.getMessage());
+        }
+    }
 
     /**
      * Retrieve Component List given Stage, Cell, Module and Module ID
      *
-     * @param stage : Stage of the module
-     * @param cell : Cell of the module
-     * @param module : Module description
+     * @param stage    : Stage of the module
+     * @param cell     : Cell of the module
+     * @param module   : Module description
      * @param moduleId : Module ID
      * @return List<SewComponentInfoDto>
      */
@@ -219,7 +226,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
                     .map(component -> modelMapper.map(component, SewComponentInfoDto.class))
                     .toList();
         } catch (MappingException e) {
-            logger.error(COMPONENT_MAPPING_ERROR + "{}",e.getMessage());
+            logger.error(COMPONENT_MAPPING_ERROR + "{}", e.getMessage());
             throw new ModelMappingException(COMPONENT_MAPPING_ERROR + e.getMessage());
         }
     }
@@ -230,7 +237,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
     @Override
     @Async("taskExecutor")
     public void locateLastMaintenanceActionForStoredComponents() {
-        Pageable pageable =  PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "tsInterventionStarted"));
+        Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "tsInterventionStarted"));
 
         // Retrieve all Components
         List<SewComponentInfo> componentInfoList = componentInfoRepository.findAll(Pageable.unpaged()).getContent();
@@ -282,7 +289,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         } catch (MappingException e) {
             logger.error("Exception occurred while mapping Grouping Predictive Maintenance Entity to DTO: {}", e.getMessage());
             throw new ModelMappingException("Exception occurred while mapping Grouping Predictive Maintenance Entity to DTO: " + e.getMessage());
-        } catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             logger.error("Unable to convert Grouping Predictive Maintenance input to Base64 Encoding");
             throw new SmartServiceInvocationException("Unable to convert Grouping Predictive Maintenance input to Base64 Encoding");
         }
@@ -290,7 +297,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         DtInputDto<SmartServiceRequest> dtInput = DtInputDto.<SmartServiceRequest>builder()
                 .inputArguments(request)
                 .build();
-        
+
         // Invoke smart service
         ResponseEntity<DtResponseDto> response = smartServicesInvocationService.invokeSmartService(
                 invocationData.getSmartServiceId(),
@@ -300,9 +307,42 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         );
 
         logger.debug("Successfully invoked grouping predictive maintenance service");
-        
+
         // Just discard the response as it will be handled via the MB
         noOpResponseProcessor.processResponse(response, invocationData.getModuleId(), invocationData.getSmartServiceId());
+    }
+
+    /**
+     * Invoker Threshold Based Predictive Maintenance and Register the Scheduled Task with the input data
+     *
+     * @param invocationData : Input Data
+     * @return SewThresholdBasedPredictiveMaintenanceOutputDto
+     */
+    @Override
+    public SewThresholdBasedPredictiveMaintenanceOutputDto invokeAndRegisterThresholdBasedPredictiveMaintenance(SewThresholdBasedMaintenanceInputDataDto invocationData) {
+
+        SewThresholdBasedPredictiveMaintenanceOutputDto responseData = invokeThresholdBasedPredictiveMaintenance(invocationData);
+
+        // If no exception occurs in the above process, request was successful and thus we can register the Task (via Application Events)
+        // Reset maintenance data
+        invocationData.setEvents(null);
+
+        // Create the scheduled task
+        ScheduledTaskDto newTask = ScheduledTaskDto.builder()
+                .frequencyValue(invocationData.getFrequencyValue())
+                .frequencyType(invocationData.getFrequencyType())
+                .smartServiceId(invocationData.getSmartServiceId())
+                .moduleId(invocationData.getModuleId())
+                .smartServiceType(THRESHOLD_BASED_TYPE)
+                .requestBody(invocationData)
+                .build();
+
+        // Publish event
+        ScheduledTaskRegistrationEvent event = new ScheduledTaskRegistrationEvent(this, newTask, THRESHOLD_BASED_TYPE);
+        eventPublisher.publishEvent(event);
+        logger.debug("Event published to register a new Scheduled Task - Event: {}", event);
+
+        return responseData;
     }
 
     @Override
@@ -333,18 +373,16 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         } catch (MappingException e) {
             logger.error("Exception occurred while mapping Threshold Based Predictive Maintenance Entity to DTO: {}", e.getMessage());
             throw new ModelMappingException("Exception occurred while mapping Threshold Based Predictive Maintenance Entity to DTO: " + e.getMessage());
-        } catch (JsonProcessingException e){
+        } catch (JsonProcessingException e) {
             logger.error("Unable to convert Threshold-Based Predictive Maintenance input to Base64 Encoding");
             throw new SmartServiceInvocationException("Unable to convert Threshold-Based Predictive Maintenance input to Base64 Encoding");
         }
-
-        //TODO: Register a Scheduler for repeated Tasks
 
         // Wrap invocation data in DtInputDto
         DtInputDto<SmartServiceRequest> dtInput = DtInputDto.<SmartServiceRequest>builder()
                 .inputArguments(request)
                 .build();
-        
+
         // Invoke smart service using the generic service
         ResponseEntity<DtResponseDto> response = smartServicesInvocationService.invokeSmartService(
                 invocationData.getSmartServiceId(),
@@ -357,12 +395,11 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
 
         // Use processor for the important response type
         return thresholdMaintenanceResponseProcessor.processResponse(
-                response, 
-                invocationData.getModuleId(), 
+                response,
+                invocationData.getModuleId(),
                 invocationData.getSmartServiceId()
         );
     }
-
 
     /*
      * Remove unnecessary fields
@@ -379,9 +416,9 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
      * Retrieve latest threshold-based predictive maintenance results for a specific Module
      *
      * @param moduleId : Module ID
-     * @throws ResourceNotFoundException Thrown if no results are found
-     * @throws ModelMappingException Thrown if unable to parse Model to DTO
      * @return SewThresholdBasedPredictiveMaintenanceOutputDto
+     * @throws ResourceNotFoundException Thrown if no results are found
+     * @throws ModelMappingException     Thrown if unable to parse Model to DTO
      */
     @Override
     public SewThresholdBasedPredictiveMaintenanceOutputDto retrieveLatestThresholdBasedMaintenanceResults(String moduleId) {
@@ -391,7 +428,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
                 throw new ResourceNotFoundException("No SEW Grouping Based Predictive Maintenance Results for Module: " + moduleId + " found");
 
             return modelMapper.map(latestResult.get(), SewThresholdBasedPredictiveMaintenanceOutputDto.class);
-        } catch (MappingException e){
+        } catch (MappingException e) {
             logger.error(MAPPING_ERROR + "for Module {} - {}", moduleId, e.getMessage());
             throw new ModelMappingException("Unable to parse SEW Threshold Based Maintenance Results Results to DTO for Module: " + moduleId + " - Error: " + e.getMessage());
         }
@@ -401,9 +438,9 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
      * Retrieve latest grouping predictive maintenance results for a specific Module
      *
      * @param moduleId : Module ID
-     * @throws ResourceNotFoundException Thrown if no results are found
-     * @throws ModelMappingException Thrown if unable to parse Model to DTO
      * @return SewGroupingPredictiveMaintenanceOutputDto
+     * @throws ResourceNotFoundException Thrown if no results are found
+     * @throws ModelMappingException     Thrown if unable to parse Model to DTO
      */
     @Override
     public SewGroupingPredictiveMaintenanceOutputDto retrieveLatestGroupingMaintenanceResults(String moduleId) {
@@ -413,7 +450,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
                 throw new ResourceNotFoundException("No SEW Grouping Based Predictive Maintenance Results for Module: " + moduleId + " found");
 
             return modelMapper.map(latestResult.get(), SewGroupingPredictiveMaintenanceOutputDto.class);
-        } catch (MappingException e){
+        } catch (MappingException e) {
             logger.error(MAPPING_ERROR + "for Module {} - {}", moduleId, e.getMessage());
             throw new ModelMappingException("Unable to parse SEW Grouping Maintenance Results to DTO for Module: " + moduleId + " - Error: " + e.getMessage());
         }
@@ -424,7 +461,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
      * Declare a new Process Drift
      *
      * @param processDriftData : Input data for the new Process Drift
-     * @throws ModelMappingException ModelMapper Exception
+     * @throws ModelMappingException     ModelMapper Exception
      * @throws ResourceNotFoundException Resource not found in DB
      */
     @Override
@@ -458,7 +495,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
      */
     @Override
     public MaintenanceDataDto retrieveProcessDriftById(String processDriftId) {
-        try{
+        try {
             MaintenanceData drift = maintenanceDataRepository.findById(processDriftId)
                     .orElseThrow(() -> new ResourceNotFoundException("Process drift with ID = '" + processDriftId + "' not found in PKB"));
 
@@ -471,6 +508,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
 
     /**
      * Retrieve all uncompleted Process Drifts (by the TsInterventionFinished timestamp - null field)
+     *
      * @param pageable : Pagination parameters
      * @return Page<MaintenanceDataDto>
      */
@@ -495,7 +533,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
      * Declare a Process Drift as Completed
      *
      * @param processDriftId : ID of Maintenance Data Drift
-     * @param endDatetime : Datetime of completion
+     * @param endDatetime    : Datetime of completion
      * @throws ResourceNotFoundException : In case the requested resource not found
      */
     @Override
@@ -506,5 +544,4 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         drift.setTsInterventionFinished(endDatetime);
         maintenanceDataRepository.save(drift);
     }
-
 }

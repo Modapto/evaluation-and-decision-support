@@ -43,13 +43,22 @@ class ModaptoEvaluationAndDecisionSupportApplicationTests {
 	private ModaptoModuleRepository modaptoModuleRepository;
 
 	@MockitoBean
+	private ProductionScheduleRepository productionScheduleRepository;
+
+	@MockitoBean
 	private SewComponentInfoRepository sewComponentInfoRepository;
+
+	@MockitoBean
+	private ScheduledTaskRepository scheduledTaskRepository;
 
 	@MockitoBean
 	private SewGroupingBasedPredictiveMaintenanceRepository sewGroupingBasedPredictiveMaintenanceRepository;
 
 	@MockitoBean
 	private SewThresholdBasedPredictiveMaintenanceRepository sewThresholdBasedPredictiveMaintenanceRepository;
+
+	@MockitoBean
+	private SewSelfAwarenessMonitoringKpisResultsRepository sewSelfAwarenessMonitoringKpisResultsRepository;
 
 	@Test
 	void contextLoads() {

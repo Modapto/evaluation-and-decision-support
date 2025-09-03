@@ -1,4 +1,4 @@
-package gr.atc.modapto.model;
+package gr.atc.modapto.model.sew;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;

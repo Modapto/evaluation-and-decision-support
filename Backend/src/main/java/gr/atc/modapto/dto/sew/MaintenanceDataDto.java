@@ -9,6 +9,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
 
@@ -66,12 +69,15 @@ public class MaintenanceDataDto {
     @JsonProperty("Name")
     private String workerName;
 
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
     @JsonProperty("TS request creation")
     private LocalDateTime tsRequestCreation;
 
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
     @JsonProperty("TS Intervention started")
     private LocalDateTime tsInterventionStarted;
 
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
     @JsonProperty("TS intervention finished")
     private LocalDateTime tsInterventionFinished;
 }

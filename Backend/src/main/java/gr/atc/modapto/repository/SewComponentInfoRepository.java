@@ -1,6 +1,6 @@
 package gr.atc.modapto.repository;
 
-import gr.atc.modapto.model.SewComponentInfo;
+import gr.atc.modapto.model.sew.SewComponentInfo;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 

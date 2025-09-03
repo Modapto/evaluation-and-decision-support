@@ -5,7 +5,7 @@ package gr.atc.modapto.enums;
  */
 public enum MessagePriority {
     LOW("Low"),
-    MEDIUM("Mid"),
+    MID("Mid"),
     HIGH("High");
 
     private final String priority;

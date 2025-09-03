@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import gr.atc.modapto.dto.sew.MaintenanceDataDto;
+import gr.atc.modapto.enums.FrequencyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,4 +46,12 @@ public class SewThresholdBasedMaintenanceInputDataDto {
     @NotNull(message = "Parameters cannot be null")
     @JsonProperty("parameters")
     private SewPredictiveMaintenanceEventParameters parameters;
+
+    @Schema(description = "Frequency value for the scheduled request", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "Frequency value can not be null")
+    private Integer frequencyValue;
+
+    @Schema(description = "Frequency type for the schedules request - Valid: 'MINUTES/HOURS'/'DAYS'", enumAsRef = true, requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "Frequency type can not be null")
+    private FrequencyType frequencyType;
 }

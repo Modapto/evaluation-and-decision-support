@@ -8,6 +8,7 @@ import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.enums.WebSocketTopics;
 import org.springframework.beans.factory.annotation.Value;
@@ -72,6 +73,8 @@ public class KafkaMessageHandler {
                         webSocketTopic = WebSocketTopics.SEW_OPTIMIZATION_RESULTS.toString();
                 case SewGroupingPredictiveMaintenanceOutputDto ignored ->
                         webSocketTopic = WebSocketTopics.SEW_GROUPING_PREDICTIVE_MAINTENANCE.toString();
+                case SewSelfAwarenessMonitoringKpisResultsDto ignored ->
+                        webSocketTopic = WebSocketTopics.SEW_SELF_AWARENESS_MONITORING_KPIS.toString();
                 default -> {
                     log.error("Unknown results data format provided. Results are discarded");
                     return;
