@@ -1,15 +1,19 @@
 package gr.atc.modapto.model.serviceResults;
 
-import lombok.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
@@ -48,10 +52,10 @@ public class SewGroupingPredictiveMaintenanceResult {
     public static class MaintenanceComponent {
 
         @Field(type = FieldType.Integer)
-        private Integer componentId;
+        private Integer moduleId;
 
         @Field(type = FieldType.Text)
-        private String componentName;
+        private String module;
 
         @Field(type = FieldType.Double)
         private Double replacementTime;
