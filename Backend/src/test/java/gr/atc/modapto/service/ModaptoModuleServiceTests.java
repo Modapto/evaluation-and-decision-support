@@ -20,10 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -85,7 +82,8 @@ class ModaptoModuleServiceTests {
                 "https://module.example.com",
                 Arrays.asList(testSmartService, otherService),
                 LocalDateTime.now(),
-                2312451L
+                2312451L,
+                new ArrayList<>()
         );
 
         testModuleDto = ModaptoModuleDto.builder()
@@ -216,7 +214,7 @@ class ModaptoModuleServiceTests {
         void whenRetrieveAllModules_thenReturnAllModulesAsDto() {
             // Given
             Page<ModaptoModule> modulePage = new PageImpl<>(Collections.singletonList(testModule));
-            
+
             BDDMockito.given(modaptoModuleRepository.findAll(Pageable.unpaged())).willReturn(modulePage);
             BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class)).willReturn(testModuleDto);
 
@@ -266,4 +264,104 @@ class ModaptoModuleServiceTests {
                     .hasMessageContaining("Module not found with moduleId: " + invalidModuleId);
         }
     }
+
+    @Nested
+    @DisplayName("Worker-Module Association")
+    class WorkerModuleAssociationTests {
+
+        private static final String TEST_WORKER = "worker1";
+
+        @DisplayName("Retrieve modules by worker : Success")
+        @Test
+        void givenWorkerAndPageable_whenRetrieveModulesByWorkerPaginated_thenReturnPaginatedResults() {
+            // Given
+            Pageable pageable = PageRequest.of(0, 10);
+            testModule.setWorkers(new ArrayList<>(Collections.singletonList(TEST_WORKER)));
+            Page<ModaptoModule> modulePage = new PageImpl<>(Collections.singletonList(testModule));
+
+            BDDMockito.given(modaptoModuleRepository.findByWorkers(TEST_WORKER, pageable))
+                    .willReturn(modulePage);
+            BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class))
+                    .willReturn(testModuleDto);
+
+            // When
+            Page<ModaptoModuleDto> result = modaptoModuleService.retrieveModulesByWorkerPaginated(TEST_WORKER, pageable);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().getFirst().getModuleId()).isEqualTo(TEST_MODULE_ID);
+        }
+
+        @DisplayName("Declare worker on module : Success")
+        @Test
+        void givenValidModuleIdAndWorker_whenDeclareWorkOnModule_thenWorkerAdded() {
+            // Given
+            BDDMockito.given(modaptoModuleRepository.findByModuleId(TEST_MODULE_ID))
+                    .willReturn(Optional.of(testModule));
+            BDDMockito.given(modaptoModuleRepository.save(testModule)).willReturn(testModule);
+            BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class))
+                    .willReturn(testModuleDto);
+
+            // When
+            ModaptoModuleDto result = modaptoModuleService.declareWorkOnModule(TEST_MODULE_ID, TEST_WORKER);
+
+            // Then
+            assertThat(testModule.getWorkers()).contains(TEST_WORKER);
+            assertThat(result).isNotNull();
+            assertThat(result.getModuleId()).isEqualTo(TEST_MODULE_ID);
+        }
+
+        @DisplayName("Declare worker on module : Module not found")
+        @Test
+        void givenInvalidModuleId_whenDeclareWorkOnModule_thenThrowResourceNotFoundException() {
+            // Given
+            String invalidModuleId = "INVALID_MODULE";
+            BDDMockito.given(modaptoModuleRepository.findByModuleId(invalidModuleId))
+                    .willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() ->
+                    modaptoModuleService.declareWorkOnModule(invalidModuleId, TEST_WORKER))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Module not found with moduleId: " + invalidModuleId);
+        }
+
+        @DisplayName("Undeclare worker on module : Success")
+        @Test
+        void givenValidModuleIdAndWorker_whenUndeclareWorkOnModule_thenWorkerRemoved() {
+            // Given
+            testModule.setWorkers(new ArrayList<>(Collections.singletonList(TEST_WORKER)));
+
+            BDDMockito.given(modaptoModuleRepository.findByModuleId(TEST_MODULE_ID))
+                    .willReturn(Optional.of(testModule));
+            BDDMockito.given(modaptoModuleRepository.save(testModule)).willReturn(testModule);
+            BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class))
+                    .willReturn(testModuleDto);
+
+            // When
+            ModaptoModuleDto result = modaptoModuleService.undeclareWorkOnModule(TEST_MODULE_ID, TEST_WORKER);
+
+            // Then
+            assertThat(testModule.getWorkers()).doesNotContain(TEST_WORKER);
+            assertThat(result).isNotNull();
+            assertThat(result.getModuleId()).isEqualTo(TEST_MODULE_ID);
+        }
+
+        @DisplayName("Undeclare worker on module : Module not found")
+        @Test
+        void givenInvalidModuleId_whenUndeclareWorkOnModule_thenThrowResourceNotFoundException() {
+            // Given
+            String invalidModuleId = "INVALID_MODULE";
+            BDDMockito.given(modaptoModuleRepository.findByModuleId(invalidModuleId))
+                    .willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() ->
+                    modaptoModuleService.undeclareWorkOnModule(invalidModuleId, TEST_WORKER))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Module not found with moduleId: " + invalidModuleId);
+        }
+    }
+
 }

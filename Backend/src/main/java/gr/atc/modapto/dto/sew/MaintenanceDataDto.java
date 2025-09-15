@@ -27,6 +27,9 @@ public class MaintenanceDataDto {
     @JsonProperty("dataId")
     private String id;
 
+    @JsonProperty("modaptoModule")
+    private String modaptoModule;
+
     @NotBlank(message = "Stage can not be blank")
     @JsonProperty("Stage")
     private String stage;

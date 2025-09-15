@@ -111,6 +111,7 @@ public class ExcelFilesUtils {
                     Cell cell = row.getCell(columnPosition);
                     if (cell != null) {
                         processCell(rowData, header, cell);
+                        rowData.setModaptoModule(null);
                     }
                 }
             }

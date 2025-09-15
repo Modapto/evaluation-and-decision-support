@@ -1,6 +1,5 @@
 package gr.atc.modapto.service.interfaces;
 
-import gr.atc.modapto.dto.ScheduledTaskDto;
 import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintenanceOutputDto;

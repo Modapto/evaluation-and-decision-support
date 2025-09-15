@@ -1,7 +1,6 @@
 package gr.atc.modapto.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.JsonNode;
 import gr.atc.modapto.enums.FrequencyType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

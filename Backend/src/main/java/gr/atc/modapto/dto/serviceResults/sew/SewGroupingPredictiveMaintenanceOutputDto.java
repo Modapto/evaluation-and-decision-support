@@ -88,13 +88,17 @@ public class SewGroupingPredictiveMaintenanceOutputDto extends BaseEventResultsD
     @Schema(name = "Maintenance Time Window", description = "Time window for maintenance activities")
     public static class TimeWindow {
 
-        @Schema(description = "Beginning of the maintenance window (hours from now)", example = "24.0")
+        @Schema(description = "Start of the time window for analysis in ISO 8601 format",
+                example = "2025-12-31T23:59:59")
         @JsonProperty("Begin")
-        private Double begin;
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+        private LocalDateTime begin;
 
-        @Schema(description = "End of the maintenance window (hours from now)", example = "72.0")
+        @Schema(description = "End of the time window for analysis in ISO 8601 format",
+                example = "2025-12-31T23:59:59")
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         @JsonProperty("End")
-        private Double end;
+        private LocalDateTime end;
     }
 
 }

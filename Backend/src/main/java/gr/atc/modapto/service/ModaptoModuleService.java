@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -134,6 +135,101 @@ public class ModaptoModuleService implements IModaptoModuleService {
             return modules.stream()
                     .map(module -> modelMapper.map(module, ModaptoModuleDto.class))
                     .toList();
+        } catch (MappingException e) {
+            logger.error(MAPPING_ERROR + "{}", e.getMessage());
+            throw new ModelMappingException(MAPPING_ERROR + e.getMessage());
+        }
+    }
+
+    /**
+     * Retrieve all MODAPTO modules a worker is working on with pagination
+     *
+     * @param pageable Pagination parameters
+     * @return Paginated ModaptoModuleDto results
+     * @throws ModelMappingException if mapping fails
+     */
+    @Override
+    public Page<ModaptoModuleDto> retrieveModulesByWorkerPaginated(String worker, Pageable pageable) {
+        logger.debug("Retrieving paginated modules the worker '{}' is working on with page: '{}', size:'{}'", worker, pageable.getPageNumber(), pageable.getPageSize());
+
+        try {
+            Page<ModaptoModule> modulePage = modaptoModuleRepository.findByWorkers(worker, pageable);
+
+            return modulePage.map(module -> modelMapper.map(module, ModaptoModuleDto.class));
+        } catch (MappingException e) {
+            logger.error(MAPPING_ERROR + "{}", e.getMessage());
+            throw new ModelMappingException(MAPPING_ERROR + e.getMessage());
+        }
+    }
+
+    /**
+     * Declare a worker is working on a specific MODAPTO module
+     *
+     * @param moduleId The module identifier
+     * @param worker The user identifier of the worker that declared working on the module
+     * @return Updated ModaptoModuleDto
+     * @throws ModelMappingException if mapping fails
+     */
+    @Override
+    public ModaptoModuleDto declareWorkOnModule(String moduleId, String worker) {
+        logger.debug("Declaring worker '{}' on module '{}'", worker, moduleId);
+
+        try {
+            // Fetch the module by its moduleId
+            ModaptoModule existingModule = modaptoModuleRepository.findByModuleId(moduleId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Module not found with moduleId: " + moduleId));
+
+            // Initialize list if null
+            if (existingModule.getWorkers() == null) {
+                existingModule.setWorkers(new ArrayList<>());
+            }
+
+            // Add worker if not already present
+            if (!existingModule.getWorkers().contains(worker)) {
+                existingModule.getWorkers().add(worker);
+            }
+
+            // Save updated module back into ES
+            ModaptoModule savedModule = modaptoModuleRepository.save(existingModule);
+
+            // Map to DTO
+            return modelMapper.map(savedModule, ModaptoModuleDto.class);
+
+        } catch (MappingException e) {
+            logger.error(MAPPING_ERROR + "{}", e.getMessage());
+            throw new ModelMappingException(MAPPING_ERROR + e.getMessage());
+        }
+    }
+
+    /**
+     * Undeclare a worker is working on a specific MODAPTO module
+     *
+     * @param moduleId The module identifier
+     * @param worker The user identifier of the worker that undeclared working on the module
+     * @return Updated ModaptoModuleDto
+     * @throws ModelMappingException if mapping fails
+     */
+    @Override
+    public ModaptoModuleDto undeclareWorkOnModule(String moduleId, String worker) {
+        logger.debug("Undeclaring worker '{}' on module '{}'", worker, moduleId);
+
+        try {
+            // Fetch the module by its moduleId
+            ModaptoModule existingModule = modaptoModuleRepository.findByModuleId(moduleId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Module not found with moduleId: " + moduleId));
+
+            // Initialize list if null
+            if (existingModule.getWorkers() != null) {
+                // Remove worker if present
+                existingModule.getWorkers().remove(worker);
+            }
+
+            // Save updated module back into ES
+            ModaptoModule savedModule = modaptoModuleRepository.save(existingModule);
+
+            // Map to DTO
+            return modelMapper.map(savedModule, ModaptoModuleDto.class);
+
         } catch (MappingException e) {
             logger.error(MAPPING_ERROR + "{}", e.getMessage());
             throw new ModelMappingException(MAPPING_ERROR + e.getMessage());

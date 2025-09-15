@@ -421,8 +421,8 @@ class SmartServicesInvocationServiceTests {
             // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
-                    .isInstanceOf(DtmClientErrorException.class)
-                    .hasMessage("Failed to retrieve smart service URL - Module not found");
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessage("Module not found");
         }
 
         @Test

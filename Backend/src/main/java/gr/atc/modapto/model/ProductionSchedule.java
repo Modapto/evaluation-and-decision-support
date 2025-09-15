@@ -1,6 +1,5 @@
 package gr.atc.modapto.model;
 
-import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

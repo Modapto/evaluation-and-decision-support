@@ -11,7 +11,6 @@ import gr.atc.modapto.dto.sew.SewComponentInfoDto;
 import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
 import gr.atc.modapto.service.interfaces.IScheduledTaskService;
 import gr.atc.modapto.dto.ScheduledTaskDto;
-import gr.atc.modapto.dto.PaginatedResultsDto;
 import gr.atc.modapto.enums.FrequencyType;
 import gr.atc.modapto.exception.CustomExceptions.FileHandlingException;
 import org.junit.jupiter.api.DisplayName;
@@ -609,6 +608,8 @@ class PredictiveMaintenanceControllerTests {
                     .setupCost(500.0)
                     .downtimeCostRate(150.0)
                     .noRepairmen(3)
+                    .timeWindowStart(LocalDateTime.parse("2025-01-01T10:00:00"))
+                    .timeWindowEnd(LocalDateTime.parse("2025-01-02T10:00:00"))
                     .build();
 
             doNothing().when(predictiveMaintenanceService).invokeGroupingPredictiveMaintenance(any());

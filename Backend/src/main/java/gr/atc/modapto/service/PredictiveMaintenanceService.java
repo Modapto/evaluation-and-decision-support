@@ -2,6 +2,7 @@ package gr.atc.modapto.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import gr.atc.modapto.dto.ScheduledTaskDto;
 import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
@@ -12,6 +13,7 @@ import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintena
 import gr.atc.modapto.dto.sew.MaintenanceDataDto;
 import gr.atc.modapto.dto.sew.SewComponentInfoDto;
 import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
+import gr.atc.modapto.enums.KafkaTopics;
 import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.events.ScheduledTaskRegistrationEvent;
 import gr.atc.modapto.model.MaintenanceData;
@@ -26,6 +28,7 @@ import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
 import gr.atc.modapto.service.processors.NoOpResponseProcessor;
 import gr.atc.modapto.service.processors.ThresholdBasedMaintenanceResponseProcessor;
 import gr.atc.modapto.util.ExcelFilesUtils;
+
 import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -48,12 +51,17 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
+import gr.atc.modapto.dto.EventDto;
+import gr.atc.modapto.enums.MessagePriority;
 import gr.atc.modapto.exception.CustomExceptions.*;
+import gr.atc.modapto.kafka.KafkaMessageProducer;
 
 @Service
 public class PredictiveMaintenanceService implements IPredictiveMaintenanceService {
 
     private final Logger logger = LoggerFactory.getLogger(PredictiveMaintenanceService.class);
+
+    private final KafkaMessageProducer kafkaMessageProducer;
 
     private final MaintenanceDataRepository maintenanceDataRepository;
 
@@ -95,7 +103,8 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
                                         ThresholdBasedMaintenanceResponseProcessor thresholdBasedMaintenanceResponseProcessor,
                                         NoOpResponseProcessor noOpResponseProcessor,
                                         ObjectMapper objectMapper,
-                                        ApplicationEventPublisher eventPublisher) {
+                                        ApplicationEventPublisher eventPublisher,
+                                        KafkaMessageProducer kafkaMessageProducer) {
         this.maintenanceDataRepository = maintenanceDataRepository;
         this.modelMapper = modelMapper;
         this.elasticsearchOperations = elasticsearchOperations;
@@ -107,6 +116,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         this.noOpResponseProcessor = noOpResponseProcessor;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
+        this.kafkaMessageProducer = kafkaMessageProducer;
     }
 
     @Override
@@ -394,11 +404,28 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         logger.debug("Successfully invoked threshold-based predictive maintenance service..Processing results..");
 
         // Use processor for the important response type
-        return thresholdMaintenanceResponseProcessor.processResponse(
+        SewThresholdBasedPredictiveMaintenanceOutputDto results =  thresholdMaintenanceResponseProcessor.processResponse(
                 response,
                 invocationData.getModuleId(),
                 invocationData.getSmartServiceId()
         );
+
+        // Send Event via MB
+        EventDto event = EventDto.builder()
+                .module(invocationData.getModuleId())
+                .smartService(invocationData.getSmartServiceId())
+                .priority(MessagePriority.MID)
+                .description("Threshold Based maintenance completed for Module: " + invocationData.getModuleId())
+                .eventType("Threshold Based Maintenance action completed")
+                .sourceComponent("Predictive Maintenance")
+                .results(objectMapper.valueToTree(results))
+                .topic(KafkaTopics.SEW_THRESHOLD_PREDICTIVE_MAINTENANCE.toString())
+                .timestamp(LocalDateTime.now().withNano(0))
+                .build();
+
+        kafkaMessageProducer.sendMessage(event.getTopic(), event);
+
+        return results;
     }
 
     /*
@@ -410,6 +437,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         dto.setTsInterventionFinished(null);
         dto.setModule(null);
         dto.setComponent(null);
+        dto.setModaptoModule(null);
     }
 
     /**
@@ -479,8 +507,28 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
 
         try {
             MaintenanceData entity = modelMapper.map(processDriftData, MaintenanceData.class);
-            return maintenanceDataRepository.save(entity).getId();
+            MaintenanceData storedDrift = maintenanceDataRepository.save(entity);
 
+            // Send Event via MB
+            EventDto event = EventDto.builder()
+                    .module(processDriftData.getModaptoModule())
+                    .smartService(null)
+                    .priority(MessagePriority.HIGH)
+                    .description("A process drift was declared for Stage: " + processDriftData.getStage() +
+                            ", Cell: " + processDriftData.getCell() +
+                            ", Module: " + processDriftData.getModule() +
+                            ", Component: " + processDriftData.getComponent() +
+                            ", by worker: " + processDriftData.getWorkerName())
+                    .eventType("Process Drift Declared")
+                    .sourceComponent("Evaluation and Decision Support")
+                    .results(null)
+                    .topic(KafkaTopics.SEW_PROCESS_DRIFT.toString())
+                    .timestamp(LocalDateTime.now().withNano(0))
+                    .build();
+
+            kafkaMessageProducer.sendMessage(event.getTopic(), event);
+
+            return storedDrift.getId();
         } catch (MappingException e) {
             logger.error(MAPPING_ERROR + "{}", e.getMessage());
             throw new ModelMappingException(MAPPING_ERROR + e.getMessage());
@@ -543,5 +591,24 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
 
         drift.setTsInterventionFinished(endDatetime);
         maintenanceDataRepository.save(drift);
+
+        // Send Event via MB
+        EventDto event = EventDto.builder()
+                .module(drift.getModaptoModule())
+                .smartService(null)
+                .priority(MessagePriority.HIGH)
+                .description("A process drift was completed for Stage: " + drift.getStage() +
+                        ", Cell: " + drift.getCell() +
+                        ", Module: " + drift.getModule() +
+                        ", Component: " + drift.getComponent() +
+                        ", by worker: " + drift.getWorkerName())
+                .eventType("Process Drift Completed")
+                .sourceComponent("Evaluation and Decision Support")
+                .results(null)
+                .topic(KafkaTopics.SEW_PROCESS_DRIFT.toString())
+                .timestamp(LocalDateTime.now().withNano(0))
+                .build();
+
+        kafkaMessageProducer.sendMessage(event.getTopic(), event);
     }
 }

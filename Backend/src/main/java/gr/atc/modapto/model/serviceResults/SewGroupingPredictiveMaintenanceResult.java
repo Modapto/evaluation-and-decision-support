@@ -66,10 +66,10 @@ public class SewGroupingPredictiveMaintenanceResult {
     @Builder
     public static class TimeWindow {
 
-        @Field(type = FieldType.Double)
-        private Double begin;
+        @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
+        private LocalDateTime begin;
 
-        @Field(type = FieldType.Double)
-        private Double end;
+        @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
+        private LocalDateTime end;
     }
 }

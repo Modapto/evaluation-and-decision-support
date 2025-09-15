@@ -2,8 +2,8 @@ package gr.atc.modapto.controller;
 
 import gr.atc.modapto.dto.ModaptoModuleDto;
 import gr.atc.modapto.dto.PaginatedResultsDto;
-import gr.atc.modapto.service.ModaptoModuleService;
 import gr.atc.modapto.service.interfaces.IModaptoModuleService;
+import gr.atc.modapto.util.JwtUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,9 +36,9 @@ public class ModaptoModulesController {
     /**
      * Retrieve all MODAPTO modules with pagination
      *
-     * @param page Page number (default 0)
-     * @param size Page size (default 10)
-     * @param sortBy Sort field (default "timestamp")
+     * @param page          Page number (default 0)
+     * @param size          Page size (default 10)
+     * @param sortBy        Sort field (default "timestamp")
      * @param sortDirection Sort direction (default "desc")
      * @return Paginated list of MODAPTO modules
      */
@@ -105,7 +107,7 @@ public class ModaptoModulesController {
     @GetMapping("/{moduleId}")
     public ResponseEntity<BaseResponse<ModaptoModuleDto>> retrieveModuleById(
             @Parameter(description = "Module identifier") @PathVariable String moduleId) {
-        
+
         ModaptoModuleDto module = modaptoModuleService.retrieveModuleByModuleId(moduleId);
 
         return new ResponseEntity<>(
@@ -129,11 +131,113 @@ public class ModaptoModulesController {
     @GetMapping("/{moduleId}/smart-services")
     public ResponseEntity<BaseResponse<List<ModaptoModuleDto.SmartServiceDto>>> retrieveSmartServicesByModuleId(
             @Parameter(description = "Module identifier") @PathVariable String moduleId) {
-        
+
         List<ModaptoModuleDto.SmartServiceDto> smartServices = modaptoModuleService.retrieveSmartServicesByModuleId(moduleId);
 
         return new ResponseEntity<>(
                 BaseResponse.success(smartServices, "Smart services retrieved successfully"),
                 HttpStatus.OK);
+    }
+
+    /**
+     * Retrieve all MODAPTO modules a worker is working on with pagination
+     *
+     * @param page          Page number (default 0)
+     * @param size          Page size (default 10)
+     * @param sortBy        Sort field (default "timestamp")
+     * @param sortDirection Sort direction (default "desc")
+     * @return Paginated list of MODAPTO modules a worker is working
+     */
+    @Operation(summary = "Retrieve all MODAPTO modules a worker is working on with pagination", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "MODAPTO modules retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/working-modules")
+    public ResponseEntity<BaseResponse<PaginatedResultsDto<ModaptoModuleDto>>> retrieveModulesByWorkerPaginated(
+            @Parameter(description = "Page number") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "Field to sort by") @RequestParam(defaultValue = "timestamp_dt") String sortBy,
+            @Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "desc") String sortDirection,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        Sort.Direction direction = sortDirection.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<ModaptoModuleDto> modulePage = modaptoModuleService.retrieveModulesByWorkerPaginated(JwtUtils.extractUserId(jwt), pageable);
+
+        PaginatedResultsDto<ModaptoModuleDto> results = new PaginatedResultsDto<>(
+                modulePage.getContent(),
+                modulePage.getTotalPages(),
+                (int) modulePage.getTotalElements(),
+                modulePage.isLast());
+
+        return new ResponseEntity<>(
+                BaseResponse.success(results, "MODAPTO modules the authenticated worker is working on retrieved successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Declare that the authenticated worker is working on a specific MODAPTO module.
+     *
+     * @param moduleId The identifier of the MODAPTO module
+     * @param jwt      The JWT containing the authenticated worker identity
+     * @return Updated MODAPTO module
+     */
+    @Operation(
+            summary = "Declare the authenticated worker is working on a specific MODAPTO module",
+            security = @SecurityRequirement(name = "bearerToken")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Worker successfully declared on module"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Module not found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/{moduleId}/declare-work")
+    public ResponseEntity<BaseResponse<ModaptoModuleDto>> declareWorkOnModule(
+            @Parameter(description = "Module identifier") @PathVariable String moduleId,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        ModaptoModuleDto updatedModule =
+                modaptoModuleService.declareWorkOnModule(moduleId, JwtUtils.extractUserId(jwt));
+
+        return new ResponseEntity<>(
+                BaseResponse.success(updatedModule, "Worker successfully declared on module"),
+                HttpStatus.OK
+        );
+    }
+
+
+    /**
+     * Undeclare that the authenticated worker is working on a specific MODAPTO module.
+     *
+     * @param moduleId The identifier of the MODAPTO module
+     * @param jwt      The JWT containing the authenticated worker identity
+     * @return Updated MODAPTO module
+     */
+    @Operation(
+            summary = "Undeclare the authenticated worker is working on a specific MODAPTO module",
+            security = @SecurityRequirement(name = "bearerToken")
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Worker successfully undeclared on module"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Module not found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/{moduleId}/undeclare-work")
+    public ResponseEntity<BaseResponse<ModaptoModuleDto>> undeclareWorkOnModule(
+            @Parameter(description = "Module identifier") @PathVariable String moduleId,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        ModaptoModuleDto updatedModule =
+                modaptoModuleService.undeclareWorkOnModule(moduleId, JwtUtils.extractUserId(jwt));
+
+        return new ResponseEntity<>(
+                BaseResponse.success(updatedModule, "Worker successfully undeclared on module"),
+                HttpStatus.OK
+        );
     }
 }

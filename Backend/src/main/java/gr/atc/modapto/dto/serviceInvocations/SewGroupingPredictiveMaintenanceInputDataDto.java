@@ -12,6 +12,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @AllArgsConstructor
@@ -55,5 +56,17 @@ public class SewGroupingPredictiveMaintenanceInputDataDto {
     @Schema(description = "List of components to be analyzed for maintenance grouping", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     @JsonProperty("components")
     private List<SewComponentInfoDto> componentList;
+
+    @Schema(description = "Start of the time window for analysis in ISO 8601 format",
+            example = "2025-01-01T00:00:00", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "Time Window Start can not be null")
+    @JsonProperty("timeWindowStart")
+    private LocalDateTime timeWindowStart;
+
+    @Schema(description = "End of the time window for analysis in ISO 8601 format",
+            example = "2025-12-31T23:59:59", requiredMode = Schema.RequiredMode.REQUIRED)
+    @NotNull(message = "Time Window End can not be null")
+    @JsonProperty("timeWindowEnd")
+    private LocalDateTime timeWindowEnd;
 
 }

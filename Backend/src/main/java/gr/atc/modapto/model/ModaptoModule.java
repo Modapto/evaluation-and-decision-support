@@ -39,6 +39,9 @@ public class ModaptoModule {
     @Field(name = "timestamp_elastic", type = FieldType.Date, format = DateFormat.epoch_millis)
     private Long timestampElastic;
 
+    @Field(type = FieldType.Keyword)
+    private List<String> workers; // user IDs
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

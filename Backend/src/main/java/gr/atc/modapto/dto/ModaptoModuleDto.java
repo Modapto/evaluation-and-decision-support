@@ -1,6 +1,5 @@
 package gr.atc.modapto.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +29,8 @@ public class ModaptoModuleDto {
     private Long timestampElastic;
     
     private List<SmartServiceDto> smartServices;
+
+    private List<String> workers;
 
     @Data
     @Builder

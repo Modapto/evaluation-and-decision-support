@@ -16,4 +16,10 @@ public interface IModaptoModuleService {
     List<ModaptoModuleDto.SmartServiceDto> retrieveSmartServicesByModuleId(String moduleId);
 
     String retrieveSmartServiceUrl(String moduleId, String smartServiceId);
+
+    Page<ModaptoModuleDto> retrieveModulesByWorkerPaginated(String worker, Pageable pageable);
+
+    ModaptoModuleDto declareWorkOnModule(String moduleId, String worker);
+
+    ModaptoModuleDto undeclareWorkOnModule(String moduleId, String worker);
 }

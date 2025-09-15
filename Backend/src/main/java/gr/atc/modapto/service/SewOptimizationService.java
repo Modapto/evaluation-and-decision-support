@@ -1,8 +1,5 @@
 package gr.atc.modapto.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import gr.atc.modapto.model.ProductionSchedule;

@@ -135,4 +135,14 @@ public class SelfAwarenessController {
                         "All Self-Awareness Monitoring KPIs results for Module " + moduleId + " retrieved successfully"),
                 HttpStatus.OK);
     }
+
+    //TODO: Invoke SA2
+
+    //TODO: Retrieve SA2 Results All
+
+    //TODO: Retrieve SA2 Results by Module ID
+
+    // TODO: Store Component List for MODAPTO Module
+
+    // TODO: Retrieve Component List for MODAPTO Module
 }

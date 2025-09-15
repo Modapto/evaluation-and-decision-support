@@ -120,11 +120,11 @@ public class SmartServicesInvocationService {
         }
         
         String smartServiceUrl = retrieveSmartServiceUrl(smartServiceId, moduleId);
-        String uri = extractUriFromUrl(smartServiceUrl);
-
+        StringBuilder uri = new StringBuilder().append(extractUriFromUrl(smartServiceUrl)).append("/invoke/$value");
+        logger.debug("URI: {}, Invocation Data: {}", uri, invocationData);
         try {
             RestClient.ResponseSpec responseSpec = restClient.post()
-                    .uri(uri.concat("/invoke/$value"))
+                    .uri(uri.toString())
                     .header("Authorization", "Bearer " + jwtToken)
                     .header(MODAPTO_HEADER, modaptoHeader.toString())
                     .body(invocationData)
@@ -177,7 +177,7 @@ public class SmartServicesInvocationService {
             
         } catch (ResourceNotFoundException e) {
             logger.error("Resource not found - service: {} and module: {} - {}", smartServiceId, moduleId, e.getMessage());
-            throw new DtmClientErrorException("Failed to retrieve smart service URL - " + e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Unexpected error retrieving smart service URL for service: {} and module: {} - {}", smartServiceId, moduleId, e.getMessage());
             throw new DtmClientErrorException("Failed to retrieve smart service URL: " + e.getMessage());

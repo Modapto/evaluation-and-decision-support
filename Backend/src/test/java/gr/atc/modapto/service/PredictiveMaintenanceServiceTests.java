@@ -94,6 +94,9 @@ class PredictiveMaintenanceServiceTests {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private gr.atc.modapto.kafka.KafkaMessageProducer kafkaMessageProducer;
+
     @InjectMocks
     private PredictiveMaintenanceService predictiveMaintenanceService;
 

@@ -21,6 +21,9 @@ public class MaintenanceData {
     private String id;
 
     @Field(type = FieldType.Keyword)
+    private String modaptoModule;
+
+    @Field(type = FieldType.Keyword)
     private String stage = "";
 
     @Field(type = FieldType.Keyword)

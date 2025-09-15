@@ -2,7 +2,6 @@ package gr.atc.modapto.model;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.JsonNode;
 import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
 import gr.atc.modapto.enums.FrequencyType;
 import lombok.AllArgsConstructor;

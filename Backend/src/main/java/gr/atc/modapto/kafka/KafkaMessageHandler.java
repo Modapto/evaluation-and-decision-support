@@ -48,8 +48,9 @@ public class KafkaMessageHandler {
     @KafkaListener(topics = "#{'${kafka.topics}'.split(',')}", groupId = "${spring.kafka.consumer.group-id}")
     public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
         // Validate that same essential variables are present
-        if (event.getPriority() == null || event.getProductionModule() == null || event.getTopic() == null) {
-            log.error("Either priority, topic or production module are missing from the event. Message is discarded!");
+        log.debug("Event message received on topic: {} with Event Data: {}", topic, event);
+        if (event.getPriority() == null || event.getModule() == null || event.getTopic() == null) {
+            log.error("Message discarded! Either priority, topic or production module are missing from the event. Message is discarded!");
             return;
         }
 

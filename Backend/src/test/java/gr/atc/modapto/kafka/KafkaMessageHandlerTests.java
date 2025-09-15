@@ -7,7 +7,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import gr.atc.modapto.dto.EventDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.enums.MessagePriority;
 import gr.atc.modapto.enums.WebSocketTopics;
@@ -22,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +51,7 @@ class KafkaMessageHandlerTests {
     void setUp() {
         baseEvent = new EventDto();
         baseEvent.setPriority(MessagePriority.HIGH);
-        baseEvent.setProductionModule("ModuleA");
+        baseEvent.setModule("ModuleA");
         baseEvent.setTopic("modapto-mqtt-topics");
     }
 
@@ -86,7 +89,7 @@ class KafkaMessageHandlerTests {
 
         @Test
         @DisplayName("Consume CRF simulation event from MQTT : Success")
-        void givenValidCrfSimulationEventFromMqtt_whenConsume_thenUsesEventTopicInsteadOfMqtt() throws JsonProcessingException {
+        void givenValidCrfSimulationEventFromMqtt_whenConsume_thenUsesEventTopicInsteadOfMqtt(){
             // Given
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("2")
@@ -213,7 +216,7 @@ class KafkaMessageHandlerTests {
         void givenEventWithMissingPriority_whenConsume_thenLogErrorAndDoNotNotifyWebSocket() {
             // Given
             EventDto invalidEvent = new EventDto();
-            invalidEvent.setProductionModule("ModuleA");
+            invalidEvent.setModule("ModuleA");
             invalidEvent.setTopic("test-topic");
             // Missing priority
             String topic = "test-kafka-topic";
@@ -226,13 +229,13 @@ class KafkaMessageHandlerTests {
         }
 
         @Test
-        @DisplayName("Consume event with missing production module : Error logged and no notification")
-        void givenEventWithMissingProductionModule_whenConsume_thenLogErrorAndDoNotNotifyWebSocket() {
+        @DisplayName("Consume event with missing module : Error logged and no notification")
+        void givenEventWithMissingModule_whenConsume_thenLogErrorAndDoNotNotifyWebSocket() {
             // Given
             EventDto invalidEvent = new EventDto();
             invalidEvent.setPriority(MessagePriority.HIGH);
             invalidEvent.setTopic("test-topic");
-            // Missing productionModule
+            // Missing module
             String topic = "test-kafka-topic";
 
             // When
@@ -248,7 +251,7 @@ class KafkaMessageHandlerTests {
             // Given
             EventDto invalidEvent = new EventDto();
             invalidEvent.setPriority(MessagePriority.HIGH);
-            invalidEvent.setProductionModule("ModuleA");
+            invalidEvent.setModule("ModuleA");
             // Missing topic
             String topic = "test-kafka-topic";
 
@@ -276,6 +279,176 @@ class KafkaMessageHandlerTests {
 
             // Then
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("SEW Grouping Predictive Maintenance Results")
+    class SewGroupingPredictiveMaintenanceResults {
+
+        @Test
+        @DisplayName("Consume SEW grouping predictive maintenance event : Success")
+        void givenValidSewGroupingPredictiveMaintenanceEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
+            // Given
+            SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent component1 = SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent.builder()
+                    .componentId(12345)
+                    .componentName("Motor Bearing Unit A1")
+                    .replacementTime(48.5)
+                    .duration(2.5)
+                    .build();
+                    
+            SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent component2 = SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent.builder()
+                    .componentId(12346)
+                    .componentName("Hydraulic Pump B2")
+                    .replacementTime(72.0)
+                    .duration(4.0)
+                    .build();
+                    
+            Map<String, List<SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent>> groupingMaintenanceData = new HashMap<>();
+            groupingMaintenanceData.put("Stage1", Arrays.asList(component1));
+            groupingMaintenanceData.put("Stage2", Arrays.asList(component2));
+            
+            Map<String, List<SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent>> individualMaintenanceData = new HashMap<>();
+            individualMaintenanceData.put("Individual_Stage1", Arrays.asList(component1));
+            
+            SewGroupingPredictiveMaintenanceOutputDto.TimeWindow timeWindow = SewGroupingPredictiveMaintenanceOutputDto.TimeWindow.builder()
+                    .begin(LocalDateTime.parse("2024-01-15T08:00:00"))
+                    .end(LocalDateTime.parse("2024-01-15T18:00:00"))
+                    .build();
+                    
+            SewGroupingPredictiveMaintenanceOutputDto maintenanceResult = SewGroupingPredictiveMaintenanceOutputDto.builder()
+                    .id("grouping-maintenance-001")
+                    .moduleId("sew-module-1")
+                    .smartServiceId("grouping-predictive-maintenance")
+                    .costSavings(15000.75)
+                    .timeWindow(timeWindow)
+                    .groupingMaintenance(groupingMaintenanceData)
+                    .individualMaintenance(individualMaintenanceData)
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
+                    .build();
+
+            JsonNode resultNode = objectMapper.valueToTree(maintenanceResult);
+            baseEvent.setResults(resultNode);
+            String topic = "sew-grouping-predictive-maintenance-topic";
+
+            // When
+            kafkaMessageHandler.consume(baseEvent, topic);
+
+            // Then
+            ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
+            ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
+
+            verify(webSocketService, times(1)).notifyInWebSocketTopic(messageCaptor.capture(), topicCaptor.capture());
+
+            assertEquals(objectMapper.writeValueAsString(maintenanceResult), messageCaptor.getValue());
+            assertEquals(WebSocketTopics.SEW_GROUPING_PREDICTIVE_MAINTENANCE.toString(), topicCaptor.getValue());
+        }
+    }
+
+    @Nested
+    @DisplayName("SEW Self-Awareness Monitoring KPIs Results")
+    class SewSelfAwarenessMonitoringKpisResults {
+
+        @Test
+        @DisplayName("Consume SEW self-awareness monitoring KPIs event : Success")
+        void givenValidSewSelfAwarenessMonitoringKpisEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
+            // Given
+            List<Double> dataList = Arrays.asList(85.5, 87.2, 89.1, 86.8, 88.5, 90.2, 89.7, 88.9);
+            
+            SewSelfAwarenessMonitoringKpisResultsDto kpisResult = SewSelfAwarenessMonitoringKpisResultsDto.builder()
+                    .id("kpis-monitoring-001")
+                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .smartServiceId("self-awareness-monitoring-kpis")
+                    .moduleId("sew-module-1")
+                    .ligne("Production_Line_A")
+                    .component("Cutting_Station_01")
+                    .variable("Overall_Equipment_Effectiveness")
+                    .startingDate("2024-01-15T08:00:00.000Z")
+                    .endingDate("2024-01-15T16:00:00.000Z")
+                    .dataSource("PLC_Sensors")
+                    .bucket("hourly_aggregation")
+                    .data(dataList)
+                    .build();
+
+            JsonNode resultNode = objectMapper.valueToTree(kpisResult);
+            baseEvent.setResults(resultNode);
+            String topic = "sew-self-awareness-monitoring-kpis-topic";
+
+            // When
+            kafkaMessageHandler.consume(baseEvent, topic);
+
+            // Then
+            ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
+            ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
+
+            verify(webSocketService, times(1)).notifyInWebSocketTopic(messageCaptor.capture(), topicCaptor.capture());
+
+            assertEquals(objectMapper.writeValueAsString(kpisResult), messageCaptor.getValue());
+            assertEquals(WebSocketTopics.SEW_SELF_AWARENESS_MONITORING_KPIS.toString(), topicCaptor.getValue());
+        }
+    }
+
+    @Nested
+    @DisplayName("Enhanced Event Validation")
+    class EnhancedEventValidation {
+
+        @Test
+        @DisplayName("Validate that module field is used instead of productionModule : Success")
+        void givenEventWithModuleField_whenConsume_thenProcessesCorrectly(){
+            // Given
+            EventDto eventWithModule = EventDto.builder()
+                    .priority(MessagePriority.HIGH)
+                    .module("TestModule")
+                    .topic("test-topic")
+                    .build();
+            
+            CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
+                    .id("1")
+                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .message("Test simulation")
+                    .simulationRun(true)
+                    .build();
+
+            JsonNode resultNode = objectMapper.valueToTree(simulationResult);
+            eventWithModule.setResults(resultNode);
+            String topic = "test-topic";
+
+            // When
+            kafkaMessageHandler.consume(eventWithModule, topic);
+
+            // Then
+            verify(webSocketService, times(1)).notifyInWebSocketTopic(anyString(), anyString());
+        }
+
+        @Test
+        @DisplayName("Handle event with different priority levels : Success")
+        void givenEventWithDifferentPriorities_whenConsume_thenProcessesAllCorrectly(){
+            // Given
+            MessagePriority[] priorities = {MessagePriority.LOW, MessagePriority.MID, MessagePriority.HIGH};
+            
+            CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
+                    .id("priority-test")
+                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .message("Priority test")
+                    .simulationRun(true)
+                    .build();
+
+            JsonNode resultNode = objectMapper.valueToTree(simulationResult);
+
+            for (MessagePriority priority : priorities) {
+                // When
+                EventDto eventWithPriority = EventDto.builder()
+                        .priority(priority)
+                        .module("TestModule")
+                        .topic("test-topic")
+                        .results(resultNode)
+                        .build();
+                
+                kafkaMessageHandler.consume(eventWithPriority, "test-topic");
+            }
+
+            // Then
+            verify(webSocketService, times(priorities.length)).notifyInWebSocketTopic(anyString(), anyString());
         }
     }
 
