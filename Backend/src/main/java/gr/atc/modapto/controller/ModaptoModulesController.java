@@ -2,6 +2,7 @@ package gr.atc.modapto.controller;
 
 import gr.atc.modapto.dto.ModaptoModuleDto;
 import gr.atc.modapto.dto.PaginatedResultsDto;
+import gr.atc.modapto.dto.sew.DeclarationOfWorkDto;
 import gr.atc.modapto.service.interfaces.IModaptoModuleService;
 import gr.atc.modapto.util.JwtUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -154,18 +156,18 @@ public class ModaptoModulesController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/working-modules")
+    @GetMapping("/working-modules/users/{workerName}")
     public ResponseEntity<BaseResponse<PaginatedResultsDto<ModaptoModuleDto>>> retrieveModulesByWorkerPaginated(
             @Parameter(description = "Page number") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Number of items per page") @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "Field to sort by") @RequestParam(defaultValue = "timestamp_dt") String sortBy,
             @Parameter(description = "Sort direction (asc/desc)") @RequestParam(defaultValue = "desc") String sortDirection,
-            @AuthenticationPrincipal Jwt jwt) {
+            @PathVariable @NotBlank(message = "Worker name can not be blank") String workerName) {
 
         Sort.Direction direction = sortDirection.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
-        Page<ModaptoModuleDto> modulePage = modaptoModuleService.retrieveModulesByWorkerPaginated(JwtUtils.extractUserId(jwt), pageable);
+        Page<ModaptoModuleDto> modulePage = modaptoModuleService.retrieveModulesByWorkerPaginated(workerName, pageable);
 
         PaginatedResultsDto<ModaptoModuleDto> results = new PaginatedResultsDto<>(
                 modulePage.getContent(),
@@ -179,32 +181,30 @@ public class ModaptoModulesController {
     }
 
     /**
-     * Declare that the authenticated worker is working on a specific MODAPTO module.
+     * Declare that one or multiple workers are working on a specific MODAPTO module
      *
-     * @param moduleId The identifier of the MODAPTO module
-     * @param jwt      The JWT containing the authenticated worker identity
+     * @param workData Declaration of Work input data
      * @return Updated MODAPTO module
      */
     @Operation(
-            summary = "Declare the authenticated worker is working on a specific MODAPTO module",
+            summary = "Declare that one or multiple workers are working on a specific MODAPTO module",
             security = @SecurityRequirement(name = "bearerToken")
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Worker successfully declared on module"),
+            @ApiResponse(responseCode = "200", description = "Workers successfully submitted working on MODAPTO Module"),
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "404", description = "Module not found"),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @PostMapping("/{moduleId}/declare-work")
+    @PostMapping("/declare-work")
     public ResponseEntity<BaseResponse<ModaptoModuleDto>> declareWorkOnModule(
-            @Parameter(description = "Module identifier") @PathVariable String moduleId,
-            @AuthenticationPrincipal Jwt jwt) {
+           @RequestBody DeclarationOfWorkDto workData) {
 
         ModaptoModuleDto updatedModule =
-                modaptoModuleService.declareWorkOnModule(moduleId, JwtUtils.extractUserId(jwt));
+                modaptoModuleService.declareWorkOnModule(workData);
 
         return new ResponseEntity<>(
-                BaseResponse.success(updatedModule, "Worker successfully declared on module"),
+                BaseResponse.success(updatedModule, "Workers successfully submitted working on MODAPTO Module"),
                 HttpStatus.OK
         );
     }
@@ -213,8 +213,7 @@ public class ModaptoModulesController {
     /**
      * Undeclare that the authenticated worker is working on a specific MODAPTO module.
      *
-     * @param moduleId The identifier of the MODAPTO module
-     * @param jwt      The JWT containing the authenticated worker identity
+     * @param workerName Worker Name
      * @return Updated MODAPTO module
      */
     @Operation(
@@ -227,13 +226,12 @@ public class ModaptoModulesController {
             @ApiResponse(responseCode = "404", description = "Module not found"),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @PostMapping("/{moduleId}/undeclare-work")
+    @PostMapping("/{moduleId}/undeclare-work/users/{workerName}")
     public ResponseEntity<BaseResponse<ModaptoModuleDto>> undeclareWorkOnModule(
             @Parameter(description = "Module identifier") @PathVariable String moduleId,
-            @AuthenticationPrincipal Jwt jwt) {
+            @Parameter(description = "Worker Full Name") @PathVariable String workerName) {
 
-        ModaptoModuleDto updatedModule =
-                modaptoModuleService.undeclareWorkOnModule(moduleId, JwtUtils.extractUserId(jwt));
+        ModaptoModuleDto updatedModule = modaptoModuleService.undeclareWorkOnModule(moduleId, workerName);
 
         return new ResponseEntity<>(
                 BaseResponse.success(updatedModule, "Worker successfully undeclared on module"),

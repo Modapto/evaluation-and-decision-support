@@ -1,21 +1,16 @@
 package gr.atc.modapto.dto.serviceResults.sew;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import gr.atc.modapto.dto.BaseEventResultsDto;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -67,19 +62,19 @@ public class SewGroupingPredictiveMaintenanceOutputDto extends BaseEventResultsD
     @Schema(name = "Maintenance Component", description = "Individual maintenance component details")
     public static class MaintenanceComponent {
 
-        @Schema(description = "Unique identifier for the component", example = "12345")
+        @Schema(description = "Unique identifier for the module", example = "12345", name = "Module ID")
         @JsonProperty("Module ID")
-        private Integer moduleId;
+        private String moduleId;
 
-        @Schema(description = "Name of the component requiring maintenance", example = "Motor Bearing Unit A1")
+        @Schema(description = "Name of the module requiring maintenance", example = "Motor Bearing Unit A1", name = "Module")
         @JsonProperty("Module")
         private String module;
 
-        @Schema(description = "Optimal replacement time (hours from now)", example = "48.5")
+        @Schema(description = "Optimal replacement time (hours from now)", example = "48.5", name = "Replacement time")
         @JsonProperty("Replacement time")
         private Double replacementTime;
 
-        @Schema(description = "Estimated maintenance duration in hours", example = "2.5")
+        @Schema(description = "Estimated maintenance duration in hours", example = "2.5", name = "Duration")
         @JsonProperty("Duration")
         private Double duration;
     }

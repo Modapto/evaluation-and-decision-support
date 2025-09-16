@@ -291,15 +291,15 @@ class KafkaMessageHandlerTests {
         void givenValidSewGroupingPredictiveMaintenanceEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
             // Given
             SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent component1 = SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent.builder()
-                    .componentId(12345)
-                    .componentName("Motor Bearing Unit A1")
+                    .moduleId("12345")
+                    .module("Motor Bearing Unit A1")
                     .replacementTime(48.5)
                     .duration(2.5)
                     .build();
                     
             SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent component2 = SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent.builder()
-                    .componentId(12346)
-                    .componentName("Hydraulic Pump B2")
+                    .moduleId("12346")
+                    .module("Hydraulic Pump B2")
                     .replacementTime(72.0)
                     .duration(4.0)
                     .build();
@@ -357,7 +357,7 @@ class KafkaMessageHandlerTests {
             
             SewSelfAwarenessMonitoringKpisResultsDto kpisResult = SewSelfAwarenessMonitoringKpisResultsDto.builder()
                     .id("kpis-monitoring-001")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.now())
                     .smartServiceId("self-awareness-monitoring-kpis")
                     .moduleId("sew-module-1")
                     .ligne("Production_Line_A")

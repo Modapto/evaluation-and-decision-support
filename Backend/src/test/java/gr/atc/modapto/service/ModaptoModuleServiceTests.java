@@ -1,6 +1,7 @@
 package gr.atc.modapto.service;
 
 import gr.atc.modapto.dto.ModaptoModuleDto;
+import gr.atc.modapto.dto.sew.DeclarationOfWorkDto;
 import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
 import gr.atc.modapto.model.ModaptoModule;
 import gr.atc.modapto.repository.ModaptoModuleRepository;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import static java.util.Collections.singletonList;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -304,7 +306,11 @@ class ModaptoModuleServiceTests {
                     .willReturn(testModuleDto);
 
             // When
-            ModaptoModuleDto result = modaptoModuleService.declareWorkOnModule(TEST_MODULE_ID, TEST_WORKER);
+            DeclarationOfWorkDto workData = DeclarationOfWorkDto.builder()
+                    .moduleId(TEST_MODULE_ID)
+                    .workers(Arrays.asList(TEST_WORKER))
+                    .build();
+            ModaptoModuleDto result = modaptoModuleService.declareWorkOnModule(workData);
 
             // Then
             assertThat(testModule.getWorkers()).contains(TEST_WORKER);
@@ -321,8 +327,12 @@ class ModaptoModuleServiceTests {
                     .willReturn(Optional.empty());
 
             // When & Then
+            DeclarationOfWorkDto workData = DeclarationOfWorkDto.builder()
+                    .moduleId(invalidModuleId)
+                    .workers(Arrays.asList(TEST_WORKER))
+                    .build();
             assertThatThrownBy(() ->
-                    modaptoModuleService.declareWorkOnModule(invalidModuleId, TEST_WORKER))
+                    modaptoModuleService.declareWorkOnModule(workData))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Module not found with moduleId: " + invalidModuleId);
         }

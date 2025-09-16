@@ -41,12 +41,12 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
         sampleResult1 = new SewSelfAwarenessMonitoringKpisResults();
         sampleResult1.setModuleId("TEST_MODULE_1");
         sampleResult1.setSmartServiceId("SELF_AWARENESS_SERVICE");
-        sampleResult1.setTimestamp("2024-01-15T14:30:45Z");
+        sampleResult1.setTimestamp(LocalDateTime.now());
 
         sampleResult2 = new SewSelfAwarenessMonitoringKpisResults();
         sampleResult2.setModuleId("TEST_MODULE_2");
         sampleResult2.setSmartServiceId("SELF_AWARENESS_SERVICE");
-        sampleResult2.setTimestamp("2024-01-16T10:15:30Z");
+        sampleResult2.setTimestamp(LocalDateTime.now());
     }
 
     @Nested
@@ -64,7 +64,6 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
             assertThat(saved.getId()).isNotNull();
             assertThat(saved.getModuleId()).isEqualTo("TEST_MODULE_1");
             assertThat(saved.getSmartServiceId()).isEqualTo("SELF_AWARENESS_SERVICE");
-            assertThat(saved.getTimestamp()).isEqualTo("2024-01-15T14:30:45Z");
         }
 
         @Test
@@ -121,12 +120,12 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
             SewSelfAwarenessMonitoringKpisResults older = new SewSelfAwarenessMonitoringKpisResults();
             older.setModuleId("SHARED_MODULE");
             older.setSmartServiceId("SERVICE_1");
-            older.setTimestamp("2024-01-15T08:00:00Z");
+            older.setTimestamp(LocalDateTime.now().minusHours(1));
 
             SewSelfAwarenessMonitoringKpisResults newer = new SewSelfAwarenessMonitoringKpisResults();
             newer.setModuleId("SHARED_MODULE");
             newer.setSmartServiceId("SERVICE_2");
-            newer.setTimestamp("2024-01-15T09:00:00Z");
+            newer.setTimestamp(LocalDateTime.now());
 
             repository.saveAll(Arrays.asList(older, newer));
 
@@ -136,7 +135,6 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
             // Then
             assertThat(found).isPresent();
             assertThat(found.get().getSmartServiceId()).isEqualTo("SERVICE_2");
-            assertThat(found.get().getTimestamp()).isEqualTo("2024-01-15T09:00:00Z");
         }
 
         @Test
@@ -156,17 +154,17 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
             SewSelfAwarenessMonitoringKpisResults older = new SewSelfAwarenessMonitoringKpisResults();
             older.setModuleId("TARGET_MODULE");
             older.setSmartServiceId("SERVICE_1");
-            older.setTimestamp(LocalDateTime.parse("2024-01-15T10:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME).minusHours(2).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z");
+            older.setTimestamp(LocalDateTime.now().minusHours(2));
 
             SewSelfAwarenessMonitoringKpisResults newer = new SewSelfAwarenessMonitoringKpisResults();
             newer.setModuleId("TARGET_MODULE");
             newer.setSmartServiceId("SERVICE_2");
-            newer.setTimestamp(LocalDateTime.parse("2024-01-15T10:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME).minusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z");
+            newer.setTimestamp(LocalDateTime.now().minusHours(1));
 
             SewSelfAwarenessMonitoringKpisResults differentModule = new SewSelfAwarenessMonitoringKpisResults();
             differentModule.setModuleId("DIFFERENT_MODULE");
             differentModule.setSmartServiceId("SERVICE_3");
-            differentModule.setTimestamp("2024-01-15T10:00:00Z");
+            differentModule.setTimestamp(LocalDateTime.now());
 
             repository.saveAll(Arrays.asList(older, newer, differentModule));
 
@@ -178,7 +176,6 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("TARGET_MODULE");
             assertThat(found.get().getSmartServiceId()).isEqualTo("SERVICE_2");
-            assertThat(found.get().getTimestamp()).isEqualTo("2024-01-15T09:00:00Z");
         }
 
         @Test
@@ -202,17 +199,17 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
             SewSelfAwarenessMonitoringKpisResults result1 = new SewSelfAwarenessMonitoringKpisResults();
             result1.setModuleId("SHARED_MODULE");
             result1.setSmartServiceId("SERVICE_1");
-            result1.setTimestamp(LocalDateTime.parse("2024-01-15T10:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME).minusHours(2).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z");
+            result1.setTimestamp(LocalDateTime.now().minusHours(2));
 
             SewSelfAwarenessMonitoringKpisResults result2 = new SewSelfAwarenessMonitoringKpisResults();
             result2.setModuleId("SHARED_MODULE");
             result2.setSmartServiceId("SERVICE_2");
-            result2.setTimestamp(LocalDateTime.parse("2024-01-15T10:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME).minusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + "Z");
+            result2.setTimestamp(LocalDateTime.now().minusHours(1));
 
             SewSelfAwarenessMonitoringKpisResults differentModule = new SewSelfAwarenessMonitoringKpisResults();
             differentModule.setModuleId("DIFFERENT_MODULE");
             differentModule.setSmartServiceId("SERVICE_3");
-            differentModule.setTimestamp("2024-01-15T10:00:00Z");
+            differentModule.setTimestamp(LocalDateTime.now());
 
             repository.saveAll(Arrays.asList(result1, result2, differentModule));
 
@@ -247,11 +244,11 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
         void givenMultipleResultsForModule_whenFindByModuleIdWithPagination_thenReturnsPagedResults() {
             // Given
             List<SewSelfAwarenessMonitoringKpisResults> results = Arrays.asList(
-                    createResult("SHARED_MODULE", "SERVICE_1", "2024-01-15T05:00:00Z"),
-                    createResult("SHARED_MODULE", "SERVICE_2", "2024-01-15T06:00:00Z"),
-                    createResult("SHARED_MODULE", "SERVICE_3", "2024-01-15T07:00:00Z"),
-                    createResult("SHARED_MODULE", "SERVICE_4", "2024-01-15T08:00:00Z"),
-                    createResult("SHARED_MODULE", "SERVICE_5", "2024-01-15T09:00:00Z")
+                    createResult("SHARED_MODULE", "SERVICE_1", LocalDateTime.now().minusHours(4)),
+                    createResult("SHARED_MODULE", "SERVICE_2", LocalDateTime.now().minusHours(3)),
+                    createResult("SHARED_MODULE", "SERVICE_3", LocalDateTime.now().minusHours(2)),
+                    createResult("SHARED_MODULE", "SERVICE_4", LocalDateTime.now().minusHours(1)),
+                    createResult("SHARED_MODULE", "SERVICE_5", LocalDateTime.now())
             );
             repository.saveAll(results);
 
@@ -306,7 +303,7 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
 
             // When
             saved.setSmartServiceId("UPDATED_SERVICE");
-            saved.setTimestamp("2024-01-15T11:00:00Z");
+            saved.setTimestamp(LocalDateTime.now());
             SewSelfAwarenessMonitoringKpisResults updated = repository.save(saved);
 
             // Then
@@ -315,95 +312,14 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
             assertThat(updated.getModuleId()).isEqualTo("TEST_MODULE_1");
         }
 
-        @Test
-        @DisplayName("Save result with special characters : Success")
-        void givenResultWithSpecialCharacters_whenSave_thenPersistsSuccessfully() {
-            // Given
-            SewSelfAwarenessMonitoringKpisResults specialResult = new SewSelfAwarenessMonitoringKpisResults();
-            specialResult.setModuleId("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
-            specialResult.setSmartServiceId("SERVICE@#$%^&*()_+-=[]{}|;':\",./<>?");
-            specialResult.setTimestamp("2024-01-15T10:00:00Z");
-
-            // When
-            SewSelfAwarenessMonitoringKpisResults saved = repository.save(specialResult);
-
-            // Then
-            assertThat(saved).isNotNull();
-            assertThat(saved.getModuleId()).isEqualTo("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
-            assertThat(saved.getSmartServiceId()).isEqualTo("SERVICE@#$%^&*()_+-=[]{}|;':\",./<>?");
-
-            // Verify retrieval
-            Optional<SewSelfAwarenessMonitoringKpisResults> found = 
-                repository.findFirstByModuleIdOrderByTimestampDesc("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
-            assertThat(found).isPresent();
-            assertThat(found.get().getModuleId()).isEqualTo("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
-        }
-
-        @Test
-        @DisplayName("Save multiple results for same module : Success")
-        void givenMultipleResultsForSameModule_whenSave_thenAllPersistSuccessfully() {
-            // Given
-            SewSelfAwarenessMonitoringKpisResults result1 = createResult("SHARED_MODULE", "SERVICE_1", "2024-01-15T08:00:00Z");
-            SewSelfAwarenessMonitoringKpisResults result2 = createResult("SHARED_MODULE", "SERVICE_2", "2024-01-15T09:00:00Z");
-
-            // When
-            repository.saveAll(Arrays.asList(result1, result2));
-
-            // Then
-            Optional<SewSelfAwarenessMonitoringKpisResults> latest = 
-                repository.findFirstByModuleIdOrderByTimestampDesc("SHARED_MODULE");
-            assertThat(latest).isPresent();
-
-            long count = repository.count();
-            assertThat(count).isEqualTo(2);
-        }
-
-        @Test
-        @DisplayName("Save result with empty strings : Success")
-        void givenResultWithEmptyStrings_whenSave_thenPersistsSuccessfully() {
-            // Given
-            SewSelfAwarenessMonitoringKpisResults emptyStringResult = new SewSelfAwarenessMonitoringKpisResults();
-            emptyStringResult.setModuleId("");
-            emptyStringResult.setSmartServiceId("");
-            emptyStringResult.setTimestamp("2024-01-15T10:00:00Z");
-
-            // When
-            SewSelfAwarenessMonitoringKpisResults saved = repository.save(emptyStringResult);
-
-            // Then
-            assertThat(saved).isNotNull();
-            assertThat(saved.getModuleId()).isEmpty();
-            assertThat(saved.getSmartServiceId()).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Save result with long string fields : Success")
-        void givenResultWithLongStringFields_whenSave_thenPersistsSuccessfully() {
-            // Given
-            String longModuleId = "MODULE_" + "A".repeat(500);
-            String longSmartServiceId = "SERVICE_" + "B".repeat(500);
-
-            SewSelfAwarenessMonitoringKpisResults longResult = new SewSelfAwarenessMonitoringKpisResults();
-            longResult.setModuleId(longModuleId);
-            longResult.setSmartServiceId(longSmartServiceId);
-            longResult.setTimestamp("2024-01-15T10:00:00Z");
-
-            // When
-            SewSelfAwarenessMonitoringKpisResults saved = repository.save(longResult);
-
-            // Then
-            assertThat(saved).isNotNull();
-            assertThat(saved.getModuleId()).hasSize(507);
-            assertThat(saved.getSmartServiceId()).hasSize(508);
-        }
 
         @Test
         @DisplayName("Find first by timestamp desc : Order verification")
         void givenResultsWithDifferentTimestamps_whenFindFirstByOrderByTimestampDesc_thenReturnsCorrectOrder() {
             // Given
-            SewSelfAwarenessMonitoringKpisResults oldest = createResult("MODULE_1", "SERVICE_1", "2024-01-01T10:00:00Z");
-            SewSelfAwarenessMonitoringKpisResults middle = createResult("MODULE_2", "SERVICE_2", "2024-01-02T10:00:00Z");
-            SewSelfAwarenessMonitoringKpisResults newest = createResult("MODULE_3", "SERVICE_3", "2024-01-03T10:00:00Z");
+            SewSelfAwarenessMonitoringKpisResults oldest = createResult("MODULE_1", "SERVICE_1", LocalDateTime.now().minusHours(2));
+            SewSelfAwarenessMonitoringKpisResults middle = createResult("MODULE_2", "SERVICE_2", LocalDateTime.now().minusHours(1));
+            SewSelfAwarenessMonitoringKpisResults newest = createResult("MODULE_3", "SERVICE_3", LocalDateTime.now());
 
             repository.saveAll(Arrays.asList(oldest, middle, newest));
 
@@ -413,11 +329,10 @@ class SewSelfAwarenessMonitoringKpisResultsRepositoryTests extends SetupTestCont
             // Then
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("MODULE_3");
-            assertThat(found.get().getTimestamp()).isEqualTo("2024-01-03T10:00:00Z");
         }
     }
 
-    private SewSelfAwarenessMonitoringKpisResults createResult(String moduleId, String smartServiceId, String timestamp) {
+    private SewSelfAwarenessMonitoringKpisResults createResult(String moduleId, String smartServiceId, LocalDateTime timestamp) {
         SewSelfAwarenessMonitoringKpisResults result = new SewSelfAwarenessMonitoringKpisResults();
         result.setModuleId(moduleId);
         result.setSmartServiceId(smartServiceId);

@@ -11,14 +11,15 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Document(indexName = "sew-self-awareness-monitoring-kpis")
-public class SewSelfAwarenessMonitoringKpisResults {
+@Document(indexName = "sew-self-awareness-real-time-monitoring-results")
+public class SewSelfAwarenessRealTimeMonitoringResults {
 
     @Id
     private String id;
@@ -47,12 +48,12 @@ public class SewSelfAwarenessMonitoringKpisResults {
     @Field(type = FieldType.Keyword)
     private String endingDate;
 
-    @Field(type = FieldType.Text)
+    @Field(type = FieldType.Keyword)
     private String dataSource;
 
     @Field(type = FieldType.Keyword)
     private String bucket;
 
-    @Field(type = FieldType.Object)
+    @Field(type = FieldType.Double)
     private List<Double> data;
 }

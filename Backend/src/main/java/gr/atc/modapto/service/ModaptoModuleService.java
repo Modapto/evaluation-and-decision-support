@@ -2,6 +2,7 @@ package gr.atc.modapto.service;
 
 import static gr.atc.modapto.exception.CustomExceptions.*;
 import gr.atc.modapto.dto.ModaptoModuleDto;
+import gr.atc.modapto.dto.sew.DeclarationOfWorkDto;
 import gr.atc.modapto.model.ModaptoModule;
 import gr.atc.modapto.repository.ModaptoModuleRepository;
 import gr.atc.modapto.service.interfaces.IModaptoModuleService;
@@ -162,43 +163,44 @@ public class ModaptoModuleService implements IModaptoModuleService {
         }
     }
 
-    /**
+    /**`
      * Declare a worker is working on a specific MODAPTO module
      *
-     * @param moduleId The module identifier
-     * @param worker The user identifier of the worker that declared working on the module
+     * @param workerData : Declarion of Work Data with Module ID and List of Workers
      * @return Updated ModaptoModuleDto
      * @throws ModelMappingException if mapping fails
      */
     @Override
-    public ModaptoModuleDto declareWorkOnModule(String moduleId, String worker) {
-        logger.debug("Declaring worker '{}' on module '{}'", worker, moduleId);
+        public ModaptoModuleDto declareWorkOnModule(DeclarationOfWorkDto workerData) {
+            String moduleId = workerData.getModuleId();
+            logger.debug("Declaring worker(s) '{}' on module '{}'", workerData.getWorkers(),moduleId);
 
-        try {
-            // Fetch the module by its moduleId
-            ModaptoModule existingModule = modaptoModuleRepository.findByModuleId(moduleId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Module not found with moduleId: " + moduleId));
+            try {
+                // Fetch the module by its moduleId
+                ModaptoModule existingModule = modaptoModuleRepository.findByModuleId(moduleId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Module not found with moduleId: " + moduleId));
 
-            // Initialize list if null
-            if (existingModule.getWorkers() == null) {
-                existingModule.setWorkers(new ArrayList<>());
+                // Initialize list if null
+                if (existingModule.getWorkers() == null) {
+                    existingModule.setWorkers(new ArrayList<>());
+                }
+
+                // Add worker if not already present
+                List<String> newWorkers = workerData.getWorkers().stream()
+                        .filter(worker -> !existingModule.getWorkers().contains(worker))
+                        .toList();
+                existingModule.getWorkers().addAll(newWorkers);
+
+                // Save updated module back into ES
+                ModaptoModule savedModule = modaptoModuleRepository.save(existingModule);
+
+                // Map to DTO
+                return modelMapper.map(savedModule, ModaptoModuleDto.class);
+
+            } catch (MappingException e) {
+                logger.error(MAPPING_ERROR + "{}", e.getMessage());
+                throw new ModelMappingException(MAPPING_ERROR + e.getMessage());
             }
-
-            // Add worker if not already present
-            if (!existingModule.getWorkers().contains(worker)) {
-                existingModule.getWorkers().add(worker);
-            }
-
-            // Save updated module back into ES
-            ModaptoModule savedModule = modaptoModuleRepository.save(existingModule);
-
-            // Map to DTO
-            return modelMapper.map(savedModule, ModaptoModuleDto.class);
-
-        } catch (MappingException e) {
-            logger.error(MAPPING_ERROR + "{}", e.getMessage());
-            throw new ModelMappingException(MAPPING_ERROR + e.getMessage());
-        }
     }
 
     /**

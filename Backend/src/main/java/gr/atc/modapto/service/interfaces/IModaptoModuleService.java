@@ -1,6 +1,7 @@
 package gr.atc.modapto.service.interfaces;
 
 import gr.atc.modapto.dto.ModaptoModuleDto;
+import gr.atc.modapto.dto.sew.DeclarationOfWorkDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -19,7 +20,7 @@ public interface IModaptoModuleService {
 
     Page<ModaptoModuleDto> retrieveModulesByWorkerPaginated(String worker, Pageable pageable);
 
-    ModaptoModuleDto declareWorkOnModule(String moduleId, String worker);
+    ModaptoModuleDto declareWorkOnModule(DeclarationOfWorkDto workData);
 
     ModaptoModuleDto undeclareWorkOnModule(String moduleId, String worker);
 }

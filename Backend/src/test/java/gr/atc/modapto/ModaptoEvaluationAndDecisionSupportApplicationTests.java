@@ -60,6 +60,12 @@ class ModaptoEvaluationAndDecisionSupportApplicationTests {
 	@MockitoBean
 	private SewSelfAwarenessMonitoringKpisResultsRepository sewSelfAwarenessMonitoringKpisResultsRepository;
 
+    @MockitoBean
+    private SewSelfAwarenessRealTimeMonitoringResultsRepository sewSelfAwarenessRealTimeMonitoringResultsRepository;
+
+    @MockitoBean
+    private SewMonitorKpisComponentsRepository sewMonitorKpisComponentsRepository;
+
 	@Test
 	void contextLoads() {
 		Assertions.assertNotNull(ApplicationContext.class);

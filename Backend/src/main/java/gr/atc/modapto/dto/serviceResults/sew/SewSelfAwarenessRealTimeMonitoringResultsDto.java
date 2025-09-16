@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SewSelfAwarenessMonitoringKpisResultsDto extends BaseEventResultsDto {
+public class SewSelfAwarenessRealTimeMonitoringResultsDto extends BaseEventResultsDto {
 
     private String id;
 

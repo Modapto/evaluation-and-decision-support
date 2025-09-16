@@ -2,6 +2,7 @@ package gr.atc.modapto.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.dto.ModaptoModuleDto;
+import gr.atc.modapto.dto.sew.DeclarationOfWorkDto;
 import gr.atc.modapto.service.interfaces.IModaptoModuleService;
 import gr.atc.modapto.util.JwtUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -208,17 +210,13 @@ class ModaptoModulesControllerTests {
 //        @WithMockUser
         @DisplayName("Retrieve modules by worker : Success")
         void givenValidRequest_whenRetrieveModulesByWorker_thenReturnsSuccess() throws Exception {
-            try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
-                // Mock static method
-                mockedJwtUtils.when(() -> JwtUtils.extractUserId(any(Jwt.class))).thenReturn(TEST_WORKER);
-
-                // Given
-                Page<ModaptoModuleDto> modulePage = new PageImpl<>(Collections.singletonList(testModuleDto));
+            // Given
+            Page<ModaptoModuleDto> modulePage = new PageImpl<>(Collections.singletonList(testModuleDto));
                 given(modaptoModuleService.retrieveModulesByWorkerPaginated(eq(TEST_WORKER), any(Pageable.class)))
                         .willReturn(modulePage);
 
                 // When & Then
-                mockMvc.perform(get("/api/eds/modules/working-modules")
+                mockMvc.perform(get("/api/eds/modules/working-modules/users/{workerName}", TEST_WORKER)
                                 .param("page", "0")
                                 .param("size", "10")
                                 .param("sortBy", "timestamp_dt")
@@ -229,14 +227,13 @@ class ModaptoModulesControllerTests {
                         .andExpect(jsonPath("$.success").value(true))
                         .andExpect(jsonPath("$.data.results").isArray())
                         .andExpect(jsonPath("$.data.results[0].moduleId").value(TEST_MODULE_ID));
-            }
         }
 
         @Test
         @DisplayName("Retrieve modules by worker : Unauthorized")
         void givenNoAuthentication_whenRetrieveModulesByWorker_thenReturnsUnauthorized() throws Exception {
             // When & Then
-            mockMvc.perform(get("/api/eds/modules/working-modules")
+            mockMvc.perform(get("/api/eds/modules/working-modules/users/{workerName}", TEST_WORKER)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isUnauthorized());
         }
@@ -249,12 +246,18 @@ class ModaptoModulesControllerTests {
                 mockedJwtUtils.when(() -> JwtUtils.extractUserId(any(Jwt.class))).thenReturn(TEST_WORKER);
 
                 // Given
-                given(modaptoModuleService.declareWorkOnModule(TEST_MODULE_ID, TEST_WORKER))
+                given(modaptoModuleService.declareWorkOnModule(any(DeclarationOfWorkDto.class)))
                         .willReturn(testModuleDto);
 
                 // When & Then
-                mockMvc.perform(post("/api/eds/modules/{moduleId}/declare-work", TEST_MODULE_ID)
+                DeclarationOfWorkDto workData = DeclarationOfWorkDto.builder()
+                        .moduleId(TEST_MODULE_ID)
+                        .workers(Arrays.asList(TEST_WORKER))
+                        .build();
+
+                mockMvc.perform(post("/api/eds/modules/declare-work")
                                 .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(workData))
                                 .with(jwt()))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.success").value(true))
@@ -265,9 +268,16 @@ class ModaptoModulesControllerTests {
         @Test
         @DisplayName("Declare work on module : Forbidden")
         void givenNoAuthentication_whenDeclareWorkOnModule_thenReturnsForbidden() throws Exception {
+            // Given
+            DeclarationOfWorkDto workData = DeclarationOfWorkDto.builder()
+                    .moduleId(TEST_MODULE_ID)
+                    .workers(Arrays.asList(TEST_WORKER))
+                    .build();
+
             // When & Then
-            mockMvc.perform(post("/api/eds/modules/{moduleId}/declare-work", TEST_MODULE_ID)
-                            .contentType(MediaType.APPLICATION_JSON))
+            mockMvc.perform(post("/api/eds/modules/declare-work")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(workData)))
                     .andExpect(status().isForbidden());
         }
 
@@ -282,7 +292,7 @@ class ModaptoModulesControllerTests {
                         .willReturn(testModuleDto);
 
                 // When & Then
-                mockMvc.perform(post("/api/eds/modules/{moduleId}/undeclare-work", TEST_MODULE_ID)
+                mockMvc.perform(post("/api/eds/modules/{moduleId}/undeclare-work/users/{workerName}", TEST_MODULE_ID, TEST_WORKER)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt()))
                         .andExpect(status().isOk())
@@ -295,7 +305,7 @@ class ModaptoModulesControllerTests {
         @DisplayName("Undeclare work on module : Forbidden")
         void givenNoAuthentication_whenUndeclareWorkOnModule_thenReturnsForbidden() throws Exception {
             // When & Then
-            mockMvc.perform(post("/api/eds/modules/{moduleId}/undeclare-work", TEST_MODULE_ID)
+            mockMvc.perform(post("/api/eds/modules/{moduleId}/undeclare-work/users/{workerName}", TEST_MODULE_ID, TEST_WORKER)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isForbidden());
         }

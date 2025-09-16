@@ -16,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SewSelfAwarenessMonitoringKpisInputDto {
+public class SewSelfAwarenessRealTimeMonitoringInputDto {
 
     @NotBlank(message = "Smart Service ID cannot be empty")
     @JsonProperty("smartServiceId")
@@ -25,14 +25,6 @@ public class SewSelfAwarenessMonitoringKpisInputDto {
     @NotBlank(message = "Module ID cannot be empty")
     @JsonProperty("moduleId")
     private String moduleId;
-
-    @NotBlank(message = "Start Date cannot be empty")
-    @JsonProperty("startDate")
-    private String startDate;
-
-    @NotBlank(message = "End date cannot be empty")
-    @JsonProperty("endDate")
-    private String endDate;
 
     @JsonProperty("components")
     private List<SewMonitorKpisComponentsDto.SewMonitorKpisComponentsDataDto> components;

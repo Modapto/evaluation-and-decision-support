@@ -1,7 +1,10 @@
 package gr.atc.modapto.controller;
 
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
+import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringInputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
+import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
 import gr.atc.modapto.service.interfaces.ISelfAwarenessService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -136,13 +139,130 @@ public class SelfAwarenessController {
                 HttpStatus.OK);
     }
 
-    //TODO: Invoke SA2
+    /**
+     * Invoke Self-Awareness Real-Time Monitoring of KPIs algorithm [SEW - SA2]
+     *
+     * @param invocationData : Input Data for algorithm
+     * @return Message of success
+     */
+    @Operation(summary = "Invoke Self-Awareness Real-Time Monitoring of KPIs algorithm [SEW - SA2]", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Self-Awareness Real-Time Monitoring algorithm invoked successfully"),
+            @ApiResponse(responseCode = "400", description = "Validation error | Throws if file is not proper or data are missing"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/real-time-monitoring/invoke")
+    public ResponseEntity<BaseResponse<String>> invokeSelfAwarenessRealTimeMonitoringProcess(@Valid @RequestBody SewSelfAwarenessRealTimeMonitoringInputDto invocationData) {
+        selfAwarenessService.invokeSelfAwarenessRealTimeMonitoringAlgorithm(invocationData);
+        return new ResponseEntity<>(
+                BaseResponse.success(null, "Self-Awareness Real-Time Monitoring algorithm invoked successfully"),
+                HttpStatus.OK);
+    }
 
-    //TODO: Retrieve SA2 Results All
+    /**
+     * Retrieve all Self-Awareness Real-Time Monitoring Results
+     *
+     * @return List<SewSelfAwarenessRealTimeMonitoringResultsDto>
+     */
+    @Operation(summary = "Retrieve all Self-Awareness Real-Time Monitoring Results", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All Self-Awareness Real-Time Monitoring results retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/real-time-monitoring/results")
+    public ResponseEntity<BaseResponse<List<SewSelfAwarenessRealTimeMonitoringResultsDto>>> retrieveAllSelfAwarenessRealTimeMonitoringResults() {
+        return new ResponseEntity<>(
+                BaseResponse.success(
+                        selfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResults(),
+                        "All Self-Awareness Real-Time Monitoring results retrieved successfully"),
+                HttpStatus.OK);
+    }
 
-    //TODO: Retrieve SA2 Results by Module ID
+    /**
+     * Retrieve all Self-Awareness Real-Time Monitoring Results by Module ID
+     *
+     * @param moduleId : Module ID
+     * @return List<SewSelfAwarenessRealTimeMonitoringResultsDto>
+     */
+    @Operation(summary = "Retrieve all Self-Awareness Real-Time Monitoring Results by Module ID", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All Self-Awareness Real-Time Monitoring results for Module retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/real-time-monitoring/results/{moduleId}")
+    public ResponseEntity<BaseResponse<List<SewSelfAwarenessRealTimeMonitoringResultsDto>>> retrieveAllSelfAwarenessRealTimeMonitoringResultsByModuleId(
+            @PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId) {
+        return new ResponseEntity<>(
+                BaseResponse.success(
+                        selfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResultsByModuleId(moduleId),
+                        "All Self-Awareness Real-Time Monitoring results for Module " + moduleId + " retrieved successfully"),
+                HttpStatus.OK);
+    }
 
-    // TODO: Store Component List for MODAPTO Module
+    /**
+     * Upload Components List of MODAPTO Module for Self-Awareness Operations
+     *
+     * @param componentsData : Input components data
+     * @return Message of success
+     */
+    @Operation(summary = "Upload Components List of MODAPTO Module for Self-Awareness Operations", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Self-Awareness component list for module 'moduleId' has been successfully uploaded"),
+            @ApiResponse(responseCode = "400", description = "Validation error | Throws if file is not proper or data are missing"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/component-list/upload")
+    public ResponseEntity<BaseResponse<String>> uploadSelfAwarenessComponentList(@Valid @RequestBody SewMonitorKpisComponentsDto componentsData) {
+        selfAwarenessService.uploadModuleComponentsList(componentsData);
+        return new ResponseEntity<>(
+                BaseResponse.success(null, "Self-Awareness component list for module '" + componentsData.getModuleId() + "' has been successfully uploaded"),
+                HttpStatus.CREATED);
+    }
 
-    // TODO: Retrieve Component List for MODAPTO Module
+    /**
+     * Retrieve Self-Awareness component list for a specific MODAPTO Module
+     *
+     * @param moduleId : Module ID
+     * @return SewMonitorKpisComponentsDto
+     */
+    @Operation(summary = "Retrieve Self-Awareness component list for a specific MODAPTO Module", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Self-Awareness component list for module retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Component list for module not found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/modules/{moduleId}/component-list")
+    public ResponseEntity<BaseResponse<SewMonitorKpisComponentsDto>> retrieveModuleComponentList(@PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId) {
+        return new ResponseEntity<>(
+                BaseResponse.success(selfAwarenessService.retrieveSelfAwarenessComponentListByModuleId(moduleId),
+                        "Self-Awareness component list for module '" + moduleId + "' retrieved successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Delete Self-Awareness component list for a specific MODAPTO Module
+     *
+     * @param moduleId : Module ID
+     * @return Message of success
+     */
+    @Operation(summary = "Delete Self-Awareness component list for a specific MODAPTO Module", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Self-Awareness component list for module deleted successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Component list for module not found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @DeleteMapping("/modules/{moduleId}/component-list")
+    public ResponseEntity<BaseResponse<String>> deleteSelfAwarenessComponentListByModuleId(
+            @PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId) {
+        selfAwarenessService.deleteSelfAwarenessComponentListByModuleId(moduleId);
+        return new ResponseEntity<>(
+                BaseResponse.success(null, "Self-Awareness component list for module '" + moduleId + "' deleted successfully"),
+                HttpStatus.OK);
+    }
 }

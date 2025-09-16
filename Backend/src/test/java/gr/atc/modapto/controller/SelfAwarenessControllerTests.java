@@ -16,6 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -415,20 +417,24 @@ class SelfAwarenessControllerTests {
     }
 
     private SewSelfAwarenessMonitoringKpisInputDto createValidInputData(String moduleId) {
-        SewMonitorKpisComponentsDto components = SewMonitorKpisComponentsDto.builder()
-                .stage("Stage1")
-                .cell("Cell1")
-                .plc("PLC1")
-                .module("Module1")
-                .subElement("SubElement1")
-                .component("Component1")
-                .property(Collections.singletonList(
-                        SewMonitorKpisComponentsDto.PropertyDto.builder()
-                                .name("Temperature")
-                                .lowThreshold(10)
-                                .highThreshold(80)
-                                .build()
-                ))
+        SewMonitorKpisComponentsDto componentsData = SewMonitorKpisComponentsDto.builder()
+                .timestampCreated(LocalDateTime.parse(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)))
+                .components(List.of(SewMonitorKpisComponentsDto.SewMonitorKpisComponentsDataDto.builder()
+                    .stage("Stage1")
+                    .cell("Cell1")
+                    .plc("PLC1")
+                    .module("Module1")
+                    .subElement("SubElement1")
+                    .component("Component1")
+                    .property(Collections.singletonList(
+                            SewMonitorKpisComponentsDto.PropertyDto.builder()
+                                    .name("Temperature")
+                                    .lowThreshold(10)
+                                    .highThreshold(80)
+                                    .build()
+                    ))
+                        .build()))
+                .moduleId("TEST_MODULE")
                 .build();
 
         return SewSelfAwarenessMonitoringKpisInputDto.builder()
@@ -436,7 +442,7 @@ class SelfAwarenessControllerTests {
                 .smartServiceId("SELF_AWARENESS_SERVICE")
                 .startDate("Start_Date")
                 .endDate("End_Date")
-                .components(List.of(components))
+                .components(componentsData.getComponents())
                 .build();
     }
 
@@ -445,12 +451,12 @@ class SelfAwarenessControllerTests {
                 .id(id)
                 .moduleId(moduleId)
                 .smartServiceId("Smart-Service-1")
-                .timestamp("2024-01-15T10:30:00Z")
+                .timestamp(LocalDateTime.now())
                 .ligne("Line1")
                 .component("Component1")
                 .variable("Temperature")
-                .startingDate("2024-01-15 00:00:00")
-                .endingDate("2024-01-15 23:59:59")
+                .startingDate("2025-01-15 00:00:00")
+                .endingDate("2025-01-15 23:59:59")
                 .dataSource("Influx DB")
                 .bucket("BUC")
                 .data(Arrays.asList(25.5, 26.1, 27.3, 28.0))
