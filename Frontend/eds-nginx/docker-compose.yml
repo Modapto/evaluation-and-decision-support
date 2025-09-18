@@ -7,9 +7,9 @@ services:
             - "./nginx/default.conf:/etc/nginx/conf.d/default.conf" #config for nginx - server runs under subdomain /server & eds under /eds
         ports:
             - "4200:80" #all services will be exposed at port 4200 of the browser;
-    fvt:
-        image: stellamarkop/eds:evaluation0
-        container_name: fvt
+    eds:
+        image: stellamarkop/eds:evaluation0 #change to the latest tag of eds
+        container_name: eds
         ports:
             - "80"
         environment:
