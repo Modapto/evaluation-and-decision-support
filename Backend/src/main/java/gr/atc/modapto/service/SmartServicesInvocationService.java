@@ -1,11 +1,8 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.config.properties.KeycloakProperties;
-import gr.atc.modapto.dto.dt.DtResponseDto;
-import static gr.atc.modapto.exception.CustomExceptions.*;
+import java.util.Map;
+import java.util.Optional;
 
-import gr.atc.modapto.enums.ModaptoHeader;
-import gr.atc.modapto.service.interfaces.IModaptoModuleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,8 +16,14 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import java.util.Map;
-import java.util.Optional;
+import gr.atc.modapto.config.properties.KeycloakProperties;
+import gr.atc.modapto.dto.dt.DtResponseDto;
+import gr.atc.modapto.enums.ModaptoHeader;
+import gr.atc.modapto.exception.CustomExceptions.DtmClientErrorException;
+import gr.atc.modapto.exception.CustomExceptions.DtmServerErrorException;
+import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
+import gr.atc.modapto.exception.CustomExceptions.SmartServiceInvocationException;
+import gr.atc.modapto.service.interfaces.IModaptoModuleService;
 
 @Service
 public class SmartServicesInvocationService {
@@ -130,6 +133,7 @@ public class SmartServicesInvocationService {
                     .body(invocationData)
                     .retrieve();
 
+            logger.debug("Successfully invoked smart service: {} for module: {} - Response: {}", smartServiceId, moduleId, responseSpec);
             return responseSpec
                     .onStatus(HttpStatusCode::is4xxClientError, (request, errorResponse) -> {
                         throw new DtmClientErrorException("Client error invoking smart service: " + smartServiceId);
@@ -140,8 +144,8 @@ public class SmartServicesInvocationService {
                     .toEntity(DtResponseDto.class);
                     
         } catch (Exception e) {
-            logger.error("Error invoking smart service: {} for module: {} - {}", smartServiceId, moduleId, e.getMessage());
-            throw new SmartServiceInvocationException("Unable to invoke smart service - Error: " + e.getMessage());
+            logger.error("Error invoking smart service: {} for module: {} - {}", smartServiceId, moduleId, e);
+            throw new SmartServiceInvocationException("Unable to invoke smart service - Error: " + e);
         }
     }
 
