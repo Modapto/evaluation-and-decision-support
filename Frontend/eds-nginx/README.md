@@ -33,20 +33,15 @@ By default, it exposes the following port:
 
 ## Usage
 
-Give it about a minute to initialize, then access the web UI by opening <http://localhost:4200/fvt> in a web
+Give it about a minute to initialize, then access the web UI by opening <http://localhost:4200/eds> in a web
 browser.
 
 
 > [!NOTE]
-> Make sure you add */fvt/* on your url 
+> Make sure you add */eds/* on your url 
 
 ---
 
-## Deployed EDS on ATC cloud
-
-Since the latest version is deployed on the cloud you can access <https://fvt.modapto.atc.gr/fvt/> in a web browser.
-  
----
 
 ## License
 
