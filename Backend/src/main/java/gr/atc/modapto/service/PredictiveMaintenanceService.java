@@ -1,39 +1,21 @@
 package gr.atc.modapto.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import gr.atc.modapto.dto.ScheduledTaskDto;
-import gr.atc.modapto.dto.dt.DtInputDto;
-import gr.atc.modapto.dto.dt.DtResponseDto;
-import gr.atc.modapto.dto.dt.SmartServiceRequest;
-import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintenanceOutputDto;
-import gr.atc.modapto.dto.sew.MaintenanceDataDto;
-import gr.atc.modapto.dto.sew.SewComponentInfoDto;
-import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
-import gr.atc.modapto.enums.KafkaTopics;
-import gr.atc.modapto.enums.ModaptoHeader;
-import gr.atc.modapto.events.ScheduledTaskRegistrationEvent;
-import gr.atc.modapto.model.MaintenanceData;
-import gr.atc.modapto.model.sew.SewComponentInfo;
-import gr.atc.modapto.model.serviceResults.SewGroupingPredictiveMaintenanceResult;
-import gr.atc.modapto.model.serviceResults.SewThresholdBasedPredictiveMaintenanceResult;
-import gr.atc.modapto.repository.MaintenanceDataRepository;
-import gr.atc.modapto.repository.SewComponentInfoRepository;
-import gr.atc.modapto.repository.SewGroupingBasedPredictiveMaintenanceRepository;
-import gr.atc.modapto.repository.SewThresholdBasedPredictiveMaintenanceRepository;
-import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
-import gr.atc.modapto.service.processors.ThresholdBasedMaintenanceResponseProcessor;
-import gr.atc.modapto.util.ExcelFilesUtils;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.List;
+import java.util.Optional;
 
 import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -44,16 +26,40 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import gr.atc.modapto.dto.EventDto;
+import gr.atc.modapto.dto.ScheduledTaskDto;
+import gr.atc.modapto.dto.dt.DtInputDto;
+import gr.atc.modapto.dto.dt.DtResponseDto;
+import gr.atc.modapto.dto.dt.SmartServiceRequest;
+import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
+import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintenanceOutputDto;
+import gr.atc.modapto.dto.sew.MaintenanceDataDto;
+import gr.atc.modapto.dto.sew.SewComponentInfoDto;
+import gr.atc.modapto.enums.KafkaTopics;
 import gr.atc.modapto.enums.MessagePriority;
-import gr.atc.modapto.exception.CustomExceptions.*;
+import gr.atc.modapto.enums.ModaptoHeader;
+import gr.atc.modapto.events.ScheduledTaskRegistrationEvent;
+import gr.atc.modapto.exception.CustomExceptions.FileHandlingException;
+import gr.atc.modapto.exception.CustomExceptions.ModelMappingException;
+import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
+import gr.atc.modapto.exception.CustomExceptions.SmartServiceInvocationException;
 import gr.atc.modapto.kafka.KafkaMessageProducer;
+import gr.atc.modapto.model.MaintenanceData;
+import gr.atc.modapto.model.serviceResults.SewGroupingPredictiveMaintenanceResult;
+import gr.atc.modapto.model.serviceResults.SewThresholdBasedPredictiveMaintenanceResult;
+import gr.atc.modapto.model.sew.SewComponentInfo;
+import gr.atc.modapto.repository.MaintenanceDataRepository;
+import gr.atc.modapto.repository.SewComponentInfoRepository;
+import gr.atc.modapto.repository.SewGroupingBasedPredictiveMaintenanceRepository;
+import gr.atc.modapto.repository.SewThresholdBasedPredictiveMaintenanceRepository;
+import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
+import gr.atc.modapto.service.processors.ThresholdBasedMaintenanceResponseProcessor;
+import gr.atc.modapto.util.ExcelFilesUtils;
 
 @Service
 public class PredictiveMaintenanceService implements IPredictiveMaintenanceService {
@@ -407,7 +413,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
     @Override
     public SewThresholdBasedPredictiveMaintenanceOutputDto retrieveLatestThresholdBasedMaintenanceResults(String moduleId) {
         try {
-            Optional<SewThresholdBasedPredictiveMaintenanceResult> latestResult = sewThresholdBasedPredictiveMaintenanceRepository.findFirstByModuleId(moduleId);
+            Optional<SewThresholdBasedPredictiveMaintenanceResult> latestResult = sewThresholdBasedPredictiveMaintenanceRepository.findFirstByModuleIdOrderByTimestampDesc(moduleId);
             if (latestResult.isEmpty())
                 throw new ResourceNotFoundException("No SEW Grouping Based Predictive Maintenance Results for Module: " + moduleId + " found");
 
@@ -429,7 +435,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
     @Override
     public SewGroupingPredictiveMaintenanceOutputDto retrieveLatestGroupingMaintenanceResults(String moduleId) {
         try {
-            Optional<SewGroupingPredictiveMaintenanceResult> latestResult = sewGroupingBasedPredictiveMaintenanceRepository.findFirstByModuleId(moduleId);
+            Optional<SewGroupingPredictiveMaintenanceResult> latestResult = sewGroupingBasedPredictiveMaintenanceRepository.findFirstByModuleIdOrderByTimestampDesc(moduleId);
             if (latestResult.isEmpty())
                 throw new ResourceNotFoundException("No SEW Grouping Based Predictive Maintenance Results for Module: " + moduleId + " found");
 
