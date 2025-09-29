@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import gr.atc.modapto.dto.BaseEventResultsDto;
-import gr.atc.modapto.dto.serviceResults.crf.CrfKhEventNotificationDto;
+import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
@@ -60,34 +60,9 @@ public class KafkaMessageHandler {
         if(event.getResults().isNull()){
             return;
         }
-
-        try {
-            // Check the instance of the Results
-            BaseEventResultsDto result = objectMapper.treeToValue(event.getResults(), BaseEventResultsDto.class);
-
-            switch (result) {
-                case CrfSimulationResultsDto ignored ->
-                        webSocketTopic = WebSocketTopics.CRF_SIMULATION_RESULTS.toString();
-                case CrfOptimizationResultsDto ignored ->
-                        webSocketTopic = WebSocketTopics.CRF_OPTIMIZATION_RESULTS.toString();
-                case SewSimulationResultsDto ignored ->
-                        webSocketTopic = WebSocketTopics.SEW_SIMULATION_RESULTS.toString();
-                case SewOptimizationResultsDto ignored ->
-                        webSocketTopic = WebSocketTopics.SEW_OPTIMIZATION_RESULTS.toString();
-                case SewGroupingPredictiveMaintenanceOutputDto ignored ->
-                        webSocketTopic = WebSocketTopics.SEW_GROUPING_PREDICTIVE_MAINTENANCE.toString();
-                case SewSelfAwarenessMonitoringKpisResultsDto ignored ->
-                        webSocketTopic = WebSocketTopics.SEW_SELF_AWARENESS_MONITORING_KPIS.toString();
-                case CrfKhEventNotificationDto ignored ->
-                        webSocketTopic = WebSocketTopics.CRF_SELF_AWARENESS.toString();
-                default -> {
-                    log.error("Unknown results data format provided. Results are discarded");
-                    return;
-                }
-            }
-
+        try{
             // Route Topic Message to WebSocket message
-            webSocketService.notifyInWebSocketTopic(objectMapper.writeValueAsString(result), webSocketTopic);
+            webSocketService.notifyInWebSocketTopic(objectMapper.writeValueAsString(event.getResults()), topic);
         } catch (JsonProcessingException e) {
             log.error("Unable to parse Event JSON or Results JSON to String Object - Error: {}", e.getMessage());
         }

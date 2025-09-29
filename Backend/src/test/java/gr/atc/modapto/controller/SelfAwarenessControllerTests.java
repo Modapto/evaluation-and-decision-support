@@ -5,7 +5,6 @@ import gr.atc.modapto.dto.PaginatedResultsDto;
 import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
-import gr.atc.modapto.dto.serviceResults.crf.CrfKhEventNotificationDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
 import gr.atc.modapto.service.interfaces.ICrfSelfAwarenessService;
@@ -470,7 +469,7 @@ class SelfAwarenessControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Register KH event : JSON deserialization error")
         void givenValidKhEvent_whenRegisterKitHolderEvent_thenReturnsJsonError() throws Exception {
-            CrfKhEventNotificationDto event = createSampleKhNotificationDto();
+            CrfKitHolderEventDto event = createSampleKhEventDto("2");
 
             doNothing().when(crfSelfAwarenessService).registerKitHolderEvent(any());
 
@@ -480,7 +479,7 @@ class SelfAwarenessControllerTests {
                             .with(csrf()))
                     .andExpect(status().isBadRequest());
 
-            verify(crfSelfAwarenessService, never()).registerKitHolderEvent(any(CrfKhEventNotificationDto.class));
+            verify(crfSelfAwarenessService, never()).registerKitHolderEvent(any(CrfKitHolderEventDto.class));
         }
 
         @Test
@@ -571,9 +570,4 @@ class SelfAwarenessControllerTests {
                 .build();
     }
 
-    private CrfKhEventNotificationDto createSampleKhNotificationDto() {
-        CrfKhEventNotificationDto dto = new CrfKhEventNotificationDto();
-        dto.setModuleId("crf_module_1");
-        return dto;
-    }
 }

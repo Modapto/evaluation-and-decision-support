@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfSelfAwarenessInputDto;
-import gr.atc.modapto.dto.serviceResults.crf.CrfKhEventNotificationDto;
 import gr.atc.modapto.kafka.KafkaMessageProducer;
 import gr.atc.modapto.model.serviceResults.CrfKitHolderEvent;
 import gr.atc.modapto.repository.CrfKitHolderEventRepository;
@@ -23,6 +22,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -141,7 +143,13 @@ class CrfSelfAwarenessServiceTests {
         @Test
         @DisplayName("Register kit holder event : Success")
         void givenValidEvent_whenRegisterKitHolderEvent_thenCallsExceptionHandler() {
-            CrfKhEventNotificationDto event = new CrfKhEventNotificationDto();
+            CrfKitHolderEventDto event = CrfKitHolderEventDto.builder()
+                    .eventType(1)
+                    .rfidStation(2)
+                    .timestamp(LocalDateTime.parse(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)))
+                    .khId(3)
+                    .khType(200)
+                    .build();
 
             when(exceptionHandler.handleOperation(any(), eq("registerKitHolderEvent")))
                     .thenReturn(null);

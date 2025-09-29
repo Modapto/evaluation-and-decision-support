@@ -5,7 +5,6 @@ import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringInputDto;
-import gr.atc.modapto.dto.serviceResults.crf.CrfKhEventNotificationDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
@@ -327,11 +326,11 @@ public class SelfAwarenessController {
     @GetMapping("/pilots/crf/kh-events")
     public ResponseEntity<BaseResponse<PaginatedResultsDto<CrfKitHolderEventDto>>> retrievePaginatedKhEventResultsByModuleId(@RequestParam(required = false, defaultValue = "0") int page,
                                                                                                                                   @RequestParam(required = false, defaultValue = "10") int size,
-                                                                                                                                  @RequestParam(required = false, defaultValue = "timeWindow") String sortAttribute,
+                                                                                                                                  @RequestParam(required = false, defaultValue = "timestamp") String sortAttribute,
                                                                                                                                   @RequestParam(required = false, defaultValue = "false") boolean isAscending) {
 
         // Fix the pagination parameters
-        Pageable pageable = PaginationUtils.createPaginationParameters(page, size, sortAttribute, isAscending, CrfKhEventNotificationDto.class);
+        Pageable pageable = PaginationUtils.createPaginationParameters(page, size, sortAttribute, isAscending, CrfKitHolderEventDto.class);
         if (pageable == null)
             return new ResponseEntity<>(BaseResponse.error("Invalid pagination sort attributes"), HttpStatus.BAD_REQUEST);
 
@@ -357,7 +356,7 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
     @PostMapping("/pilots/crf/register-event")
-    public ResponseEntity<BaseResponse<String>> registerKitHolderEventByCrfWorkers(@RequestBody CrfKhEventNotificationDto event){
+    public ResponseEntity<BaseResponse<String>> registerKitHolderEventByCrfWorkers(@RequestBody @Valid CrfKitHolderEventDto event){
         crfSelfAwarenessService.registerKitHolderEvent(event);
         return new ResponseEntity<>(
                 BaseResponse.success(null, "Kit Holder event registered successfully"),

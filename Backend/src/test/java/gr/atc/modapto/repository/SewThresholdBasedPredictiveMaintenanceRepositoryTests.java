@@ -111,7 +111,7 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
 
             repository.saveAll(Arrays.asList(result1, result2));
 
-            Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleId("SHARED_MODULE");
+            Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleIdOrderByTimestampDesc("SHARED_MODULE");
 
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("SHARED_MODULE");
@@ -123,7 +123,7 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         void givenNoMatchingResults_whenFindFirstByModuleId_thenReturnsEmpty() {
             repository.save(sampleResult1);
 
-            Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleId("NON_EXISTENT_MODULE");
+            Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleIdOrderByTimestampDesc("NON_EXISTENT_MODULE");
 
             assertThat(found).isNotPresent();
         }
@@ -133,7 +133,7 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         void givenSingleResult_whenFindFirstByModuleId_thenReturnsResult() {
             repository.save(sampleResult1);
 
-            Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleId("TEST_MODULE_1");
+            Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleIdOrderByTimestampDesc("TEST_MODULE_1");
 
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("TEST_MODULE_1");
@@ -211,7 +211,7 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
             repository.save(specialResult);
 
             Optional<SewThresholdBasedPredictiveMaintenanceResult> found = 
-                    repository.findFirstByModuleId("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
+                    repository.findFirstByModuleIdOrderByTimestampDesc("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
 
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
@@ -235,7 +235,7 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
 
             repository.saveAll(Arrays.asList(result1, result2));
 
-            Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleId("SHARED_MODULE");
+            Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleIdOrderByTimestampDesc("SHARED_MODULE");
             assertThat(found).isPresent();
 
             long count = repository.count();

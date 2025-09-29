@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import gr.atc.modapto.dto.BaseEventResultsDto;
 import lombok.*;
 
-import java.util.List;
 import java.util.Map;
 
 @EqualsAndHashCode(callSuper = true)

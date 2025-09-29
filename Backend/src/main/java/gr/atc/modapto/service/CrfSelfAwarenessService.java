@@ -5,7 +5,6 @@ import gr.atc.modapto.dto.EventDto;
 import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfSelfAwarenessInputDto;
-import gr.atc.modapto.dto.serviceResults.crf.CrfKhEventNotificationDto;
 import gr.atc.modapto.enums.KafkaTopics;
 import gr.atc.modapto.enums.MessagePriority;
 import gr.atc.modapto.kafka.KafkaMessageProducer;
@@ -84,7 +83,7 @@ public class CrfSelfAwarenessService implements ICrfSelfAwarenessService {
      * @param event
      */
     @Override
-    public void registerKitHolderEvent(CrfKhEventNotificationDto event) {
+    public void registerKitHolderEvent(CrfKitHolderEventDto event) {
         exceptionHandler.handleOperation(() -> {
             // Store the event
             CrfKitHolderEvent eventNotification = crfKitHolderEventRepository.save(modelMapper.map(event, CrfKitHolderEvent.class));

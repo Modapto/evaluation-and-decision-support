@@ -30,7 +30,7 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
     private final Logger log = LoggerFactory.getLogger(SewOptimizationService.class);
 
     private final static String MAPPING_ERROR = "Unable to parse SEW Optimization Results to DTO - Error: ";
-    
+
     private final static String PROD_SCHEDULE_ID = "latest-production-schedule";
 
     private final SewOptimizationResultsRepository sewOptimizationResultsRepository;
@@ -45,7 +45,7 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
 
     private final ObjectMapper objectMapper;
 
-    public SewOptimizationService(SewOptimizationResultsRepository sewOptimizationResultsRepository, ExceptionHandlerService exceptionHandler, ProductionScheduleRepository productionScheduleRepository, ObjectMapper objectMapper, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService){
+    public SewOptimizationService(SewOptimizationResultsRepository sewOptimizationResultsRepository, ExceptionHandlerService exceptionHandler, ProductionScheduleRepository productionScheduleRepository, ObjectMapper objectMapper, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService) {
         this.sewOptimizationResultsRepository = sewOptimizationResultsRepository;
         this.productionScheduleRepository = productionScheduleRepository;
         this.modelMapper = modelMapper;
@@ -63,33 +63,38 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
     public SewOptimizationResultsDto retrieveLatestOptimizationResults() {
         try {
             Optional<SewOptimizationResults> latestResult = sewOptimizationResultsRepository.findFirstByOrderByTimestampDesc();
-            if (latestResult.isEmpty())
+            if (latestResult.isEmpty()) {
                 throw new ResourceNotFoundException("No SEW Optimization Results found");
+            }
 
             return modelMapper.map(latestResult.get(), SewOptimizationResultsDto.class);
-        } catch (MappingException e){
+        } catch (MappingException e) {
             log.error(MAPPING_ERROR + "{}", e.getMessage());
             throw new ModelMappingException("Unable to parse SEW Optimization Results to DTO - Error: " + e.getMessage());
         }
     }
 
     /**
-     * Retrieve latest results regarding SEW Optimization Smart Service for a specific MODAPTO module
+     * Retrieve latest results regarding SEW Optimization Smart Service for a
+     * specific MODAPTO module
      *
      * @param moduleId MODAPTO module
-     * @throws  ResourceNotFoundException Thrown when the requested resource not found in Elasticsearch
-     * @throws  ModelMappingException Thrown when a mismatch exists between DTO and Entity data
+     * @throws ResourceNotFoundException Thrown when the requested resource not
+     * found in Elasticsearch
+     * @throws ModelMappingException Thrown when a mismatch exists between DTO
+     * and Entity data
      * @return SewOptimizationResultsDto
      */
     @Override
     public SewOptimizationResultsDto retrieveLatestOptimizationResultsByModuleId(String moduleId) {
         try {
             Optional<SewOptimizationResults> latestResult = sewOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(moduleId);
-            if (latestResult.isEmpty())
+            if (latestResult.isEmpty()) {
                 throw new ResourceNotFoundException("No SEW Optimization Results for Module: " + moduleId + " found");
+            }
 
             return modelMapper.map(latestResult.get(), SewOptimizationResultsDto.class);
-        } catch (MappingException e){
+        } catch (MappingException e) {
             log.error(MAPPING_ERROR + "for Module {} - {}", moduleId, e.getMessage());
             throw new ModelMappingException("Unable to parse SEW Optimization Results to DTO for Module: " + moduleId + " - Error: " + e.getMessage());
         }
@@ -130,14 +135,15 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
     @Override
     public void invokeOptimizationOfProductionSchedules(SewOptimizationInputDto invocationData) {
         // Check if Prod. Schedules data is provided
-         if (invocationData.getInput() == null || invocationData.getInput().isEmpty()){
+        if (invocationData.getInput() == null || invocationData.getInput().isEmpty()) {
             Map<String, SewProductionScheduleDto.DailyDataDto> data = retrieveLatestProductionSchedule().getData();
-            if (data == null || data.isEmpty())
+            if (data == null || data.isEmpty()) {
                 throw new SmartServiceInvocationException("No Prod. Schedule data provided and no stored Prod. Schedule found in the DB");
+            }
             invocationData.setInput(data);
-            log.debug("No Prod. Schedule data provided. Using the latest stored Prod. Schedule");        
+            log.debug("No Prod. Schedule data provided. Using the latest stored Prod. Schedule");
         }
-       
+
         smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, PRODUCTION_SCHEDULE_OPTIMIZATION.toString(), "SEW Optimization of Production Schedules");
     }
 }

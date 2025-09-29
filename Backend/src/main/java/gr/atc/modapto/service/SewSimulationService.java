@@ -1,6 +1,5 @@
 package gr.atc.modapto.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.dto.serviceInvocations.SewSimulationInputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.model.serviceResults.SewSimulationResults;

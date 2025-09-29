@@ -2,7 +2,6 @@ package gr.atc.modapto.service.interfaces;
 
 import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
-import gr.atc.modapto.dto.serviceResults.crf.CrfKhEventNotificationDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,5 +13,5 @@ public interface ICrfSelfAwarenessService {
 
     Page<CrfKitHolderEventDto> retrievePaginatedKhEventResultsPaginated(Pageable pageable);
 
-    void registerKitHolderEvent(CrfKhEventNotificationDto event);
+    void registerKitHolderEvent(CrfKitHolderEventDto event);
 }

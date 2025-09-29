@@ -103,7 +103,7 @@ class SewGroupingBasedPredictiveMaintenanceRepositoryTests extends SetupTestCont
 
             repository.saveAll(Arrays.asList(result1, result2));
 
-            Optional<SewGroupingPredictiveMaintenanceResult> found = repository.findFirstByModuleId("SHARED_MODULE");
+            Optional<SewGroupingPredictiveMaintenanceResult> found = repository.findFirstByModuleIdOrderByTimestampDesc("SHARED_MODULE");
 
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("SHARED_MODULE");
@@ -115,7 +115,7 @@ class SewGroupingBasedPredictiveMaintenanceRepositoryTests extends SetupTestCont
         void givenNoMatchingResults_whenFindFirstByModuleId_thenReturnsEmpty() {
             repository.save(sampleResult1);
 
-            Optional<SewGroupingPredictiveMaintenanceResult> found = repository.findFirstByModuleId("NON_EXISTENT_MODULE");
+            Optional<SewGroupingPredictiveMaintenanceResult> found = repository.findFirstByModuleIdOrderByTimestampDesc("NON_EXISTENT_MODULE");
 
             assertThat(found).isNotPresent();
         }
@@ -125,7 +125,7 @@ class SewGroupingBasedPredictiveMaintenanceRepositoryTests extends SetupTestCont
         void givenSingleResult_whenFindFirstByModuleId_thenReturnsResult() {
             repository.save(sampleResult1);
 
-            Optional<SewGroupingPredictiveMaintenanceResult> found = repository.findFirstByModuleId("TEST_MODULE_1");
+            Optional<SewGroupingPredictiveMaintenanceResult> found = repository.findFirstByModuleIdOrderByTimestampDesc("TEST_MODULE_1");
 
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("TEST_MODULE_1");
@@ -178,7 +178,7 @@ class SewGroupingBasedPredictiveMaintenanceRepositoryTests extends SetupTestCont
             repository.save(specialResult);
 
             Optional<SewGroupingPredictiveMaintenanceResult> found = 
-                    repository.findFirstByModuleId("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
+                    repository.findFirstByModuleIdOrderByTimestampDesc("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
 
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
@@ -200,7 +200,7 @@ class SewGroupingBasedPredictiveMaintenanceRepositoryTests extends SetupTestCont
 
             repository.saveAll(Arrays.asList(result1, result2));
 
-            Optional<SewGroupingPredictiveMaintenanceResult> found = repository.findFirstByModuleId("SHARED_MODULE");
+            Optional<SewGroupingPredictiveMaintenanceResult> found = repository.findFirstByModuleIdOrderByTimestampDesc("SHARED_MODULE");
             assertThat(found).isPresent();
 
             long count = repository.count();
