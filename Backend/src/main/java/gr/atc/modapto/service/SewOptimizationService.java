@@ -1,24 +1,29 @@
 package gr.atc.modapto.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
-import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
-import gr.atc.modapto.model.sew.ProductionSchedule;
-import gr.atc.modapto.model.serviceResults.SewOptimizationResults;
-import gr.atc.modapto.repository.ProductionScheduleRepository;
-import gr.atc.modapto.repository.SewOptimizationResultsRepository;
-import gr.atc.modapto.service.interfaces.IProductionScheduleOptimizationService;
+import java.util.Map;
+import java.util.Optional;
+
 import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import gr.atc.modapto.exception.CustomExceptions.*;
 
-import java.util.Optional;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
+import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import static gr.atc.modapto.enums.OptEngineRoute.PRODUCTION_SCHEDULE_OPTIMIZATION;
+import gr.atc.modapto.exception.CustomExceptions.*;
+import gr.atc.modapto.exception.CustomExceptions.ModelMappingException;
+import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
+import gr.atc.modapto.exception.CustomExceptions.SmartServiceInvocationException;
+import gr.atc.modapto.model.serviceResults.SewOptimizationResults;
+import gr.atc.modapto.model.sew.ProductionSchedule;
+import gr.atc.modapto.repository.ProductionScheduleRepository;
+import gr.atc.modapto.repository.SewOptimizationResultsRepository;
+import gr.atc.modapto.service.interfaces.IProductionScheduleOptimizationService;
 
 @Service
 public class SewOptimizationService implements IProductionScheduleOptimizationService {
@@ -126,9 +131,13 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
     @Override
     public void invokeOptimizationOfProductionSchedules(SewOptimizationInputDto invocationData) {
         // Check if Prod. Schedules data is provided
-        if (invocationData.getInput().isEmpty())
+         if (invocationData.getInput() == null || invocationData.getInput().isEmpty()){
+            Map<String, SewProductionScheduleDto.DailyDataDto> data = retrieveLatestProductionSchedule().getData();
+            if (data == null || data.isEmpty())
+                throw new SmartServiceInvocationException("No Prod. Schedule data provided and no stored Prod. Schedule found in the DB");
             invocationData.setInput(objectMapper.valueToTree(retrieveLatestProductionSchedule().getData()));
-
+            log.debug("No Prod. Schedule data provided. Using the latest stored Prod. Schedule");        }
+       
         smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, PRODUCTION_SCHEDULE_OPTIMIZATION.toString(), "SEW Optimization of Production Schedules");
     }
 }
