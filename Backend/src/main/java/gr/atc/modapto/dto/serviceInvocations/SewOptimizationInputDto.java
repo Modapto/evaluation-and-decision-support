@@ -1,21 +1,25 @@
 package gr.atc.modapto.dto.serviceInvocations;
 
+import java.util.Map;
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -43,7 +47,7 @@ public class SewOptimizationInputDto {
     private Config config;
 
     @Schema(description = "Production Schedules for SEW Case", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private Map<String, SewProductionScheduleDto.DailyDataDto> input;
+    private Map<String,SewProductionScheduleDto.DailyDataDto> input;
 
     @Data
     @AllArgsConstructor
