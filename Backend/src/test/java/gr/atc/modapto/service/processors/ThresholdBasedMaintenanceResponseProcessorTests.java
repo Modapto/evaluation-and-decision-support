@@ -99,7 +99,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : Success")
         void givenValidSuccessResponse_whenProcessResponse_thenReturnsOutputDto() throws IOException {
-            // Given
             when(objectMapper.convertValue(anyMap(), eq(SmartServiceResponse.class)))
                     .thenReturn(smartServiceResponse);
             when(objectMapper.readValue(any(byte[].class), eq(SewThresholdBasedPredictiveMaintenanceOutputDto.class)))
@@ -109,11 +108,9 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
             when(repository.save(any(SewThresholdBasedPredictiveMaintenanceResult.class)))
                     .thenReturn(expectedResult);
 
-            // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = processor.processResponse(
                     successResponse, "TEST_MODULE", "THRESHOLD_SERVICE");
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getModuleId()).isEqualTo("TEST_MODULE");
             assertThat(result.getSmartServiceId()).isEqualTo("THRESHOLD_SERVICE");
@@ -121,7 +118,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
             assertThat(result.getRecommendation()).isEqualTo("Replace bearing in motor unit within 72 hours");
             assertThat(result.getDetails()).isEqualTo("Vibration levels exceeded threshold");
 
-            // Verify the sequence of operations
             verify(objectMapper).convertValue(successfulDtResponse.getOutputArguments(), SmartServiceResponse.class);
             verify(objectMapper).readValue(Base64.getDecoder().decode(smartServiceResponse.getResponse()), SewThresholdBasedPredictiveMaintenanceOutputDto.class);
             verify(modelMapper).map(result, SewThresholdBasedPredictiveMaintenanceResult.class);
@@ -136,7 +132,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : Null response")
         void givenNullResponse_whenProcessResponse_thenThrowsDtmServerErrorException() {
-            // When & Then
             assertThatThrownBy(() -> processor.processResponse(null, "TEST_MODULE", "THRESHOLD_SERVICE"))
                     .isInstanceOf(DtmServerErrorException.class)
                     .hasMessage("No response received from DTM service for threshold maintenance");
@@ -147,10 +142,8 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : Null response body")
         void givenNullResponseBody_whenProcessResponse_thenThrowsDtmServerErrorException() {
-            // Given
             ResponseEntity<DtResponseDto> nullBodyResponse = new ResponseEntity<>(null, HttpStatus.OK);
 
-            // When & Then
             assertThatThrownBy(() -> processor.processResponse(nullBodyResponse, "TEST_MODULE", "THRESHOLD_SERVICE"))
                     .isInstanceOf(DtmServerErrorException.class)
                     .hasMessage("No response received from DTM service for threshold maintenance");
@@ -161,7 +154,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : Failed DTM execution")
         void givenFailedDtmExecution_whenProcessResponse_thenThrowsDtmServerErrorException() {
-            // When & Then
             assertThatThrownBy(() -> processor.processResponse(failedResponse, "TEST_MODULE", "THRESHOLD_SERVICE"))
                     .isInstanceOf(DtmServerErrorException.class)
                     .hasMessage("DTM service execution failed for threshold maintenance");
@@ -172,16 +164,13 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : ObjectMapper conversion error")
         void givenObjectMapperError_whenProcessResponse_thenThrowsSmartServiceInvocationException() {
-            // Given
             when(objectMapper.convertValue(anyMap(), eq(SmartServiceResponse.class)))
                     .thenThrow(new IllegalArgumentException("ObjectMapper conversion error"));
 
-            // When & Then
             assertThatThrownBy(() -> processor.processResponse(successResponse, "TEST_MODULE", "THRESHOLD_SERVICE"))
                     .isInstanceOf(SmartServiceInvocationException.class)
                     .hasMessage("Failed to process DTM threshold-based predictive maintenance response: ObjectMapper conversion error");
 
-            // Verify that the failing method was called, but subsequent steps were not.
             verify(objectMapper).convertValue(anyMap(), eq(SmartServiceResponse.class));
             verify(repository, never()).save(any());
         }
@@ -189,7 +178,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : ModelMapper error")
         void givenModelMapperError_whenProcessResponse_thenThrowsSmartServiceInvocationException() throws IOException {
-            // Given
             when(objectMapper.convertValue(anyMap(), eq(SmartServiceResponse.class)))
                     .thenReturn(smartServiceResponse);
             when(objectMapper.readValue(any(byte[].class), eq(SewThresholdBasedPredictiveMaintenanceOutputDto.class)))
@@ -197,7 +185,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
             when(modelMapper.map(any(SewThresholdBasedPredictiveMaintenanceOutputDto.class), eq(SewThresholdBasedPredictiveMaintenanceResult.class)))
                     .thenThrow(new RuntimeException("ModelMapper error"));
 
-            // When & Then
             assertThatThrownBy(() -> processor.processResponse(successResponse, "TEST_MODULE", "THRESHOLD_SERVICE"))
                     .isInstanceOf(SmartServiceInvocationException.class)
                     .hasMessage("Failed to process DTM threshold-based predictive maintenance response: ModelMapper error");
@@ -209,7 +196,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : Repository save error")
         void givenRepositorySaveError_whenProcessResponse_thenThrowsSmartServiceInvocationException() throws IOException {
-            // Given
             when(objectMapper.convertValue(anyMap(), eq(SmartServiceResponse.class)))
                     .thenReturn(smartServiceResponse);
             when(objectMapper.readValue(any(byte[].class), eq(SewThresholdBasedPredictiveMaintenanceOutputDto.class)))
@@ -219,7 +205,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
             when(repository.save(any(SewThresholdBasedPredictiveMaintenanceResult.class)))
                     .thenThrow(new RuntimeException("Database save error"));
 
-            // When & Then
             assertThatThrownBy(() -> processor.processResponse(successResponse, "TEST_MODULE", "THRESHOLD_SERVICE"))
                     .isInstanceOf(SmartServiceInvocationException.class)
                     .hasMessage("Failed to process DTM threshold-based predictive maintenance response: Database save error");
@@ -235,17 +220,14 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : Empty module and service IDs")
         void givenEmptyModuleAndServiceIds_whenProcessResponse_thenProcessesSuccessfully() throws IOException {
-            // Given
             when(objectMapper.convertValue(anyMap(), eq(SmartServiceResponse.class))).thenReturn(smartServiceResponse);
             when(objectMapper.readValue(any(byte[].class), eq(SewThresholdBasedPredictiveMaintenanceOutputDto.class))).thenReturn(expectedOutputDto);
             when(modelMapper.map(any(), any())).thenReturn(expectedResult);
             when(repository.save(any())).thenReturn(expectedResult);
 
-            // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = processor.processResponse(
                     successResponse, "", "");
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getModuleId()).isEmpty();
             assertThat(result.getSmartServiceId()).isEmpty();
@@ -255,7 +237,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : Complex output arguments")
         void givenComplexOutputArguments_whenProcessResponse_thenProcessesSuccessfully() throws IOException {
-            // Given
             SewThresholdBasedPredictiveMaintenanceOutputDto complexDto = SewThresholdBasedPredictiveMaintenanceOutputDto.builder()
                     .recommendation("Complex recommendation")
                     .details("Detailed analysis with multiple parameters")
@@ -286,11 +267,9 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
             when(repository.save(any(SewThresholdBasedPredictiveMaintenanceResult.class)))
                     .thenReturn(expectedResult);
 
-            // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = processor.processResponse(
                     response, "COMPLEX_MODULE", "COMPLEX_SERVICE");
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getModuleId()).isEqualTo("COMPLEX_MODULE");
             assertThat(result.getSmartServiceId()).isEqualTo("COMPLEX_SERVICE");
@@ -304,7 +283,6 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
         @Test
         @DisplayName("Process response : Timestamp assignment validation")
         void givenValidResponse_whenProcessResponse_thenAssignsCurrentTimestamp() throws IOException {
-            // Given
             when(objectMapper.convertValue(anyMap(), eq(SmartServiceResponse.class))).thenReturn(smartServiceResponse);
             when(objectMapper.readValue(any(byte[].class), eq(SewThresholdBasedPredictiveMaintenanceOutputDto.class))).thenReturn(expectedOutputDto);
             when(modelMapper.map(any(), any())).thenReturn(expectedResult);
@@ -312,13 +290,11 @@ class ThresholdBasedMaintenanceResponseProcessorTests {
 
             LocalDateTime beforeExecution = LocalDateTime.now();
 
-            // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = processor.processResponse(
                     successResponse, "TEST_MODULE", "THRESHOLD_SERVICE");
 
             LocalDateTime afterExecution = LocalDateTime.now();
 
-            // Then
             assertThat(result.getTimestamp()).isNotNull();
             assertThat(result.getTimestamp()).isBetween(beforeExecution, afterExecution);
         }

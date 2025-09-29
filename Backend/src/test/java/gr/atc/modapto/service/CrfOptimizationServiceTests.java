@@ -1,5 +1,6 @@
 package gr.atc.modapto.service;
 
+import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.model.serviceResults.CrfOptimizationResults;
@@ -33,6 +34,9 @@ class CrfOptimizationServiceTests {
     @Mock
     private ModelMapper modelMapper;
 
+    @Mock
+    private SmartServicesInvocationService smartServicesInvocationService;
+
     @InjectMocks
     private CrfOptimizationService crfOptimizationService;
 
@@ -42,10 +46,8 @@ class CrfOptimizationServiceTests {
 
     @BeforeEach
     void setUp() {
-        // Given - Setup test data
         sampleTimestamp = "2025-07-17T10:30:00Z";
 
-        // Create TimeDetail objects
         List<CrfOptimizationResults.OptimizationResults.Exact.TimeDetail> timeDetails = Arrays.asList(
                 new CrfOptimizationResults.OptimizationResults.Exact.TimeDetail(
                         "component_A", "component_B", 150L, "position_1", "position_2"
@@ -55,21 +57,17 @@ class CrfOptimizationServiceTests {
                 )
         );
 
-        // Create Exact
         CrfOptimizationResults.OptimizationResults.Exact exact =
                 new CrfOptimizationResults.OptimizationResults.Exact(2500L, timeDetails);
 
-        // Create OptimizationResults
         CrfOptimizationResults.OptimizationResults optimizationResults =
                 new CrfOptimizationResults.OptimizationResults(exact, 15.5f);
 
-        // Create entity
         sampleEntity = new CrfOptimizationResults(
                 "1", sampleTimestamp, "Optimization completed successfully", "test_module",
                 optimizationResults, true, 3000L, 5000L
         );
 
-        // Create corresponding DTO
         sampleDto = createSampleDto();
     }
 
@@ -80,17 +78,14 @@ class CrfOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Success")
         void givenExistingOptimizationResults_whenRetrieveLatestOptimizationResults_thenReturnsLatestResult() {
-            // Given
             when(crfOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, CrfOptimizationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
             CrfOptimizationResultsDto result = crfOptimizationService.retrieveLatestOptimizationResults();
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
@@ -107,11 +102,9 @@ class CrfOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : No results found")
         void givenNoOptimizationResults_whenRetrieveLatestOptimizationResults_thenThrowsResourceNotFoundException() {
-            // Given
             when(crfOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResults())
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No CRF Optimization Results found");
@@ -123,14 +116,12 @@ class CrfOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Mapping exception")
         void givenMappingError_whenRetrieveLatestOptimizationResults_thenThrowsModelMappingException() {
-            // Given
             when(crfOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, CrfOptimizationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse CRF Optimization Results to DTO - Error: Mapping error occurred"));
 
-            // When & Then
             assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResults())
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse CRF Optimization Results to DTO - Error: Mapping error occurred");
@@ -142,11 +133,9 @@ class CrfOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Repository exception")
         void givenRepositoryError_whenRetrieveLatestOptimizationResults_thenThrowsException() {
-            // Given
             when(crfOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            // When & Then
             assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResults())
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
@@ -157,24 +146,21 @@ class CrfOptimizationServiceTests {
     }
 
     @Nested
-    @DisplayName("Retrieve Latest Optimization Results by Production Module")
-    class RetrieveLatestOptimizationResultsByProductionModule {
+    @DisplayName("Retrieve Latest Optimization Results by Module ID")
+    class RetrieveLatestOptimizationResultsByModuleId {
 
         @Test
         @DisplayName("Retrieve latest results by module : Success")
-        void givenExistingModuleResults_whenRetrieveLatestOptimizationResultsByProductionModule_thenReturnsLatestResult() {
-            // Given
+        void givenExistingModuleResults_whenRetrieveLatestOptimizationResultsByModuleId_thenReturnsLatestResult() {
             String productionModule = "crf_module_1";
-            when(crfOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(crfOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, CrfOptimizationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
-            CrfOptimizationResultsDto result = crfOptimizationService.retrieveLatestOptimizationResultsByProductionModule(productionModule);
+            CrfOptimizationResultsDto result = crfOptimizationService.retrieveLatestOptimizationResultsByModuleId(productionModule);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
@@ -184,62 +170,101 @@ class CrfOptimizationServiceTests {
             assertThat(result.getTotalTime()).isEqualTo(5000L);
             assertThat(result.getOptimizationResults()).isNotNull();
 
-            verify(crfOptimizationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(crfOptimizationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, CrfOptimizationResultsDto.class);
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : No results found")
-        void givenNoModuleResults_whenRetrieveLatestOptimizationResultsByProductionModule_thenThrowsResourceNotFoundException() {
-            // Given
+        void givenNoModuleResults_whenRetrieveLatestOptimizationResultsByModuleId_thenThrowsResourceNotFoundException() {
             String productionModule = "non_existing_module";
-            when(crfOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(crfOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.empty());
 
-            // When & Then
-            assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResultsByModuleId(productionModule))
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No CRF Optimization Results for Module: " + productionModule + " found");
 
-            verify(crfOptimizationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(crfOptimizationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : Mapping exception")
-        void givenMappingError_whenRetrieveLatestOptimizationResultsByProductionModule_thenThrowsModelMappingException() {
-            // Given
+        void givenMappingError_whenRetrieveLatestOptimizationResultsByModuleId_thenThrowsModelMappingException() {
             String productionModule = "crf_module_1";
-            when(crfOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(crfOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, CrfOptimizationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse CRF Optimization Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred"));
 
-            // When & Then
-            assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResultsByModuleId(productionModule))
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse CRF Optimization Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred");
 
-            verify(crfOptimizationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(crfOptimizationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, CrfOptimizationResultsDto.class);
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : Repository exception")
-        void givenRepositoryError_whenRetrieveLatestOptimizationResultsByProductionModule_thenThrowsException() {
-            // Given
+        void givenRepositoryError_whenRetrieveLatestOptimizationResultsByModuleId_thenThrowsException() {
             String productionModule = "crf_module_1";
-            when(crfOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(crfOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            // When & Then
-            assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> crfOptimizationService.retrieveLatestOptimizationResultsByModuleId(productionModule))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
 
-            verify(crfOptimizationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(crfOptimizationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Invoke Optimization of KH Picking Sequence")
+    class InvokeOptimizationOfKhPickingSequence {
+
+        @Test
+        @DisplayName("Invoke KH picking sequence optimization : Success")
+        void givenValidInput_whenInvokeOptimizationOfKhPickingSequence_thenCallsSmartServicesInvocationService() {
+            CrfInvocationInputDto inputDto = CrfInvocationInputDto.builder()
+                    .moduleId("crf_module_1")
+                    .smartServiceId("service_1")
+                    .build();
+
+            crfOptimizationService.invokeOptimizationOfKhPickingSequence(inputDto);
+
+            verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
+                    inputDto,
+                    "robot-picking-seq",
+                    "CRF KH Picking Sequence Optimization"
+            );
+        }
+
+        @Test
+        @DisplayName("Invoke KH picking sequence optimization : Service exception")
+        void givenServiceError_whenInvokeOptimizationOfKhPickingSequence_thenThrowsException() {
+            CrfInvocationInputDto inputDto = CrfInvocationInputDto.builder()
+                    .moduleId("crf_module_1")
+                    .smartServiceId("service_1")
+                    .build();
+
+            doThrow(new RuntimeException("Service invocation failed"))
+                    .when(smartServicesInvocationService)
+                    .formulateAndImplementSmartServiceRequest(any(), any(), any());
+
+            assertThatThrownBy(() -> crfOptimizationService.invokeOptimizationOfKhPickingSequence(inputDto))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Service invocation failed");
+
+            verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
+                    inputDto,
+                    "robot-picking-seq",
+                    "CRF KH Picking Sequence Optimization"
+            );
         }
     }
 

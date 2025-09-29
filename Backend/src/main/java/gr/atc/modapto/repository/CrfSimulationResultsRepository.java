@@ -11,5 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface CrfSimulationResultsRepository extends ElasticsearchRepository<CrfSimulationResults, String> {
     Optional<CrfSimulationResults> findFirstByOrderByTimestampDesc();
 
-    Optional<CrfSimulationResults> findFirstByProductionModuleOrderByTimestampDesc(String productionModule);
+    Optional<CrfSimulationResults> findFirstByModuleIdOrderByTimestampDesc(String moduleId);
 }

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import gr.atc.modapto.util.JwtUtils;
+import gr.atc.modapto.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
@@ -185,14 +186,9 @@ public class OrderController {
                                                                 "No orders found for the given search parameters"));
                         }
 
-                        // Fix the pagination class object
-                        PaginatedResultsDto<OrderDto> results = new PaginatedResultsDto<>(page.getContent(),
-                                        page.getTotalPages(),
-                                        (int) page.getTotalElements(), page.isLast());
-
                         return ResponseEntity.status(HttpStatus.OK)
                                         .cacheControl(CacheControl.maxAge(60, TimeUnit.SECONDS))
-                                        .body(BaseResponse.success(results, "Orders retrieved successfully"));
+                                        .body(BaseResponse.success(PaginationUtils.formulatePaginatedResults(page), "Orders retrieved successfully"));
 
                 } catch (PaginationException e) {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST)

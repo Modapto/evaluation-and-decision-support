@@ -1,10 +1,13 @@
 package gr.atc.modapto.dto.dt;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -18,8 +21,16 @@ public class SmartServiceRequest {
 
     // Used for AUEB services
     @Builder.Default
-    private String data = null;
+    private Base64Data data = null; // Base64 Encoding format of Input
 
     @Builder.Default
     private String route = null;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class Base64Data{
+        private String base64;
+    }
 }

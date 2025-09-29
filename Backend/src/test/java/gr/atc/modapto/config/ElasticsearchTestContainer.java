@@ -6,20 +6,26 @@ import org.testcontainers.utility.DockerImageName;
 public class ElasticsearchTestContainer {
     private static final String ELASTICSEARCH_IMAGE = "docker.elastic.co/elasticsearch/elasticsearch:8.15.0";
 
-    private static final ElasticsearchContainer container = new ElasticsearchContainer(
-            DockerImageName.parse(ELASTICSEARCH_IMAGE))
-            .withEnv("xpack.security.enabled", "true")
-            .withEnv("xpack.security.transport.ssl.enabled", "false")
-            .withEnv("xpack.security.http.ssl.enabled", "false")
-            .withEnv("xpack.license.self_generated.type", "basic")
-            .withEnv("ES_JAVA_OPTS", "-Xms1g -Xmx1g")
-            .withPassword("password");
-
-    static {
-        container.start();
-    }
+    private static volatile ElasticsearchContainer container;
 
     public static ElasticsearchContainer getInstance() {
+        if (container == null) {
+            synchronized (ElasticsearchTestContainer.class) {
+                if (container == null) {
+                    container = new ElasticsearchContainer(
+                            DockerImageName.parse(ELASTICSEARCH_IMAGE))
+                            .withEnv("xpack.security.enabled", "true")
+                            .withEnv("xpack.security.transport.ssl.enabled", "false")
+                            .withEnv("xpack.security.http.ssl.enabled", "false")
+                            .withEnv("xpack.license.self_generated.type", "basic")
+                            .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
+                            .withPassword("password")
+                            .withReuse(true)
+                            .withStartupTimeout(java.time.Duration.ofMinutes(3));
+                    container.start();
+                }
+            }
+        }
         return container;
     }
 }

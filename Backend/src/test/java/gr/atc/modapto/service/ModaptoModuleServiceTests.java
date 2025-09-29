@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 import static java.util.Collections.singletonList;
@@ -84,7 +85,7 @@ class ModaptoModuleServiceTests {
                 "https://module.example.com",
                 Arrays.asList(testSmartService, otherService),
                 LocalDateTime.now(),
-                2312451L,
+                Instant.now(),
                 new ArrayList<>()
         );
 
@@ -105,26 +106,21 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve smart service URL : Success")
         @Test
         void givenValidModuleIdAndServiceId_whenRetrieveSmartServiceUrl_thenReturnUrl() {
-            // Given
             BDDMockito.given(modaptoModuleRepository.findByModuleId(TEST_MODULE_ID))
                     .willReturn(Optional.of(testModule));
 
-            // When
             String url = modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID);
 
-            // Then
             assertThat(url).isEqualTo("https://dtm.example.com/api/services/threshold");
         }
 
         @DisplayName("Retrieve smart service URL : Module not found")
         @Test
         void givenInvalidModuleId_whenRetrieveSmartServiceUrl_thenThrowResourceNotFoundException() {
-            // Given
             String invalidModuleId = "INVALID_MODULE";
             BDDMockito.given(modaptoModuleRepository.findByModuleId(invalidModuleId))
                     .willReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> modaptoModuleService.retrieveSmartServiceUrl(invalidModuleId, TEST_SERVICE_ID))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Module not found with moduleId: " + invalidModuleId);
@@ -133,12 +129,10 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve smart service URL : Smart service not found")
         @Test
         void givenValidModuleIdButInvalidServiceId_whenRetrieveSmartServiceUrl_thenThrowResourceNotFoundException() {
-            // Given
             String invalidServiceId = "INVALID_SERVICE";
             BDDMockito.given(modaptoModuleRepository.findByModuleId(TEST_MODULE_ID))
                     .willReturn(Optional.of(testModule));
 
-            // When & Then
             assertThatThrownBy(() -> modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, invalidServiceId))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Smart service not found with serviceId: " + invalidServiceId);
@@ -152,16 +146,13 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve module by ID : Success")
         @Test
         void givenValidModuleId_whenRetrieveModuleByModuleId_thenReturnModule() {
-            // Given
             BDDMockito.given(modaptoModuleRepository.findByModuleId(TEST_MODULE_ID))
                     .willReturn(Optional.of(testModule));
             BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class))
                     .willReturn(testModuleDto);
 
-            // When
             ModaptoModuleDto foundModule = modaptoModuleService.retrieveModuleByModuleId(TEST_MODULE_ID);
 
-            // Then
             assertThat(foundModule.getModuleId()).isEqualTo(TEST_MODULE_ID);
             assertThat(foundModule.getName()).isEqualTo("Test Production Module");
         }
@@ -169,12 +160,10 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve module by ID : Module not found")
         @Test
         void givenInvalidModuleId_whenRetrieveModuleByModuleId_thenThrowResourceNotFoundException() {
-            // Given
             String invalidModuleId = "INVALID_MODULE";
             BDDMockito.given(modaptoModuleRepository.findByModuleId(invalidModuleId))
                     .willReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> modaptoModuleService.retrieveModuleByModuleId(invalidModuleId))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Module not found with moduleId: " + invalidModuleId);
@@ -188,7 +177,6 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve paginated modules : Success")
         @Test
         void givenValidPageable_whenRetrieveAllModulesPaginated_thenReturnPaginatedResults() {
-            // Given
             Pageable pageable = PageRequest.of(0, 10);
             Page<ModaptoModule> modulePage = new PageImpl<>(Collections.singletonList(testModule));
             ModaptoModuleDto moduleDto = new ModaptoModuleDto();
@@ -197,10 +185,8 @@ class ModaptoModuleServiceTests {
             BDDMockito.given(modaptoModuleRepository.findAll(pageable)).willReturn(modulePage);
             BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class)).willReturn(moduleDto);
 
-            // When
             Page<ModaptoModuleDto> result = modaptoModuleService.retrieveAllModulesPaginated(pageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().getFirst().getModuleId()).isEqualTo(TEST_MODULE_ID);
@@ -214,16 +200,13 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve all modules : Success")
         @Test
         void whenRetrieveAllModules_thenReturnAllModulesAsDto() {
-            // Given
             Page<ModaptoModule> modulePage = new PageImpl<>(Collections.singletonList(testModule));
 
             BDDMockito.given(modaptoModuleRepository.findAll(Pageable.unpaged())).willReturn(modulePage);
             BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class)).willReturn(testModuleDto);
 
-            // When
             List<ModaptoModuleDto> result = modaptoModuleService.retrieveAllModules();
 
-            // Then
             assertThat(result).isNotNull().hasSize(1);
             assertThat(result.getFirst().getModuleId()).isEqualTo(TEST_MODULE_ID);
             assertThat(result.getFirst().getName()).isEqualTo("Test Production Module");
@@ -237,16 +220,13 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve smart services : Success")
         @Test
         void givenValidModuleId_whenRetrieveSmartServicesByModuleId_thenReturnSmartServices() {
-            // Given
             BDDMockito.given(modaptoModuleRepository.findByModuleId(TEST_MODULE_ID))
                     .willReturn(Optional.of(testModule));
             BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class))
                     .willReturn(testModuleDto);
 
-            // When
             List<ModaptoModuleDto.SmartServiceDto> smartServices = modaptoModuleService.retrieveSmartServicesByModuleId(TEST_MODULE_ID);
 
-            // Then
             assertThat(smartServices).isNotNull().hasSize(2);
             assertThat(smartServices.getFirst().getServiceId()).isEqualTo(TEST_SERVICE_ID);
             assertThat(smartServices.getFirst().getName()).isEqualTo("Threshold Maintenance Service");
@@ -255,12 +235,10 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve smart services : Module not found")
         @Test
         void givenInvalidModuleId_whenRetrieveSmartServicesByModuleId_thenThrowResourceNotFoundException() {
-            // Given
             String invalidModuleId = "INVALID_MODULE";
             BDDMockito.given(modaptoModuleRepository.findByModuleId(invalidModuleId))
                     .willReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> modaptoModuleService.retrieveSmartServicesByModuleId(invalidModuleId))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Module not found with moduleId: " + invalidModuleId);
@@ -276,7 +254,6 @@ class ModaptoModuleServiceTests {
         @DisplayName("Retrieve modules by worker : Success")
         @Test
         void givenWorkerAndPageable_whenRetrieveModulesByWorkerPaginated_thenReturnPaginatedResults() {
-            // Given
             Pageable pageable = PageRequest.of(0, 10);
             testModule.setWorkers(new ArrayList<>(Collections.singletonList(TEST_WORKER)));
             Page<ModaptoModule> modulePage = new PageImpl<>(Collections.singletonList(testModule));
@@ -286,10 +263,8 @@ class ModaptoModuleServiceTests {
             BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class))
                     .willReturn(testModuleDto);
 
-            // When
             Page<ModaptoModuleDto> result = modaptoModuleService.retrieveModulesByWorkerPaginated(TEST_WORKER, pageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().getFirst().getModuleId()).isEqualTo(TEST_MODULE_ID);
@@ -298,21 +273,18 @@ class ModaptoModuleServiceTests {
         @DisplayName("Declare worker on module : Success")
         @Test
         void givenValidModuleIdAndWorker_whenDeclareWorkOnModule_thenWorkerAdded() {
-            // Given
             BDDMockito.given(modaptoModuleRepository.findByModuleId(TEST_MODULE_ID))
                     .willReturn(Optional.of(testModule));
             BDDMockito.given(modaptoModuleRepository.save(testModule)).willReturn(testModule);
             BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class))
                     .willReturn(testModuleDto);
 
-            // When
             DeclarationOfWorkDto workData = DeclarationOfWorkDto.builder()
                     .moduleId(TEST_MODULE_ID)
                     .workers(Arrays.asList(TEST_WORKER))
                     .build();
             ModaptoModuleDto result = modaptoModuleService.declareWorkOnModule(workData);
 
-            // Then
             assertThat(testModule.getWorkers()).contains(TEST_WORKER);
             assertThat(result).isNotNull();
             assertThat(result.getModuleId()).isEqualTo(TEST_MODULE_ID);
@@ -321,12 +293,10 @@ class ModaptoModuleServiceTests {
         @DisplayName("Declare worker on module : Module not found")
         @Test
         void givenInvalidModuleId_whenDeclareWorkOnModule_thenThrowResourceNotFoundException() {
-            // Given
             String invalidModuleId = "INVALID_MODULE";
             BDDMockito.given(modaptoModuleRepository.findByModuleId(invalidModuleId))
                     .willReturn(Optional.empty());
 
-            // When & Then
             DeclarationOfWorkDto workData = DeclarationOfWorkDto.builder()
                     .moduleId(invalidModuleId)
                     .workers(Arrays.asList(TEST_WORKER))
@@ -340,7 +310,6 @@ class ModaptoModuleServiceTests {
         @DisplayName("Undeclare worker on module : Success")
         @Test
         void givenValidModuleIdAndWorker_whenUndeclareWorkOnModule_thenWorkerRemoved() {
-            // Given
             testModule.setWorkers(new ArrayList<>(Collections.singletonList(TEST_WORKER)));
 
             BDDMockito.given(modaptoModuleRepository.findByModuleId(TEST_MODULE_ID))
@@ -349,10 +318,8 @@ class ModaptoModuleServiceTests {
             BDDMockito.given(modelMapper.map(testModule, ModaptoModuleDto.class))
                     .willReturn(testModuleDto);
 
-            // When
             ModaptoModuleDto result = modaptoModuleService.undeclareWorkOnModule(TEST_MODULE_ID, TEST_WORKER);
 
-            // Then
             assertThat(testModule.getWorkers()).doesNotContain(TEST_WORKER);
             assertThat(result).isNotNull();
             assertThat(result.getModuleId()).isEqualTo(TEST_MODULE_ID);
@@ -361,12 +328,10 @@ class ModaptoModuleServiceTests {
         @DisplayName("Undeclare worker on module : Module not found")
         @Test
         void givenInvalidModuleId_whenUndeclareWorkOnModule_thenThrowResourceNotFoundException() {
-            // Given
             String invalidModuleId = "INVALID_MODULE";
             BDDMockito.given(modaptoModuleRepository.findByModuleId(invalidModuleId))
                     .willReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() ->
                     modaptoModuleService.undeclareWorkOnModule(invalidModuleId, TEST_WORKER))
                     .isInstanceOf(ResourceNotFoundException.class)

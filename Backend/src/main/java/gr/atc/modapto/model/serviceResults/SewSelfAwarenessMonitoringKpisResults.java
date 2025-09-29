@@ -53,6 +53,6 @@ public class SewSelfAwarenessMonitoringKpisResults {
     @Field(type = FieldType.Keyword)
     private String bucket;
 
-    @Field(type = FieldType.Object)
+    @Field(type = FieldType.Double)
     private List<Double> data;
 }

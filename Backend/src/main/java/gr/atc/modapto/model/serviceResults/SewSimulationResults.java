@@ -17,44 +17,44 @@ public class SewSimulationResults {
     @Id
     private String id;
 
-    @Field(name = "@timestamp", type = FieldType.Keyword)
+    @Field(name = "timestamp", type = FieldType.Keyword)
     private String timestamp;
 
     @Field(name = "simulationData", type = FieldType.Object)
     private SimulationData simulationData;
 
-    @Field(name = "productionModule", type = FieldType.Keyword)
-    private String productionModule;
+    @Field(name = "moduleId", type = FieldType.Keyword)
+    private String moduleId;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class SimulationData {
-
         @Field(name = "makespan", type = FieldType.Object)
-        private MetricComparison makespan;
+        private KpiMetric makespan;
 
-        @Field(name = "machine_utilization", type = FieldType.Object)
-        private MetricComparison machineUtilization;
+        @Field(name = "machineUtilization", type = FieldType.Object)
+        private KpiMetric machineUtilization;
 
-        @Field(name = "throughput_stdev", type = FieldType.Object)
-        private MetricComparison throughputStdev;
+        @Field(name = "throughputStdev", type = FieldType.Object)
+        private KpiMetric throughputStdev;
     }
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MetricComparison {
+    public static class KpiMetric {
+
         @Field(name = "current", type = FieldType.Double)
         private Double current;
 
         @Field(name = "simulated", type = FieldType.Double)
         private Double simulated;
 
-        @Field(name = "simulated", type = FieldType.Double)
+        @Field(name = "difference", type = FieldType.Double)
         private Double difference;
 
-        @Field(name = "difference_percent", type = FieldType.Double)
+        @Field(name = "differencePercent", type = FieldType.Double)
         private Double differencePercent;
     }
 }

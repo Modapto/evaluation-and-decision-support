@@ -4,7 +4,7 @@ import gr.atc.modapto.dto.ModaptoModuleDto;
 import gr.atc.modapto.dto.PaginatedResultsDto;
 import gr.atc.modapto.dto.sew.DeclarationOfWorkDto;
 import gr.atc.modapto.service.interfaces.IModaptoModuleService;
-import gr.atc.modapto.util.JwtUtils;
+import gr.atc.modapto.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -18,8 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -62,14 +60,8 @@ public class ModaptoModulesController {
 
         Page<ModaptoModuleDto> modulePage = modaptoModuleService.retrieveAllModulesPaginated(pageable);
 
-        PaginatedResultsDto<ModaptoModuleDto> results = new PaginatedResultsDto<>(
-                modulePage.getContent(),
-                modulePage.getTotalPages(),
-                (int) modulePage.getTotalElements(),
-                modulePage.isLast());
-
         return new ResponseEntity<>(
-                BaseResponse.success(results, "MODAPTO modules retrieved successfully"),
+                BaseResponse.success(PaginationUtils.formulatePaginatedResults(modulePage), "MODAPTO modules retrieved successfully"),
                 HttpStatus.OK);
     }
 
@@ -169,14 +161,8 @@ public class ModaptoModulesController {
 
         Page<ModaptoModuleDto> modulePage = modaptoModuleService.retrieveModulesByWorkerPaginated(workerName, pageable);
 
-        PaginatedResultsDto<ModaptoModuleDto> results = new PaginatedResultsDto<>(
-                modulePage.getContent(),
-                modulePage.getTotalPages(),
-                (int) modulePage.getTotalElements(),
-                modulePage.isLast());
-
         return new ResponseEntity<>(
-                BaseResponse.success(results, "MODAPTO modules the authenticated worker is working on retrieved successfully"),
+                BaseResponse.success(PaginationUtils.formulatePaginatedResults(modulePage), "MODAPTO modules the authenticated worker is working on retrieved successfully"),
                 HttpStatus.OK);
     }
 

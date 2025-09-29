@@ -87,14 +87,11 @@ class OrderServiceTests {
     @DisplayName("Save new order: Success")
     @Test
     void givenValidOrderDto_whenSaveNewOrder_thenReturnTrue() {
-        // Given
         BDDMockito.given(modelMapper.map(orderDto, Order.class)).willReturn(order);
         BDDMockito.given(orderRepository.save(order)).willReturn(order);
 
-        // When
         boolean isSuccess = orderService.saveNewOrder(orderDto);
 
-        // Then
         Assertions.assertThat(isSuccess).isTrue();
     }
 
@@ -102,26 +99,21 @@ class OrderServiceTests {
     @DisplayName("Retrieve an order by ID: Success")
     @Test
     void givenValidOrderId_whenRetrieveOrderById_thenReturnOrderDto() throws OrderNotFoundException {
-        // Given
         String orderId = "123";
         BDDMockito.given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
         BDDMockito.given(modelMapper.map(order, OrderDto.class)).willReturn(orderDto);
 
-        // When
         OrderDto foundOrderDto = orderService.retrieveOrderById(orderId);
 
-        // Then
         Assertions.assertThat(foundOrderDto).isNotNull().isEqualTo(orderDto);
     }
 
     @DisplayName("Retrieve an order by ID: Error - Not Found")
     @Test
     void givenInvalidOrderId_whenRetrieveOrderById_thenThrowOrderNotFoundException() {
-        // Given
         String orderId = "invalidId";
         BDDMockito.given(orderRepository.findById(orderId)).willReturn(Optional.empty());
 
-        // When / Then
         Assertions.assertThatThrownBy(() -> orderService.retrieveOrderById(orderId))
                 .isInstanceOf(OrderNotFoundException.class)
                 .hasMessageContaining(orderId);
@@ -130,30 +122,24 @@ class OrderServiceTests {
     @DisplayName("Retrieve an orders by Customer: Success")
     @Test
     void givenValidCustomerAndDateRange_whenRetrieveOrdersByCustomerFilteredByDates_thenReturnOrderDtoPage() {
-        // Given
         String customer = "CRF";
         String startDate = "2024-01-01";
         String endDate = "2024-01-01";
         Pageable pageable = PageRequest.of(0, 10);
 
-        // Mock SearchHits and SearchHit
         SearchHits<Order> searchHits = mock(SearchHits.class);
         SearchHit<Order> searchHit = mock(SearchHit.class);
 
-        // Mock search hits
         BDDMockito.given(searchHit.getContent()).willReturn(order);
         BDDMockito.given(searchHits.getSearchHits()).willReturn(Collections.singletonList(searchHit));
         BDDMockito.given(searchHits.getTotalHits()).willReturn(1L);
 
-        // Mock elasticsearchOperations
         BDDMockito.given(elasticsearchOperations.search(any(CriteriaQuery.class), eq(Order.class))).willReturn(searchHits);
 
         BDDMockito. given(modelMapper.map(order, OrderDto.class)).willReturn(orderDto);
 
-        // When
         Page<OrderDto> resultPage = orderService.retrieveOrdersByCustomerFilteredByDates(customer, pageable, startDate, endDate);
 
-        // Then
         Assertions.assertThat(resultPage.getContent()).isEqualTo(Collections.singletonList(orderDto));
         Assertions.assertThat(resultPage.getTotalElements()).isEqualTo(1L);
     }

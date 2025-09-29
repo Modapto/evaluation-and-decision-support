@@ -22,7 +22,7 @@ public class SewSimulationResultsDto extends BaseEventResultsDto {
     @JsonProperty("timestamp")
     private String timestamp;
 
-    @JsonProperty("productionModule")
+    @JsonProperty("module")
     private String productionModule;
 
     @JsonProperty("simulationData")
@@ -32,19 +32,21 @@ public class SewSimulationResultsDto extends BaseEventResultsDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class SimulationData {
-        private MetricComparison makespan;
+        @JsonProperty("makespan")
+        private KpiMetric makespan;
 
         @JsonProperty("machine_utilization")
-        private MetricComparison machineUtilization;
+        private KpiMetric machineUtilization;
 
         @JsonProperty("throughput_stdev")
-        private MetricComparison throughputStdev;
+        private KpiMetric throughputStdev;
     }
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MetricComparison {
+    public static class KpiMetric {
+
         @JsonProperty("Current")
         private Double current;
 

@@ -25,6 +25,7 @@ import static gr.atc.modapto.exception.CustomExceptions.*;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MultipartException;
 
 /*
  * Exception Handling Responses
@@ -156,6 +157,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<BaseResponse<String>> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex) {
         BaseResponse<String> response = BaseResponse.error("Missing input parameter", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<BaseResponse<String>> handleMultipartException(MultipartException ex) {
+        BaseResponse<String> response = BaseResponse.error("Missing input file", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }

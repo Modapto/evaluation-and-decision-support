@@ -99,7 +99,6 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Register scheduled task : Success")
         void givenValidTask_whenRegisterScheduledTask_thenReturnsTrue() {
-            // Given
             when(modelMapper.map(any(ScheduledTaskDto.class), eq(ScheduledTask.class)))
                     .thenReturn(sampleTaskEntity);
             when(taskRepository.save(any(ScheduledTask.class)))
@@ -107,10 +106,8 @@ class ScheduledTaskServiceTests {
             when(taskScheduler.schedule(any(Runnable.class), any(java.time.Instant.class)))
                     .thenReturn((ScheduledFuture) scheduledFuture);
 
-            // When
             boolean result = scheduledTaskService.registerScheduledTask(sampleTaskDto);
 
-            // Then
             assertThat(result).isTrue();
             verify(modelMapper).map(any(ScheduledTaskDto.class), eq(ScheduledTask.class));
             verify(taskRepository).save(any(ScheduledTask.class));
@@ -121,14 +118,11 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Register scheduled task : Mapping exception")
         void givenMappingException_whenRegisterScheduledTask_thenReturnsFalse() {
-            // Given
             when(modelMapper.map(any(ScheduledTaskDto.class), eq(ScheduledTask.class)))
                     .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
 
-            // When
             boolean result = scheduledTaskService.registerScheduledTask(sampleTaskDto);
 
-            // Then
             assertThat(result).isFalse();
             verify(modelMapper).map(any(ScheduledTaskDto.class), eq(ScheduledTask.class));
             verify(taskRepository, never()).save(any(ScheduledTask.class));
@@ -138,7 +132,6 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Register scheduled task : Sets creation and execution time")
         void givenTaskWithoutTimes_whenRegisterScheduledTask_thenSetsTimestamps() {
-            // Given
             ScheduledTaskDto taskWithoutTimes = ScheduledTaskDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -155,10 +148,8 @@ class ScheduledTaskServiceTests {
             when(taskScheduler.schedule(any(Runnable.class), any(java.time.Instant.class)))
                     .thenReturn((ScheduledFuture) scheduledFuture);
 
-            // When
             boolean result = scheduledTaskService.registerScheduledTask(taskWithoutTimes);
 
-            // Then
             assertThat(result).isTrue();
             verify(modelMapper).map(any(ScheduledTaskDto.class), eq(ScheduledTask.class));
             verify(taskRepository).save(any(ScheduledTask.class));
@@ -172,7 +163,6 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Retrieve scheduled tasks : Success")
         void givenValidSmartServiceType_whenRetrieveScheduledTasks_thenReturnsPagedResults() {
-            // Given
             List<ScheduledTask> taskEntities = Collections.singletonList(sampleTaskEntity);
             Page<ScheduledTask> taskPage = new PageImpl<>(taskEntities);
             Pageable pageable = Pageable.ofSize(10);
@@ -182,11 +172,9 @@ class ScheduledTaskServiceTests {
             when(modelMapper.map(any(ScheduledTask.class), eq(ScheduledTaskDto.class)))
                     .thenReturn(sampleTaskDto);
 
-            // When
             Page<ScheduledTaskDto> result = scheduledTaskService
                     .retrieveScheduledTaskBySmartServiceType(pageable, THRESHOLD_BASED_SERVICE_TYPE);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().getFirst().getId()).isEqualTo("task-1");
@@ -197,18 +185,15 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Retrieve scheduled tasks : Empty result")
         void givenNoMatchingTasks_whenRetrieveScheduledTasks_thenReturnsEmptyPage() {
-            // Given
             Page<ScheduledTask> emptyPage = new PageImpl<>(Collections.emptyList());
             Pageable pageable = Pageable.ofSize(10);
 
             when(taskRepository.findBySmartServiceType(THRESHOLD_BASED_SERVICE_TYPE, pageable))
                     .thenReturn(emptyPage);
 
-            // When
             Page<ScheduledTaskDto> result = scheduledTaskService
                     .retrieveScheduledTaskBySmartServiceType(pageable, THRESHOLD_BASED_SERVICE_TYPE);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).isEmpty();
             verify(taskRepository).findBySmartServiceType(THRESHOLD_BASED_SERVICE_TYPE, pageable);
@@ -218,16 +203,13 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Retrieve scheduled tasks : General exception")
         void givenGeneralException_whenRetrieveScheduledTasks_thenReturnsEmptyPage() {
-            // Given
             Pageable pageable = Pageable.ofSize(10);
             when(taskRepository.findBySmartServiceType(THRESHOLD_BASED_SERVICE_TYPE, pageable))
                     .thenThrow(new RuntimeException("Unexpected error"));
 
-            // When
             Page<ScheduledTaskDto> result = scheduledTaskService
                     .retrieveScheduledTaskBySmartServiceType(pageable, THRESHOLD_BASED_SERVICE_TYPE);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).isEmpty();
             assertThat(result.getTotalElements()).isEqualTo(0);
@@ -242,16 +224,13 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Delete scheduled task : Success")
         void givenValidTaskId_whenDeleteScheduledTask_thenDeletesSuccessfully() {
-            // Given
             String taskId = "task-1";
             when(taskRepository.findById(taskId))
                     .thenReturn(Optional.of(sampleTaskEntity));
             doNothing().when(taskRepository).delete(sampleTaskEntity);
 
-            // When
             scheduledTaskService.deleteScheduledTaskById(taskId);
 
-            // Then
             verify(taskRepository).findById(taskId);
             verify(taskRepository).delete(sampleTaskEntity);
         }
@@ -259,12 +238,10 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Delete scheduled task : Task not found")
         void givenNonExistentTaskId_whenDeleteScheduledTask_thenThrowsResourceNotFoundException() {
-            // Given
             String taskId = "non-existent-task";
             when(taskRepository.findById(taskId))
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> scheduledTaskService.deleteScheduledTaskById(taskId))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Scheduled task with ID: non-existent-task not found");
@@ -276,14 +253,12 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Delete scheduled task : Database exception")
         void givenDatabaseException_whenDeleteScheduledTask_thenThrowsServiceOperationException() {
-            // Given
             String taskId = "task-1";
             when(taskRepository.findById(taskId))
                     .thenReturn(Optional.of(sampleTaskEntity));
             doThrow(new RuntimeException("Database error"))
                     .when(taskRepository).delete(sampleTaskEntity);
 
-            // When & Then
             assertThatThrownBy(() -> scheduledTaskService.deleteScheduledTaskById(taskId))
                     .isInstanceOf(ServiceOperationException.class)
                     .hasMessageContaining("Failed to delete scheduled task");
@@ -301,7 +276,6 @@ class ScheduledTaskServiceTests {
         @DisplayName("Calculate next execution time : Hours frequency")
         void givenHoursFrequency_whenCalculateNextExecutionTime_thenReturnsCorrectTime() {
             // This tests the frequency calculation logic indirectly through task registration
-            // Given
             ScheduledTaskDto hourlyTask = ScheduledTaskDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -318,10 +292,8 @@ class ScheduledTaskServiceTests {
             when(taskScheduler.schedule(any(Runnable.class), any(java.time.Instant.class)))
                    .thenReturn((ScheduledFuture) scheduledFuture);
 
-            // When
             boolean result = scheduledTaskService.registerScheduledTask(hourlyTask);
 
-            // Then
             assertThat(result).isTrue();
             verify(taskRepository).save(any(ScheduledTask.class));
         }
@@ -334,7 +306,6 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Initialize scheduled tasks : Success with future tasks")
         void givenFutureTasks_whenInitializeScheduledTasks_thenSchedulesTasks() {
-            // Given
             ScheduledTask futureTask = new ScheduledTask();
             futureTask.setId("future-task");
             futureTask.setModuleId("TEST_MODULE");
@@ -346,10 +317,8 @@ class ScheduledTaskServiceTests {
             //when(taskScheduler.schedule(any(Runnable.class), any(java.time.Instant.class)))
             //        .thenReturn((ScheduledFuture<?>) scheduledFuture);
 
-            // When
             scheduledTaskService.initializeScheduledTasks();
 
-            // Then
             verify(taskRepository).findAll(any(Pageable.class));
             verify(taskScheduler).schedule(any(Runnable.class), any(java.time.Instant.class));
         }
@@ -357,7 +326,6 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Initialize scheduled tasks : Success with overdue tasks")
         void givenOverdueTasks_whenInitializeScheduledTasks_thenExecutesImmediately() {
-            // Given
             ScheduledTask overdueTask = new ScheduledTask();
             overdueTask.setId("overdue-task");
             overdueTask.setModuleId("TEST_MODULE");
@@ -374,10 +342,8 @@ class ScheduledTaskServiceTests {
             //when(taskScheduler.schedule(any(Runnable.class), any(java.time.Instant.class)))
             //        .thenReturn((ScheduledFuture<?>) scheduledFuture);
 
-            // When
             scheduledTaskService.initializeScheduledTasks();
 
-            // Then
             verify(taskRepository).findAll(any(Pageable.class));
             // Overdue task should be executed and rescheduled
             verify(taskRepository, atLeastOnce()).save(any(ScheduledTask.class));
@@ -386,14 +352,11 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Initialize scheduled tasks : Empty task list")
         void givenNoTasks_whenInitializeScheduledTasks_thenHandlesGracefully() {
-            // Given
             when(taskRepository.findAll(any(Pageable.class)))
                     .thenReturn(new PageImpl<>(Collections.emptyList()));
 
-            // When
             scheduledTaskService.initializeScheduledTasks();
 
-            // Then
             verify(taskRepository).findAll(any(Pageable.class));
             verify(taskScheduler, never()).schedule(any(Runnable.class), any(java.time.Instant.class));
         }
@@ -401,11 +364,9 @@ class ScheduledTaskServiceTests {
         @Test
         @DisplayName("Initialize scheduled tasks : Database exception")
         void givenDatabaseException_whenInitializeScheduledTasks_thenHandlesGracefully() {
-            // Given
             when(taskRepository.findAll(any(Pageable.class)))
                     .thenThrow(new RuntimeException("Database connection failed"));
 
-            // When & Then - Should not throw exception
             assertThatCode(() -> scheduledTaskService.initializeScheduledTasks())
                     .doesNotThrowAnyException();
 

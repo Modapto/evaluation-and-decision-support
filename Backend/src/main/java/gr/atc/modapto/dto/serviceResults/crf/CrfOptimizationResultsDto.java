@@ -27,8 +27,8 @@ public class CrfOptimizationResultsDto extends BaseEventResultsDto {
     @JsonProperty("message")
     private String message;
 
-    @JsonProperty("productionModule")
-    private String productionModule;
+    @JsonProperty("module")
+    private String module;
 
     @JsonProperty("optimization_results")
     private OptimizationResults optimizationResults;

@@ -1,11 +1,17 @@
 package gr.atc.modapto.controller;
 
+import gr.atc.modapto.dto.PaginatedResultsDto;
+import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
+import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringInputDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfKhEventNotificationDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
-import gr.atc.modapto.service.interfaces.ISelfAwarenessService;
+import gr.atc.modapto.service.interfaces.ICrfSelfAwarenessService;
+import gr.atc.modapto.service.interfaces.ISewSelfAwarenessService;
+import gr.atc.modapto.util.PaginationUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -13,11 +19,15 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -26,12 +36,18 @@ import java.util.List;
 @Tag(name = "Self Awareness Controller", description = "API Controller for managing Self-Awareness")
 public class SelfAwarenessController {
 
-    private final ISelfAwarenessService selfAwarenessService;
+    private final ISewSelfAwarenessService sewSelfAwarenessService;
 
-    public SelfAwarenessController(ISelfAwarenessService selfAwarenessService){
-        this.selfAwarenessService = selfAwarenessService;
+    private final ICrfSelfAwarenessService crfSelfAwarenessService;
+
+    public SelfAwarenessController(ISewSelfAwarenessService sewSelfAwarenessService, ICrfSelfAwarenessService crfSelfAwarenessService){
+        this.sewSelfAwarenessService = sewSelfAwarenessService;
+        this.crfSelfAwarenessService = crfSelfAwarenessService;
     }
 
+    /*
+     *--------------------------------- SEW --------------------------------
+     */
     /**
      * Invoke Self-Awareness Monitoring KPIs algorithm [SEW - SA1]
      *
@@ -45,9 +61,9 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @PostMapping("/monitor-kpis/invoke")
+    @PostMapping("/pilots/sew/monitor-kpis/invoke")
     public ResponseEntity<BaseResponse<String>> invokeSelfAwarenessMonitoringKpisProcess(@Valid @RequestBody SewSelfAwarenessMonitoringKpisInputDto invocationData) {
-        selfAwarenessService.invokeSelfAwarenessMonitoringKpisAlgorithm(invocationData);
+        sewSelfAwarenessService.invokeSelfAwarenessMonitoringKpisAlgorithm(invocationData);
         return new ResponseEntity<>(
                 BaseResponse.success(null, "Self-Awareness Monitoring KPIs algorithm invoked successfully"),
                 HttpStatus.OK);
@@ -65,11 +81,11 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "404", description = "No Self-Awareness Monitoring KPIs results found"),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/monitor-kpis/results/latest")
+    @GetMapping("/pilots/sew/monitor-kpis/results/latest")
     public ResponseEntity<BaseResponse<SewSelfAwarenessMonitoringKpisResultsDto>> retrieveLatestSelfAwarenessMonitoringKpisResults() {
         return new ResponseEntity<>(
                 BaseResponse.success(
-                        selfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResults(),
+                        sewSelfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResults(),
                         "Latest Self-Awareness Monitoring KPIs results retrieved successfully"),
                 HttpStatus.OK);
     }
@@ -87,12 +103,12 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "404", description = "No Self-Awareness Monitoring KPIs results found for the specified module"),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/monitor-kpis/results/{moduleId}/latest")
+    @GetMapping("/pilots/sew/monitor-kpis/results/{moduleId}/latest")
     public ResponseEntity<BaseResponse<SewSelfAwarenessMonitoringKpisResultsDto>> retrieveLatestSelfAwarenessMonitoringKpisResultsByModuleId(
             @PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId) {
         return new ResponseEntity<>(
                 BaseResponse.success(
-                        selfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResultsByModuleId(moduleId),
+                        sewSelfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResultsByModuleId(moduleId),
                         "Latest Self-Awareness Monitoring KPIs results for Module " + moduleId + " retrieved successfully"),
                 HttpStatus.OK);
     }
@@ -108,11 +124,11 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/monitor-kpis/results")
+    @GetMapping("/pilots/sew/monitor-kpis/results")
     public ResponseEntity<BaseResponse<List<SewSelfAwarenessMonitoringKpisResultsDto>>> retrieveAllSelfAwarenessMonitoringKpisResults() {
         return new ResponseEntity<>(
                 BaseResponse.success(
-                        selfAwarenessService.retrieveAllSelfAwarenessMonitoringKpisResults(),
+                        sewSelfAwarenessService.retrieveAllSelfAwarenessMonitoringKpisResults(),
                         "All Self-Awareness Monitoring KPIs results retrieved successfully"),
                 HttpStatus.OK);
     }
@@ -129,12 +145,12 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/monitor-kpis/results/{moduleId}")
+    @GetMapping("/pilots/sew/monitor-kpis/results/{moduleId}")
     public ResponseEntity<BaseResponse<List<SewSelfAwarenessMonitoringKpisResultsDto>>> retrieveAllSelfAwarenessMonitoringKpisResultsByModuleId(
             @PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId) {
         return new ResponseEntity<>(
                 BaseResponse.success(
-                        selfAwarenessService.retrieveAllSelfAwarenessMonitoringKpisResultsByModuleId(moduleId),
+                        sewSelfAwarenessService.retrieveAllSelfAwarenessMonitoringKpisResultsByModuleId(moduleId),
                         "All Self-Awareness Monitoring KPIs results for Module " + moduleId + " retrieved successfully"),
                 HttpStatus.OK);
     }
@@ -152,9 +168,9 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @PostMapping("/real-time-monitoring/invoke")
+    @PostMapping("/pilots/sew/real-time-monitoring/invoke")
     public ResponseEntity<BaseResponse<String>> invokeSelfAwarenessRealTimeMonitoringProcess(@Valid @RequestBody SewSelfAwarenessRealTimeMonitoringInputDto invocationData) {
-        selfAwarenessService.invokeSelfAwarenessRealTimeMonitoringAlgorithm(invocationData);
+        sewSelfAwarenessService.invokeSelfAwarenessRealTimeMonitoringAlgorithm(invocationData);
         return new ResponseEntity<>(
                 BaseResponse.success(null, "Self-Awareness Real-Time Monitoring algorithm invoked successfully"),
                 HttpStatus.OK);
@@ -171,11 +187,11 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/real-time-monitoring/results")
+    @GetMapping("/pilots/sew/real-time-monitoring/results")
     public ResponseEntity<BaseResponse<List<SewSelfAwarenessRealTimeMonitoringResultsDto>>> retrieveAllSelfAwarenessRealTimeMonitoringResults() {
         return new ResponseEntity<>(
                 BaseResponse.success(
-                        selfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResults(),
+                        sewSelfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResults(),
                         "All Self-Awareness Real-Time Monitoring results retrieved successfully"),
                 HttpStatus.OK);
     }
@@ -192,12 +208,12 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/real-time-monitoring/results/{moduleId}")
+    @GetMapping("/pilots/sew/real-time-monitoring/results/{moduleId}")
     public ResponseEntity<BaseResponse<List<SewSelfAwarenessRealTimeMonitoringResultsDto>>> retrieveAllSelfAwarenessRealTimeMonitoringResultsByModuleId(
             @PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId) {
         return new ResponseEntity<>(
                 BaseResponse.success(
-                        selfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResultsByModuleId(moduleId),
+                        sewSelfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResultsByModuleId(moduleId),
                         "All Self-Awareness Real-Time Monitoring results for Module " + moduleId + " retrieved successfully"),
                 HttpStatus.OK);
     }
@@ -215,9 +231,9 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @PostMapping("/component-list/upload")
+    @PostMapping("/pilots/sew/component-list/upload")
     public ResponseEntity<BaseResponse<String>> uploadSelfAwarenessComponentList(@Valid @RequestBody SewMonitorKpisComponentsDto componentsData) {
-        selfAwarenessService.uploadModuleComponentsList(componentsData);
+        sewSelfAwarenessService.uploadModuleComponentsList(componentsData);
         return new ResponseEntity<>(
                 BaseResponse.success(null, "Self-Awareness component list for module '" + componentsData.getModuleId() + "' has been successfully uploaded"),
                 HttpStatus.CREATED);
@@ -236,10 +252,10 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "404", description = "Component list for module not found"),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/modules/{moduleId}/component-list")
+    @GetMapping("/pilots/sew/modules/{moduleId}/component-list")
     public ResponseEntity<BaseResponse<SewMonitorKpisComponentsDto>> retrieveModuleComponentList(@PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId) {
         return new ResponseEntity<>(
-                BaseResponse.success(selfAwarenessService.retrieveSelfAwarenessComponentListByModuleId(moduleId),
+                BaseResponse.success(sewSelfAwarenessService.retrieveSelfAwarenessComponentListByModuleId(moduleId),
                         "Self-Awareness component list for module '" + moduleId + "' retrieved successfully"),
                 HttpStatus.OK);
     }
@@ -257,12 +273,94 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "404", description = "Component list for module not found"),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @DeleteMapping("/modules/{moduleId}/component-list")
+    @DeleteMapping("/pilots/sew/modules/{moduleId}/component-list")
     public ResponseEntity<BaseResponse<String>> deleteSelfAwarenessComponentListByModuleId(
             @PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId) {
-        selfAwarenessService.deleteSelfAwarenessComponentListByModuleId(moduleId);
+        sewSelfAwarenessService.deleteSelfAwarenessComponentListByModuleId(moduleId);
         return new ResponseEntity<>(
                 BaseResponse.success(null, "Self-Awareness component list for module '" + moduleId + "' deleted successfully"),
                 HttpStatus.OK);
+    }
+
+    /*
+     *--------------------------------- CRF --------------------------------
+     */
+    /**
+     * Invoke CRF Self-Awareness operation with Events data
+     *
+     * @param eventsFile : Events CSV Data
+     * @param parameters : Input parameters
+     * @return Message of success
+     */
+    @Operation(summary = "Invoke CRF Self-Awareness operation with Events data", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Self-Awareness algorithm for Kit-Holder has been successfully initialized"),
+            @ApiResponse(responseCode = "400", description = "Validation error | Throws if file is not proper or data are missing"),
+            @ApiResponse(responseCode = "400", description = "File handling error"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/pilots/crf/invoke")
+    public ResponseEntity<BaseResponse<String>> invokeCrfKhSelfAwareness(@RequestPart("file") MultipartFile eventsFile, @Valid @RequestPart("parameters") CrfSelfAwarenessParametersDto parameters) throws IOException {
+        crfSelfAwarenessService.invokeKhSelfAwareness(eventsFile, parameters);
+        return new ResponseEntity<>(
+                BaseResponse.success(null, "Self-Awareness algorithm for Kit-Holder has been successfully initialized"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Retrieve all KH Events from Self-Awareness analysis (paginated)
+     *
+     * @param page : Page Size
+     * @param size : Size of elements per page
+     * @param sortAttribute : Sort Attribute of Process Drift
+     * @param isAscending : Order of sorting
+     * @return SewThresholdBasedPredictiveMaintenanceOutputDto
+     */
+    @Operation(summary = "Retrieve all KH Events from Self-Awareness analysis (paginated)", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "KH Events retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination sort attributes"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Invalid pagination sort attributes")
+    })
+    @GetMapping("/pilots/crf/kh-events")
+    public ResponseEntity<BaseResponse<PaginatedResultsDto<CrfKitHolderEventDto>>> retrievePaginatedKhEventResultsByModuleId(@RequestParam(required = false, defaultValue = "0") int page,
+                                                                                                                                  @RequestParam(required = false, defaultValue = "10") int size,
+                                                                                                                                  @RequestParam(required = false, defaultValue = "timeWindow") String sortAttribute,
+                                                                                                                                  @RequestParam(required = false, defaultValue = "false") boolean isAscending) {
+
+        // Fix the pagination parameters
+        Pageable pageable = PaginationUtils.createPaginationParameters(page, size, sortAttribute, isAscending, CrfKhEventNotificationDto.class);
+        if (pageable == null)
+            return new ResponseEntity<>(BaseResponse.error("Invalid pagination sort attributes"), HttpStatus.BAD_REQUEST);
+
+        // Retrieve stored results in pages
+        Page<CrfKitHolderEventDto> output = crfSelfAwarenessService.retrievePaginatedKhEventResultsPaginated(pageable);
+
+        return new ResponseEntity<>(
+                BaseResponse.success(PaginationUtils.formulatePaginatedResults(output), "KH Events retrieved successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Registration of Kit Holder event by Workers
+     *
+     * @param event : Registration event
+     * @return Message of success
+     */
+    @Operation(summary = "Registration of Kit Holder event by Workers", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Kit Holder event registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Validation error | Throws if file is not proper or data are missing"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/pilots/crf/register-event")
+    public ResponseEntity<BaseResponse<String>> registerKitHolderEventByCrfWorkers(@RequestBody CrfKhEventNotificationDto event){
+        crfSelfAwarenessService.registerKitHolderEvent(event);
+        return new ResponseEntity<>(
+                BaseResponse.success(null, "Kit Holder event registered successfully"),
+                HttpStatus.CREATED);
     }
 }

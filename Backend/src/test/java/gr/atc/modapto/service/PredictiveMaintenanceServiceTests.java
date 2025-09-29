@@ -107,7 +107,6 @@ class PredictiveMaintenanceServiceTests {
 
     @BeforeEach
     void setUp() {
-        // Given - Setup test data
         sampleDto = MaintenanceDataDto.builder()
                 .stage("TestStage")
                 .cell("TestCell")
@@ -152,7 +151,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store CORIM data : Success")
         void givenValidCorimFile_whenStoreCorimData_thenSavesDataSuccessfully() {
-            // Given
             try (MockedStatic<ExcelFilesUtils> mockedStatic = mockStatic(ExcelFilesUtils.class)) {
                 mockedStatic.when(() -> ExcelFilesUtils.extractMaintenanceDataFromCorimFile(multipartFile))
                         .thenReturn(sampleDtoList);
@@ -163,10 +161,8 @@ class PredictiveMaintenanceServiceTests {
                 when(maintenanceDataRepository.saveAll(anyList()))
                         .thenReturn(sampleEntityList);
 
-                // When
                 predictiveMaintenanceService.storeCorimData(multipartFile);
 
-                // Then
                 mockedStatic.verify(() -> ExcelFilesUtils.extractMaintenanceDataFromCorimFile(multipartFile));
                 verify(modelMapper, times(2)).map(any(MaintenanceDataDto.class), eq(MaintenanceData.class));
                 verify(maintenanceDataRepository).saveAll(anyList());
@@ -176,7 +172,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store CORIM data : Large dataset batch processing")
         void givenLargeDataset_whenStoreCorimData_thenProcessesInBatches() {
-            // Given
             List<MaintenanceDataDto> largeDataset = createLargeDataset(2500); // More than batch size
             
             try (MockedStatic<ExcelFilesUtils> mockedStatic = mockStatic(ExcelFilesUtils.class)) {
@@ -189,10 +184,8 @@ class PredictiveMaintenanceServiceTests {
                 when(maintenanceDataRepository.saveAll(anyList()))
                         .thenReturn(sampleEntityList);
 
-                // When
                 predictiveMaintenanceService.storeCorimData(multipartFile);
 
-                // Then
                 mockedStatic.verify(() -> ExcelFilesUtils.extractMaintenanceDataFromCorimFile(multipartFile));
                 verify(modelMapper, times(2500)).map(any(MaintenanceDataDto.class), eq(MaintenanceData.class));
                 verify(maintenanceDataRepository, times(3)).saveAll(anyList()); // 3 batches (1000 + 1000 + 500)
@@ -202,15 +195,12 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store CORIM data : Empty dataset")
         void givenEmptyDataset_whenStoreCorimData_thenHandlesGracefully() {
-            // Given
             try (MockedStatic<ExcelFilesUtils> mockedStatic = mockStatic(ExcelFilesUtils.class)) {
                 mockedStatic.when(() -> ExcelFilesUtils.extractMaintenanceDataFromCorimFile(multipartFile))
                         .thenReturn(Collections.emptyList());
 
-                // When
                 predictiveMaintenanceService.storeCorimData(multipartFile);
 
-                // Then
                 mockedStatic.verify(() -> ExcelFilesUtils.extractMaintenanceDataFromCorimFile(multipartFile));
                 verify(modelMapper, never()).map(any(MaintenanceDataDto.class), eq(MaintenanceData.class));
                 verify(maintenanceDataRepository, never()).saveAll(anyList());
@@ -220,12 +210,10 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store CORIM data : Excel processing failure")
         void givenExcelProcessingFailure_whenStoreCorimData_thenThrowsFileHandlingException() {
-            // Given
             try (MockedStatic<ExcelFilesUtils> mockedStatic = mockStatic(ExcelFilesUtils.class)) {
                 mockedStatic.when(() -> ExcelFilesUtils.extractMaintenanceDataFromCorimFile(multipartFile))
                         .thenThrow(new RuntimeException("Excel processing error"));
 
-                // When & Then
                 assertThatThrownBy(() -> predictiveMaintenanceService.storeCorimData(multipartFile))
                         .isInstanceOf(FileHandlingException.class)
                         .hasMessage("Error processing Excel file");
@@ -238,7 +226,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store CORIM data : Database save failure")
         void givenDatabaseSaveFailure_whenStoreCorimData_thenThrowsFileHandlingException() {
-            // Given
             try (MockedStatic<ExcelFilesUtils> mockedStatic = mockStatic(ExcelFilesUtils.class)) {
                 mockedStatic.when(() -> ExcelFilesUtils.extractMaintenanceDataFromCorimFile(multipartFile))
                         .thenReturn(sampleDtoList);
@@ -249,7 +236,6 @@ class PredictiveMaintenanceServiceTests {
                 when(maintenanceDataRepository.saveAll(anyList()))
                         .thenThrow(new RuntimeException("Database error"));
 
-                // When & Then
                 assertThatThrownBy(() -> predictiveMaintenanceService.storeCorimData(multipartFile))
                         .isInstanceOf(FileHandlingException.class)
                         .hasMessage("Error processing Excel file");
@@ -261,7 +247,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store CORIM data : Mapping error")
         void givenMappingError_whenStoreCorimData_thenThrowsFileHandlingException() {
-            // Given
             try (MockedStatic<ExcelFilesUtils> mockedStatic = mockStatic(ExcelFilesUtils.class)) {
                 mockedStatic.when(() -> ExcelFilesUtils.extractMaintenanceDataFromCorimFile(multipartFile))
                         .thenReturn(sampleDtoList);
@@ -269,7 +254,6 @@ class PredictiveMaintenanceServiceTests {
                 when(modelMapper.map(any(MaintenanceDataDto.class), eq(MaintenanceData.class)))
                         .thenThrow(new RuntimeException("Mapping error"));
 
-                // When & Then
                 assertThatThrownBy(() -> predictiveMaintenanceService.storeCorimData(multipartFile))
                         .isInstanceOf(FileHandlingException.class)
                         .hasMessage("Error processing Excel file");
@@ -282,7 +266,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store CORIM data : Exact batch size")
         void givenExactBatchSize_whenStoreCorimData_thenProcessesCorrectly() {
-            // Given
             List<MaintenanceDataDto> exactBatchSize = createLargeDataset(1000); // Exactly batch size
             
             try (MockedStatic<ExcelFilesUtils> mockedStatic = mockStatic(ExcelFilesUtils.class)) {
@@ -295,10 +278,8 @@ class PredictiveMaintenanceServiceTests {
                 when(maintenanceDataRepository.saveAll(anyList()))
                         .thenReturn(sampleEntityList);
 
-                // When
                 predictiveMaintenanceService.storeCorimData(multipartFile);
 
-                // Then
                 verify(maintenanceDataRepository, times(1)).saveAll(anyList()); // Exactly 1 batch
                 verify(modelMapper, times(1000)).map(any(MaintenanceDataDto.class), eq(MaintenanceData.class));
             }
@@ -306,13 +287,12 @@ class PredictiveMaintenanceServiceTests {
     }
 
     @Nested
-    @DisplayName("Retrieve Maintenance Data by Date Range")
-    class RetrieveMaintenanceDataByDateRange {
+    @DisplayName("Retrieve Maintenance Data Paginated")
+    class RetrieveMaintenanceDataPaginated {
 
         @Test
-        @DisplayName("Retrieve maintenance data : Success with date range")
-        void givenStartAndEndDates_whenRetrieveMaintenanceData_thenReturnsFilteredData() {
-            // Given
+        @DisplayName("Retrieve maintenance data : Success with pagination")
+        void givenValidPageable_whenRetrieveMaintenanceDataPaginated_thenReturnsPagedData() {
             SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(sampleEntityList);
             when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
                     .thenReturn(mockSearchHits);
@@ -320,175 +300,42 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
                     .thenReturn(sampleDto);
 
-            // When
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange("2024-01-01", "2024-01-31");
+            Page<MaintenanceDataDto> result = predictiveMaintenanceService
+                    .retrieveMaintenanceDataPaginated(Pageable.unpaged());
 
-            // Then
-            assertThat(result).hasSize(2);
+            assertThat(result.getContent()).hasSize(2);
             verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
-            verify(modelMapper, times(2)).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
-        }
-
-        @Test
-        @DisplayName("Retrieve maintenance data : Success with start date only")
-        void givenStartDateOnly_whenRetrieveMaintenanceData_thenReturnsFilteredData() {
-            // Given
-            SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(sampleEntityList);
-            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
-                    .thenReturn(mockSearchHits);
-
-            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
-                    .thenReturn(sampleDto);
-
-            // When
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange("2024-01-01", null);
-
-            // Then
-            assertThat(result).hasSize(2);
-            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
-            verify(modelMapper, times(2)).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
-        }
-
-        @Test
-        @DisplayName("Retrieve maintenance data : Success with end date only")
-        void givenEndDateOnly_whenRetrieveMaintenanceData_thenReturnsFilteredData() {
-            // Given
-            SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(sampleEntityList);
-            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
-                    .thenReturn(mockSearchHits);
-
-            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
-                    .thenReturn(sampleDto);
-
-            // When
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange(null, "2024-01-31");
-
-            // Then
-            assertThat(result).hasSize(2);
-            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
-            verify(modelMapper, times(2)).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
-        }
-
-        @Test
-        @DisplayName("Retrieve maintenance data : Success with no dates")
-        void givenNoDates_whenRetrieveMaintenanceData_thenReturnsAllData() {
-            // Given
-            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
-            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
-
-            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
-                    .thenReturn(sampleDto);
-
-            // When
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange(null, null);
-
-            // Then
-            assertThat(result).hasSize(2);
-            verify(maintenanceDataRepository).findAll(any(Pageable.class));
-            verify(elasticsearchOperations, never()).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
             verify(modelMapper, times(2)).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
         }
 
         @Test
         @DisplayName("Retrieve maintenance data : Empty result")
-        void givenNoDataFound_whenRetrieveMaintenanceData_thenReturnsEmptyList() {
-            // Given
+        void givenNoDataFound_whenRetrieveMaintenanceDataPaginated_thenReturnsEmptyPage() {
             SearchHits<MaintenanceData> emptySearchHits = createMockSearchHits(Collections.emptyList());
             when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
                     .thenReturn(emptySearchHits);
 
-            // When
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange("2024-01-01", "2024-01-31");
+            Page<MaintenanceDataDto> result = predictiveMaintenanceService
+                    .retrieveMaintenanceDataPaginated(Pageable.unpaged());
 
-            // Then
-            assertThat(result).isEmpty();
-            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
-            verify(modelMapper, never()).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
-        }
-
-        @Test
-        @DisplayName("Retrieve maintenance data : Elasticsearch error")
-        void givenElasticsearchError_whenRetrieveMaintenanceData_thenThrowsException() {
-            // Given
-            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
-                    .thenThrow(new RuntimeException("Elasticsearch error"));
-
-            // When & Then
-            assertThatThrownBy(() -> predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange("2024-01-01", "2024-01-31"))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Elasticsearch error");
-
+            assertThat(result.getContent()).isEmpty();
             verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
             verify(modelMapper, never()).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
         }
 
         @Test
         @DisplayName("Retrieve maintenance data : Repository error")
-        void givenRepositoryError_whenRetrieveAllData_thenThrowsException() {
-            // Given
-            when(maintenanceDataRepository.findAll(any(Pageable.class)))
-                    .thenThrow(new RuntimeException("Repository error"));
+        void givenRepositoryError_whenRetrieveMaintenanceDataPaginated_thenThrowsException() {
+            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
+                    .thenThrow(new RuntimeException("Elasticsearch error"));
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange(null, null))
+                    .retrieveMaintenanceDataPaginated(Pageable.unpaged()))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessage("Repository error");
+                    .hasMessage("Elasticsearch error");
 
-            verify(maintenanceDataRepository).findAll(any(Pageable.class));
+            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
             verify(modelMapper, never()).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
-        }
-
-        @Test
-        @DisplayName("Retrieve maintenance data : Date format edge cases")
-        void givenDateFormatEdgeCases_whenRetrieveMaintenanceData_thenHandlesGracefully() {
-            // Given
-            SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(sampleEntityList);
-            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
-                    .thenReturn(mockSearchHits);
-
-            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
-                    .thenReturn(sampleDto);
-
-            // When
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange("2024-01-01T00:00:00", "2024-01-31T23:59:59");
-
-            // Then
-            assertThat(result).hasSize(2);
-            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
-            verify(modelMapper, times(2)).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
-        }
-
-        @Test
-        @DisplayName("Retrieve maintenance data : Large result set performance")
-        void givenLargeResultSet_whenRetrieveMaintenanceData_thenProcessesEfficiently() {
-            // Given
-            List<MaintenanceData> largeDataset = createLargeMaintenanceDataset();
-            SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(largeDataset);
-            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
-                    .thenReturn(mockSearchHits);
-
-            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
-                    .thenReturn(sampleDto);
-
-            // When
-            long startTime = System.currentTimeMillis();
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange("2024-01-01", "2024-12-31");
-            long endTime = System.currentTimeMillis();
-
-            // Then
-            assertThat(result).hasSize(5000);
-            assertThat(endTime - startTime).isLessThan(5000); // Should complete within 5 seconds
-            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
-            verify(modelMapper, times(5000)).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
         }
     }
 
@@ -499,63 +346,40 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store CORIM data : Null file")
         void givenNullFile_whenStoreCorimData_thenThrowsFileHandlingException() {
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService.storeCorimData(null))
                     .isInstanceOf(FileHandlingException.class)
                     .hasMessage("Error processing Excel file");
         }
 
         @Test
-        @DisplayName("Retrieve maintenance data : Null date parameters")
-        void givenNullDateParameters_whenRetrieveMaintenanceData_thenReturnsAllData() {
-            // Given
-            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
-            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+        @DisplayName("Retrieve maintenance data : Standard pageable")
+        void givenStandardPageable_whenRetrieveMaintenanceDataPaginated_thenReturnsData() {
+            SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(sampleEntityList);
+            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
+                    .thenReturn(mockSearchHits);
 
             when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
                     .thenReturn(sampleDto);
 
-            // When
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange(null, null);
+            Page<MaintenanceDataDto> result = predictiveMaintenanceService
+                    .retrieveMaintenanceDataPaginated(Pageable.unpaged());
 
-            // Then
-            assertThat(result).hasSize(2);
-            verify(maintenanceDataRepository).findAll(any(Pageable.class));
-        }
-
-        @Test
-        @DisplayName("Retrieve maintenance data : Empty string date parameters")
-        void givenEmptyStringDateParameters_whenRetrieveMaintenanceData_thenReturnsAllData() {
-            // Given
-            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
-            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
-
-            when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
-                    .thenReturn(sampleDto);
-
-            // When
-            List<MaintenanceDataDto> result = predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange(null,null);
-
-            // Then
-            assertThat(result).hasSize(2);
-            verify(maintenanceDataRepository).findAll(any(Pageable.class));
+            assertThat(result.getContent()).hasSize(2);
+            verify(elasticsearchOperations).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
         }
 
         @Test
         @DisplayName("Performance : Concurrent access")
-        void givenConcurrentAccess_whenRetrieveMaintenanceData_thenHandlesProperlyOptimized() throws InterruptedException {
-            // Given
-            Page<MaintenanceData> mockPage = new PageImpl<>(sampleEntityList);
-            when(maintenanceDataRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+        void givenConcurrentAccess_whenRetrieveMaintenanceDataPaginated_thenHandlesProperlyOptimized() throws InterruptedException {
+            SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(sampleEntityList);
+            when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
+                    .thenReturn(mockSearchHits);
 
             when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
                     .thenReturn(sampleDto);
 
-            // When
             Runnable retrievalTask = () -> predictiveMaintenanceService
-                    .retrieveMaintenanceDataByDateRange(null, null);
+                    .retrieveMaintenanceDataPaginated(Pageable.unpaged());
 
             Thread thread1 = new Thread(retrievalTask);
             Thread thread2 = new Thread(retrievalTask);
@@ -566,8 +390,7 @@ class PredictiveMaintenanceServiceTests {
             thread1.join();
             thread2.join();
 
-            // Then
-            verify(maintenanceDataRepository, times(2)).findAll(any(Pageable.class));
+            verify(elasticsearchOperations, times(2)).search(any(CriteriaQuery.class), eq(MaintenanceData.class));
             verify(modelMapper, times(4)).map(any(MaintenanceData.class), eq(MaintenanceDataDto.class));
         }
     }
@@ -579,7 +402,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Invoke threshold-based maintenance : Success")
         void givenValidInput_whenInvokeThresholdMaintenance_thenReturnsResult() throws JsonProcessingException {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -602,15 +424,12 @@ class PredictiveMaintenanceServiceTests {
             when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
                     .thenReturn(expectedOutput);
 
-            // Mock ObjectMapper to return valid JSON string
             when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
 
 
-            // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = predictiveMaintenanceService
                     .invokeThresholdBasedPredictiveMaintenance(inputData);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getModuleId()).isEqualTo("TEST_MODULE");
             assertThat(result.getSmartServiceId()).isEqualTo("THRESHOLD_SERVICE");
@@ -622,7 +441,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Invoke threshold-based maintenance : Mapping exception")
         void givenMappingError_whenInvokeThresholdMaintenance_thenThrowsModelMappingException() {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -633,7 +451,6 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
                     .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService.invokeThresholdBasedPredictiveMaintenance(inputData))
                     .isInstanceOf(ModelMappingException.class)
                     .hasMessageContaining("Exception occurred while mapping Threshold Based Predictive Maintenance Entity to DTO");
@@ -645,7 +462,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Invoke threshold-based maintenance : Empty maintenance data")
         void givenEmptyMaintenanceData_whenInvokeThresholdMaintenance_thenProceedsSuccessfully() throws JsonProcessingException {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -663,14 +479,11 @@ class PredictiveMaintenanceServiceTests {
                     .build();
             when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
                     .thenReturn(expectedOutput);
-            // Mock ObjectMapper to return valid JSON string
             when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
 
-            // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = predictiveMaintenanceService
                     .invokeThresholdBasedPredictiveMaintenance(inputData);
 
-            // Then
             assertThat(result).isNotNull();
             verify(maintenanceDataRepository).findAll(any(Pageable.class));
             verify(smartServicesInvocationService).invokeSmartService(eq("THRESHOLD_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
@@ -685,7 +498,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Invoke grouping maintenance : Success")
         void givenValidInput_whenInvokeGroupingMaintenance_thenInvokesSuccessfully() throws JsonProcessingException {
-            // Given
             SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("GROUPING_SERVICE")
@@ -711,32 +523,23 @@ class PredictiveMaintenanceServiceTests {
                     .thenReturn(componentDto);
 
             ResponseEntity<DtResponseDto> mockResponse = new ResponseEntity<>(new DtResponseDto(), HttpStatus.OK);
-            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
-                    .thenReturn(mockResponse);
 
-            when(noOpResponseProcessor.processResponse(any(), anyString(), anyString()))
-                    .thenReturn(null);
-
-            // Mock ObjectMapper to return valid JSON string
-            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
-
-            // When
             predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData);
 
-            // Then
             verify(componentInfoRepository).findAll(any(Pageable.class));
             verify(modelMapper, times(2)).map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class));
-            verify(smartServicesInvocationService).invokeSmartService(eq("GROUPING_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
-            verify(noOpResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "GROUPING_SERVICE");
-            
-            // Verify component list was set
+            verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
+                    eq(inputData),
+                    eq(null),
+                    eq("Grouping Predictive Maintenance")
+            );
+
             assertThat(inputData.getComponentList()).hasSize(2);
         }
 
         @Test
         @DisplayName("Invoke grouping maintenance : Component mapping exception")
         void givenComponentMappingError_whenInvokeGroupingMaintenance_thenThrowsModelMappingException() {
-            // Given
             SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("GROUPING_SERVICE")
@@ -749,19 +552,17 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class)))
                     .thenThrow(new MappingException(List.of(new ErrorMessage("Component mapping error"))));
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData))
                     .isInstanceOf(ModelMappingException.class)
                     .hasMessageContaining("Exception occurred while mapping Grouping Predictive Maintenance Entity to DTO");
 
             verify(componentInfoRepository).findAll(any(Pageable.class));
-            verify(smartServicesInvocationService, never()).invokeSmartService(anyString(), anyString(), any(), any());
+            verify(smartServicesInvocationService, never()).formulateAndImplementSmartServiceRequest(any(), any(), any());
         }
 
         @Test
         @DisplayName("Invoke grouping maintenance : Empty component list")
         void givenEmptyComponentList_whenInvokeGroupingMaintenance_thenProceedsSuccessfully() throws JsonProcessingException {
-            // Given
             SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("GROUPING_SERVICE")
@@ -771,25 +572,51 @@ class PredictiveMaintenanceServiceTests {
             when(componentInfoRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
 
             ResponseEntity<DtResponseDto> mockResponse = new ResponseEntity<>(new DtResponseDto(), HttpStatus.OK);
-            when(smartServicesInvocationService.invokeSmartService(anyString(), anyString(), any(DtInputDto.class), any(ModaptoHeader.class)))
-                    .thenReturn(mockResponse);
 
-            when(noOpResponseProcessor.processResponse(any(), anyString(), anyString()))
-                    .thenReturn(null);
 
-            // Mock ObjectMapper to return valid JSON string
-            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
-
-            // When
             predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData);
 
-            // Then
             verify(componentInfoRepository).findAll(any(Pageable.class));
-            verify(smartServicesInvocationService).invokeSmartService(eq("GROUPING_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
-            verify(noOpResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "GROUPING_SERVICE");
-            
-            // Verify empty component list was set
+            verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
+                    eq(inputData),
+                    eq(null),
+                    eq("Grouping Predictive Maintenance")
+            );
+
             assertThat(inputData.getComponentList()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Invoke grouping maintenance : SmartServicesInvocationService failure")
+        void givenSmartServiceFailure_whenInvokeGroupingMaintenance_thenThrowsException() throws Exception {
+            SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
+                    .moduleId("TEST_MODULE")
+                    .smartServiceId("GROUPING_SERVICE")
+                    .build();
+
+            List<SewComponentInfo> componentEntities = Arrays.asList(
+                    createSewComponentInfo("1", "Stage1", "Cell1", "Module1", "MOD1")
+            );
+            Page<SewComponentInfo> mockPage = new PageImpl<>(componentEntities);
+            when(componentInfoRepository.findAll(any(Pageable.class))).thenReturn(mockPage);
+
+            SewComponentInfoDto componentDto = SewComponentInfoDto.builder().build();
+            when(modelMapper.map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class)))
+                    .thenReturn(componentDto);
+
+            doThrow(new RuntimeException("Smart service invocation failed"))
+                    .when(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(any(), any(), any());
+
+            assertThatThrownBy(() -> predictiveMaintenanceService.invokeGroupingPredictiveMaintenance(inputData))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Smart service invocation failed");
+
+            verify(componentInfoRepository).findAll(any(Pageable.class));
+            verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
+                    eq(inputData),
+                    eq(null),
+                    eq("Grouping Predictive Maintenance")
+            );
         }
     }
 
@@ -800,7 +627,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Declare process drift : Success with timestamps set automatically")
         void givenValidProcessDriftData_whenDeclareProcessDrift_thenReturnsId() {
-            // Given
             MaintenanceDataDto inputData = MaintenanceDataDto.builder()
                     .stage("TestStage")
                     .cell("TestCell")
@@ -824,10 +650,8 @@ class PredictiveMaintenanceServiceTests {
             when(maintenanceDataRepository.save(any(MaintenanceData.class)))
                     .thenReturn(savedEntity);
 
-            // When
             String result = predictiveMaintenanceService.declareProcessDrift(inputData);
 
-            // Then
             assertThat(result).isEqualTo("generated-id");
             verify(modelMapper).map(any(MaintenanceDataDto.class), eq(MaintenanceData.class));
             verify(maintenanceDataRepository).save(any(MaintenanceData.class));
@@ -836,7 +660,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Declare process drift : Success with pre-existing timestamps")
         void givenProcessDriftDataWithTimestamps_whenDeclareProcessDrift_thenPreservesTimestamps() {
-            // Given
             LocalDateTime existingTimestamp = LocalDateTime.now().minusHours(1);
             MaintenanceDataDto inputData = MaintenanceDataDto.builder()
                     .stage("TestStage")
@@ -855,10 +678,8 @@ class PredictiveMaintenanceServiceTests {
             when(maintenanceDataRepository.save(any(MaintenanceData.class)))
                     .thenReturn(savedEntity);
 
-            // When
             String result = predictiveMaintenanceService.declareProcessDrift(inputData);
 
-            // Then
             assertThat(result).isEqualTo("generated-id");
             assertThat(inputData.getTsRequestCreation()).isEqualTo(existingTimestamp);
             assertThat(inputData.getTsInterventionStarted()).isEqualTo(existingTimestamp);
@@ -868,7 +689,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Declare process drift : Mapping exception")
         void givenMappingError_whenDeclareProcessDrift_thenThrowsModelMappingException() {
-            // Given
             MaintenanceDataDto inputData = MaintenanceDataDto.builder()
                     .stage("TestStage")
                     .cell("TestCell")
@@ -878,7 +698,6 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(any(MaintenanceDataDto.class), eq(MaintenanceData.class)))
                     .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService.declareProcessDrift(inputData))
                     .isInstanceOf(ModelMappingException.class)
                     .hasMessageContaining("Unable to parse SEW Predictive Maintenance Results to DTO or vice-versa");
@@ -890,7 +709,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Retrieve process drift by ID : Success")
         void givenValidProcessDriftId_whenRetrieveProcessDriftById_thenReturnsDto() {
-            // Given
             String driftId = "test-drift-id";
             MaintenanceData entity = new MaintenanceData();
             entity.setId(driftId);
@@ -911,10 +729,8 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(entity, MaintenanceDataDto.class))
                     .thenReturn(expectedDto);
 
-            // When
             MaintenanceDataDto result = predictiveMaintenanceService.retrieveProcessDriftById(driftId);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getStage()).isEqualTo("TestStage");
             assertThat(result.getCell()).isEqualTo("TestCell");
@@ -927,12 +743,10 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Retrieve process drift by ID : Not found")
         void givenNonExistentId_whenRetrieveProcessDriftById_thenThrowsResourceNotFoundException() {
-            // Given
             String driftId = "non-existent-id";
             when(maintenanceDataRepository.findById(driftId))
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService.retrieveProcessDriftById(driftId))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Process drift with ID = 'non-existent-id' not found in PKB");
@@ -944,7 +758,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Retrieve process drift by ID : Mapping exception")
         void givenMappingError_whenRetrieveProcessDriftById_thenThrowsModelMappingException() {
-            // Given
             String driftId = "test-drift-id";
             MaintenanceData entity = new MaintenanceData();
             entity.setId(driftId);
@@ -954,7 +767,6 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(entity, MaintenanceDataDto.class))
                     .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService.retrieveProcessDriftById(driftId))
                     .isInstanceOf(ModelMappingException.class)
                     .hasMessageContaining("Unable to parse SEW Predictive Maintenance Results to DTO or vice-versa");
@@ -966,7 +778,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Complete process drift : Success")
         void givenValidIdAndEndTime_whenCompleteProcessDrift_thenUpdatesEntity() {
-            // Given
             String driftId = "test-drift-id";
             LocalDateTime endTime = LocalDateTime.now();
             MaintenanceData entity = new MaintenanceData();
@@ -978,10 +789,8 @@ class PredictiveMaintenanceServiceTests {
             when(maintenanceDataRepository.save(any(MaintenanceData.class)))
                     .thenReturn(entity);
 
-            // When
             predictiveMaintenanceService.completeProcessDrift(driftId, endTime);
 
-            // Then
             verify(maintenanceDataRepository).findById(driftId);
             verify(maintenanceDataRepository).save(any(MaintenanceData.class));
         }
@@ -989,13 +798,11 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Complete process drift : Not found")
         void givenNonExistentId_whenCompleteProcessDrift_thenThrowsResourceNotFoundException() {
-            // Given
             String driftId = "non-existent-id";
             LocalDateTime endTime = LocalDateTime.now();
             when(maintenanceDataRepository.findById(driftId))
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService.completeProcessDrift(driftId, endTime))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Process drift with ID = 'non-existent-id' not found in PKB");
@@ -1007,8 +814,7 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Retrieve paginated uncompleted process drifts : Success")
         void givenValidPageable_whenRetrievePaginatedUncompletedProcessDrifts_thenReturnsPagedResults() {
-            // Given
-            Pageable pageable = Pageable.ofSize(10);
+            Pageable pageable = Pageable.unpaged();
             List<MaintenanceData> entities = Arrays.asList(
                     createMaintenanceData("1", "Stage1", "Cell1", "Component1", "2024-01-15T10:30:00"),
                     createMaintenanceData("2", "Stage2", "Cell2", "Component2", "2024-01-16T11:30:00")
@@ -1017,16 +823,13 @@ class PredictiveMaintenanceServiceTests {
             SearchHits<MaintenanceData> mockSearchHits = createMockSearchHits(entities);
             when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
                     .thenReturn(mockSearchHits);
-            when(mockSearchHits.getTotalHits()).thenReturn(2L);
 
             when(modelMapper.map(any(MaintenanceData.class), eq(MaintenanceDataDto.class)))
                     .thenReturn(sampleDto);
 
-            // When
             Page<MaintenanceDataDto> result = predictiveMaintenanceService
                     .retrievePaginatedUncompletedProcessDrifts(pageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(2);
             assertThat(result.getTotalElements()).isEqualTo(2L);
@@ -1037,18 +840,14 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Retrieve paginated uncompleted process drifts : Empty result")
         void givenNoUncompletedDrifts_whenRetrievePaginatedUncompletedProcessDrifts_thenReturnsEmptyPage() {
-            // Given
-            Pageable pageable = Pageable.ofSize(10);
+            Pageable pageable = Pageable.unpaged();
             SearchHits<MaintenanceData> emptySearchHits = createMockSearchHits(Collections.emptyList());
             when(elasticsearchOperations.search(any(CriteriaQuery.class), eq(MaintenanceData.class)))
                     .thenReturn(emptySearchHits);
-            when(emptySearchHits.getTotalHits()).thenReturn(0L);
 
-            // When
             Page<MaintenanceDataDto> result = predictiveMaintenanceService
                     .retrievePaginatedUncompletedProcessDrifts(pageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).isEmpty();
             assertThat(result.getTotalElements()).isEqualTo(0L);
@@ -1064,7 +863,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Invoke and register threshold maintenance : Success")
         void givenValidInput_whenInvokeAndRegisterThresholdMaintenance_thenReturnsResultAndRegistersTask() throws JsonProcessingException {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -1091,11 +889,9 @@ class PredictiveMaintenanceServiceTests {
 
             when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
 
-            // When
             SewThresholdBasedPredictiveMaintenanceOutputDto result = predictiveMaintenanceService
                     .invokeAndRegisterThresholdBasedPredictiveMaintenance(inputData);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getModuleId()).isEqualTo("TEST_MODULE");
             assertThat(result.getSmartServiceId()).isEqualTo("THRESHOLD_SERVICE");
@@ -1104,14 +900,12 @@ class PredictiveMaintenanceServiceTests {
             verify(thresholdMaintenanceResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "THRESHOLD_SERVICE");
             verify(eventPublisher).publishEvent(any());
             
-            // Verify that events were cleared from input data
             assertThat(inputData.getEvents()).isNull();
         }
 
         @Test
         @DisplayName("Invoke and register threshold maintenance : Service invocation failure")
         void givenServiceInvocationFailure_whenInvokeAndRegisterThresholdMaintenance_thenThrowsExceptionWithoutRegistering() {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -1133,7 +927,6 @@ class PredictiveMaintenanceServiceTests {
                 // This won't happen in this test case
             }
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService
                     .invokeAndRegisterThresholdBasedPredictiveMaintenance(inputData))
                     .isInstanceOf(RuntimeException.class)
@@ -1148,7 +941,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Invoke and register threshold maintenance : Processing failure")
         void givenProcessingFailure_whenInvokeAndRegisterThresholdMaintenance_thenThrowsExceptionWithoutRegistering() {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -1174,7 +966,6 @@ class PredictiveMaintenanceServiceTests {
                 // This won't happen in this test case
             }
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService
                     .invokeAndRegisterThresholdBasedPredictiveMaintenance(inputData))
                     .isInstanceOf(RuntimeException.class)
@@ -1194,7 +985,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store components list : Success")
         void givenValidComponentsList_whenStoreComponentsListData_thenStoresSuccessfully() {
-            // Given
             List<SewComponentInfoDto> componentsList = Arrays.asList(
                     SewComponentInfoDto.builder()
                             .stage("Stage1")
@@ -1221,10 +1011,8 @@ class PredictiveMaintenanceServiceTests {
             when(componentInfoRepository.saveAll(anyList()))
                     .thenReturn(Arrays.asList(mappedComponent));
 
-            // When
             predictiveMaintenanceService.storeComponentsListData(componentsList);
 
-            // Then
             verify(componentInfoRepository).deleteAll();
             verify(modelMapper, times(2)).map(any(SewComponentInfoDto.class), eq(SewComponentInfo.class));
             verify(componentInfoRepository).saveAll(anyList());
@@ -1233,15 +1021,12 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store components list : Empty list")
         void givenEmptyComponentsList_whenStoreComponentsListData_thenHandlesGracefully() {
-            // Given
             List<SewComponentInfoDto> emptyList = Collections.emptyList();
             when(componentInfoRepository.saveAll(anyList()))
                     .thenReturn(Collections.emptyList());
 
-            // When
             predictiveMaintenanceService.storeComponentsListData(emptyList);
 
-            // Then
             verify(componentInfoRepository).deleteAll();
             verify(modelMapper, never()).map(any(SewComponentInfoDto.class), eq(SewComponentInfo.class));
             verify(componentInfoRepository).saveAll(anyList());
@@ -1250,7 +1035,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Store components list : Mapping exception")
         void givenMappingError_whenStoreComponentsListData_thenThrowsModelMappingException() {
-            // Given
             List<SewComponentInfoDto> componentsList = Arrays.asList(
                     SewComponentInfoDto.builder()
                             .stage("Stage1")
@@ -1263,7 +1047,6 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(any(SewComponentInfoDto.class), eq(SewComponentInfo.class)))
                     .thenThrow(new MappingException(List.of(new ErrorMessage("Mapping error"))));
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService.storeComponentsListData(componentsList))
                     .isInstanceOf(ModelMappingException.class)
                     .hasMessageContaining("Unable to parse DTO SewComponentInfo to Model");
@@ -1281,7 +1064,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Retrieve component list : Success")
         void givenValidFilterAttributes_whenRetrieveComponentList_thenReturnsFilteredComponents() {
-            // Given
             String stage = "Stage1";
             String cell = "Cell1";
             String module = "Module1";
@@ -1304,16 +1086,14 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class)))
                     .thenReturn(expectedDto);
 
-            // When
             List<SewComponentInfoDto> result = predictiveMaintenanceService
                     .retrieveComponentListGivenFilterAttributes(stage, cell, module, moduleId);
 
-            // Then
             assertThat(result).hasSize(2);
-            assertThat(result.get(0).getStage()).isEqualTo(stage);
-            assertThat(result.get(0).getCell()).isEqualTo(cell);
-            assertThat(result.get(0).getModule()).isEqualTo(module);
-            assertThat(result.get(0).getModuleId()).isEqualTo(moduleId);
+            assertThat(result.getFirst().getStage()).isEqualTo(stage);
+            assertThat(result.getFirst().getCell()).isEqualTo(cell);
+            assertThat(result.getFirst().getModule()).isEqualTo(module);
+            assertThat(result.getFirst().getModuleId()).isEqualTo(moduleId);
             verify(componentInfoRepository).findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId);
             verify(modelMapper, times(2)).map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class));
         }
@@ -1321,7 +1101,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Retrieve component list : Empty result")
         void givenNoMatchingComponents_whenRetrieveComponentList_thenReturnsEmptyList() {
-            // Given
             String stage = "NonExistentStage";
             String cell = "NonExistentCell";
             String module = "NonExistentModule";
@@ -1330,11 +1109,9 @@ class PredictiveMaintenanceServiceTests {
             when(componentInfoRepository.findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId))
                     .thenReturn(Collections.emptyList());
 
-            // When
             List<SewComponentInfoDto> result = predictiveMaintenanceService
                     .retrieveComponentListGivenFilterAttributes(stage, cell, module, moduleId);
 
-            // Then
             assertThat(result).isEmpty();
             verify(componentInfoRepository).findByStageAndCellAndModuleAndModuleId(stage, cell, module, moduleId);
             verify(modelMapper, never()).map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class));
@@ -1343,7 +1120,6 @@ class PredictiveMaintenanceServiceTests {
         @Test
         @DisplayName("Retrieve component list : Mapping exception")
         void givenMappingError_whenRetrieveComponentList_thenThrowsModelMappingException() {
-            // Given
             String stage = "Stage1";
             String cell = "Cell1";
             String module = "Module1";
@@ -1358,7 +1134,6 @@ class PredictiveMaintenanceServiceTests {
             when(modelMapper.map(any(SewComponentInfo.class), eq(SewComponentInfoDto.class)))
                     .thenThrow(new MappingException(List.of(new ErrorMessage("Component mapping error"))));
 
-            // When & Then
             assertThatThrownBy(() -> predictiveMaintenanceService
                     .retrieveComponentListGivenFilterAttributes(stage, cell, module, moduleId))
                     .isInstanceOf(ModelMappingException.class)
@@ -1405,7 +1180,7 @@ class PredictiveMaintenanceServiceTests {
 
     @SuppressWarnings("unchecked")
     private SearchHits<MaintenanceData> createMockSearchHits(List<MaintenanceData> data) {
-        SearchHits<MaintenanceData> searchHits = mock(SearchHits.class);
+        SearchHits<MaintenanceData> searchHits = mock(SearchHits.class, withSettings().lenient());
         List<SearchHit<MaintenanceData>> searchHitList = data.stream()
                 .map(item -> {
                     SearchHit<MaintenanceData> searchHit = mock(SearchHit.class);
@@ -1413,8 +1188,10 @@ class PredictiveMaintenanceServiceTests {
                     return searchHit;
                 })
                 .toList();
-        
+
         when(searchHits.getSearchHits()).thenReturn(searchHitList);
+        when(searchHits.getTotalHits()).thenReturn((long) data.size());
+        when(searchHits.hasSearchHits()).thenReturn(!data.isEmpty());
         return searchHits;
     }
 

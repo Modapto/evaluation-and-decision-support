@@ -69,7 +69,7 @@ class SelfAwarenessServiceTests {
     private NoOpResponseProcessor noOpResponseProcessor;
 
     @InjectMocks
-    private SelfAwarenessService selfAwarenessService;
+    private SewSelfAwarenessService selfAwarenessService;
 
     private SewSelfAwarenessMonitoringKpisInputDto monitoringKpisInput;
     private SewSelfAwarenessRealTimeMonitoringInputDto realTimeMonitoringInput;
@@ -178,51 +178,94 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Invoke Self-Awareness Monitoring KPIs algorithm : Success")
         void givenValidInput_whenInvokeMonitoringKpisAlgorithm_thenInvokeSuccessfully() throws JsonProcessingException {
-            // Given
-            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
+            lenient().when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
             when(sewMonitorKpisComponentsRepository.findByModuleId(eq("TEST_MODULE"))).thenReturn(Optional.of(componentsEntity));
             lenient().when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
 
-            // When
             assertDoesNotThrow(() -> selfAwarenessService.invokeSelfAwarenessMonitoringKpisAlgorithm(monitoringKpisInput));
 
-            // Then
             verify(sewMonitorKpisComponentsRepository, times(1)).findByModuleId(eq("TEST_MODULE"));
+            verify(smartServicesInvocationService, times(1)).formulateAndImplementSmartServiceRequest(
+                    eq(monitoringKpisInput),
+                    eq(null),
+                    eq("Self-Awareness Monitoring KPIs")
+            );
         }
 
         @Test
         @DisplayName("Invoke Self-Awareness Real-Time Monitoring algorithm : Success")
         void givenValidInput_whenInvokeRealTimeMonitoringAlgorithm_thenInvokeSuccessfully() throws JsonProcessingException {
-            // Given
-            when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
+            lenient().when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
             when(sewMonitorKpisComponentsRepository.findByModuleId(eq("TEST_MODULE"))).thenReturn(Optional.of(componentsEntity));
             lenient().when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
 
-            // When
             assertDoesNotThrow(() -> selfAwarenessService.invokeSelfAwarenessRealTimeMonitoringAlgorithm(realTimeMonitoringInput));
 
-            // Then
             verify(sewMonitorKpisComponentsRepository, times(1)).findByModuleId(eq("TEST_MODULE"));
+            verify(smartServicesInvocationService, times(1)).formulateAndImplementSmartServiceRequest(
+                    eq(realTimeMonitoringInput),
+                    eq(null),
+                    eq("Self-Awareness Real-Time Monitoring")
+            );
         }
 
         @Test
         @DisplayName("Invoke algorithm when components not found : Throw exception")
         void givenModuleWithoutComponents_whenInvokeAlgorithm_thenThrowException() {
-            // Given
             when(sewMonitorKpisComponentsRepository.findByModuleId(eq("TEST_MODULE"))).thenReturn(Optional.empty());
             lenient().when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
 
-            // When & Then
             assertThrows(CustomExceptions.SmartServiceInvocationException.class, () ->
                 selfAwarenessService.invokeSelfAwarenessMonitoringKpisAlgorithm(monitoringKpisInput));
 
             verify(sewMonitorKpisComponentsRepository, times(1)).findByModuleId(eq("TEST_MODULE"));
+            verify(smartServicesInvocationService, never()).formulateAndImplementSmartServiceRequest(any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("Handle SmartServicesInvocationService failure during algorithm invocation")
+        void givenSmartServiceInvocationFailure_whenInvokeAlgorithm_thenPropagatesException() throws Exception {
+            lenient().when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
+            when(sewMonitorKpisComponentsRepository.findByModuleId(eq("TEST_MODULE"))).thenReturn(Optional.of(componentsEntity));
+            lenient().when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
+                return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
+            });
+            doThrow(new RuntimeException("Smart service invocation failed"))
+                    .when(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(any(), any(), any());
+
+            assertThrows(RuntimeException.class, () ->
+                selfAwarenessService.invokeSelfAwarenessMonitoringKpisAlgorithm(monitoringKpisInput));
+
+            verify(sewMonitorKpisComponentsRepository, times(1)).findByModuleId(eq("TEST_MODULE"));
+            verify(smartServicesInvocationService, times(1)).formulateAndImplementSmartServiceRequest(
+                    eq(monitoringKpisInput),
+                    eq(null),
+                    eq("Self-Awareness Monitoring KPIs")
+            );
+        }
+
+        @Test
+        @DisplayName("Verify correct algorithm name passed for real-time monitoring")
+        void givenRealTimeMonitoringInput_whenInvokeAlgorithm_thenPassesCorrectAlgorithmName() throws Exception {
+            lenient().when(objectMapper.writeValueAsString(any())).thenReturn("{\"mockJson\":\"data\"}");
+            when(sewMonitorKpisComponentsRepository.findByModuleId(eq("TEST_MODULE"))).thenReturn(Optional.of(componentsEntity));
+            lenient().when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
+                return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
+            });
+
+            assertDoesNotThrow(() -> selfAwarenessService.invokeSelfAwarenessRealTimeMonitoringAlgorithm(realTimeMonitoringInput));
+
+            verify(smartServicesInvocationService, times(1)).formulateAndImplementSmartServiceRequest(
+                    eq(realTimeMonitoringInput),
+                    eq(null),
+                    eq("Self-Awareness Real-Time Monitoring")
+            );
         }
     }
 
@@ -233,17 +276,14 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve latest Monitoring KPIs results : Success")
         void whenRetrieveLatestMonitoringKpisResults_thenReturnResults() {
-            // Given
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
             when(sewSelfAwarenessMonitoringKpisResultsRepository.findFirstByOrderByTimestampDesc()).thenReturn(Optional.of(monitoringKpisEntity));
             when(modelMapper.map(eq(monitoringKpisEntity), eq(SewSelfAwarenessMonitoringKpisResultsDto.class))).thenReturn(monitoringKpisDto);
 
-            // When
             SewSelfAwarenessMonitoringKpisResultsDto result = selfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResults();
 
-            // Then
             assertNotNull(result);
             assertEquals("RESULT_ID", result.getId());
             assertEquals("TEST_MODULE", result.getModuleId());
@@ -254,7 +294,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve latest Monitoring KPIs results by module ID : Success")
         void givenModuleId_whenRetrieveLatestMonitoringKpisResultsByModuleId_thenReturnResults() {
-            // Given
             String moduleId = "TEST_MODULE";
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
@@ -262,10 +301,8 @@ class SelfAwarenessServiceTests {
             when(sewSelfAwarenessMonitoringKpisResultsRepository.findFirstByModuleIdOrderByTimestampDesc(eq(moduleId))).thenReturn(Optional.of(monitoringKpisEntity));
             when(modelMapper.map(eq(monitoringKpisEntity), eq(SewSelfAwarenessMonitoringKpisResultsDto.class))).thenReturn(monitoringKpisDto);
 
-            // When
             SewSelfAwarenessMonitoringKpisResultsDto result = selfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResultsByModuleId(moduleId);
 
-            // Then
             assertNotNull(result);
             assertEquals("RESULT_ID", result.getId());
             assertEquals("TEST_MODULE", result.getModuleId());
@@ -275,7 +312,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve all Monitoring KPIs results : Success")
         void whenRetrieveAllMonitoringKpisResults_thenReturnResultsList() {
-            // Given
             Page<SewSelfAwarenessMonitoringKpisResults> page = new PageImpl<>(List.of(monitoringKpisEntity));
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
@@ -283,10 +319,8 @@ class SelfAwarenessServiceTests {
             when(sewSelfAwarenessMonitoringKpisResultsRepository.findAll(any(Pageable.class))).thenReturn(page);
             when(modelMapper.map(eq(monitoringKpisEntity), eq(SewSelfAwarenessMonitoringKpisResultsDto.class))).thenReturn(monitoringKpisDto);
 
-            // When
             List<SewSelfAwarenessMonitoringKpisResultsDto> results = selfAwarenessService.retrieveAllSelfAwarenessMonitoringKpisResults();
 
-            // Then
             assertNotNull(results);
             assertEquals(1, results.size());
             assertEquals("RESULT_ID", results.get(0).getId());
@@ -296,7 +330,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve all Monitoring KPIs results by module ID : Success")
         void givenModuleId_whenRetrieveAllMonitoringKpisResultsByModuleId_thenReturnResultsList() {
-            // Given
             String moduleId = "TEST_MODULE";
             Page<SewSelfAwarenessMonitoringKpisResults> page = new PageImpl<>(List.of(monitoringKpisEntity));
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
@@ -305,10 +338,8 @@ class SelfAwarenessServiceTests {
             when(sewSelfAwarenessMonitoringKpisResultsRepository.findByModuleId(eq(moduleId), any(Pageable.class))).thenReturn(page);
             when(modelMapper.map(eq(monitoringKpisEntity), eq(SewSelfAwarenessMonitoringKpisResultsDto.class))).thenReturn(monitoringKpisDto);
 
-            // When
             List<SewSelfAwarenessMonitoringKpisResultsDto> results = selfAwarenessService.retrieveAllSelfAwarenessMonitoringKpisResultsByModuleId(moduleId);
 
-            // Then
             assertNotNull(results);
             assertEquals(1, results.size());
             assertEquals("RESULT_ID", results.get(0).getId());
@@ -318,13 +349,11 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve latest results when none found : Throw exception")
         void whenRetrieveLatestResults_andNoneFound_thenThrowException() {
-            // Given
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
             when(sewSelfAwarenessMonitoringKpisResultsRepository.findFirstByOrderByTimestampDesc()).thenReturn(Optional.empty());
 
-            // When & Then
             assertThrows(ResourceNotFoundException.class, () ->
                 selfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResults());
 
@@ -334,17 +363,14 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve results with empty list : Return empty list")
         void whenRetrieveAllResults_andRepositoryReturnsEmpty_thenReturnEmptyList() {
-            // Given
             Page<SewSelfAwarenessMonitoringKpisResults> emptyPage = new PageImpl<>(Collections.emptyList());
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
             when(sewSelfAwarenessMonitoringKpisResultsRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
 
-            // When
             List<SewSelfAwarenessMonitoringKpisResultsDto> results = selfAwarenessService.retrieveAllSelfAwarenessMonitoringKpisResults();
 
-            // Then
             assertNotNull(results);
             assertTrue(results.isEmpty());
             verify(sewSelfAwarenessMonitoringKpisResultsRepository, times(1)).findAll(any(Pageable.class));
@@ -358,7 +384,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve all Real-Time Monitoring results : Success")
         void whenRetrieveAllRealTimeMonitoringResults_thenReturnResultsList() {
-            // Given
             Page<SewSelfAwarenessRealTimeMonitoringResults> page = new PageImpl<>(List.of(realTimeMonitoringEntity));
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
@@ -366,10 +391,8 @@ class SelfAwarenessServiceTests {
             when(sewSelfAwarenessRealTimeMonitoringResultsRepository.findAll(any(Pageable.class))).thenReturn(page);
             when(modelMapper.map(eq(realTimeMonitoringEntity), eq(SewSelfAwarenessRealTimeMonitoringResultsDto.class))).thenReturn(realTimeMonitoringDto);
 
-            // When
             List<SewSelfAwarenessRealTimeMonitoringResultsDto> results = selfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResults();
 
-            // Then
             assertNotNull(results);
             assertEquals(1, results.size());
             assertEquals("RT_RESULT_ID", results.get(0).getId());
@@ -379,7 +402,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve all Real-Time Monitoring results by module ID : Success")
         void givenModuleId_whenRetrieveAllRealTimeMonitoringResultsByModuleId_thenReturnResultsList() {
-            // Given
             String moduleId = "TEST_MODULE";
             Page<SewSelfAwarenessRealTimeMonitoringResults> page = new PageImpl<>(List.of(realTimeMonitoringEntity));
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
@@ -388,10 +410,8 @@ class SelfAwarenessServiceTests {
             when(sewSelfAwarenessRealTimeMonitoringResultsRepository.findByModuleId(eq(moduleId), any(Pageable.class))).thenReturn(page);
             when(modelMapper.map(eq(realTimeMonitoringEntity), eq(SewSelfAwarenessRealTimeMonitoringResultsDto.class))).thenReturn(realTimeMonitoringDto);
 
-            // When
             List<SewSelfAwarenessRealTimeMonitoringResultsDto> results = selfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResultsByModuleId(moduleId);
 
-            // Then
             assertNotNull(results);
             assertEquals(1, results.size());
             assertEquals("RT_RESULT_ID", results.get(0).getId());
@@ -401,17 +421,14 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve Real-Time Monitoring results with empty list : Return empty list")
         void whenRetrieveAllRealTimeResults_andRepositoryReturnsEmpty_thenReturnEmptyList() {
-            // Given
             Page<SewSelfAwarenessRealTimeMonitoringResults> emptyPage = new PageImpl<>(Collections.emptyList());
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
             when(sewSelfAwarenessRealTimeMonitoringResultsRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
 
-            // When
             List<SewSelfAwarenessRealTimeMonitoringResultsDto> results = selfAwarenessService.retrieveAllSelfAwarenessRealTimeMonitoringResults();
 
-            // Then
             assertNotNull(results);
             assertTrue(results.isEmpty());
             verify(sewSelfAwarenessRealTimeMonitoringResultsRepository, times(1)).findAll(any(Pageable.class));
@@ -425,7 +442,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Upload component list for new module : Success")
         void givenNewModuleComponents_whenUploadComponentList_thenSaveSuccessfully() {
-            // Given
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
@@ -433,10 +449,8 @@ class SelfAwarenessServiceTests {
             when(modelMapper.map(eq(componentsDto), eq(SewMonitorKpisComponents.class))).thenReturn(componentsEntity);
             when(sewMonitorKpisComponentsRepository.save(any(SewMonitorKpisComponents.class))).thenReturn(componentsEntity);
 
-            // When
             assertDoesNotThrow(() -> selfAwarenessService.uploadModuleComponentsList(componentsDto));
 
-            // Then
             verify(sewMonitorKpisComponentsRepository, times(1)).findByModuleId(eq("TEST_MODULE"));
             verify(sewMonitorKpisComponentsRepository, never()).deleteByModuleId(any());
             verify(sewMonitorKpisComponentsRepository, times(1)).save(any(SewMonitorKpisComponents.class));
@@ -445,7 +459,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Upload component list for existing module : Replace existing")
         void givenExistingModuleComponents_whenUploadComponentList_thenReplaceExisting() {
-            // Given
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
@@ -453,10 +466,8 @@ class SelfAwarenessServiceTests {
             when(modelMapper.map(eq(componentsDto), eq(SewMonitorKpisComponents.class))).thenReturn(componentsEntity);
             when(sewMonitorKpisComponentsRepository.save(any(SewMonitorKpisComponents.class))).thenReturn(componentsEntity);
 
-            // When
             assertDoesNotThrow(() -> selfAwarenessService.uploadModuleComponentsList(componentsDto));
 
-            // Then
             verify(sewMonitorKpisComponentsRepository, times(1)).findByModuleId(eq("TEST_MODULE"));
             verify(sewMonitorKpisComponentsRepository, times(1)).deleteByModuleId(eq("TEST_MODULE"));
             verify(sewMonitorKpisComponentsRepository, times(1)).save(any(SewMonitorKpisComponents.class));
@@ -465,7 +476,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve component list by module ID : Success")
         void givenModuleId_whenRetrieveComponentList_thenReturnComponentList() {
-            // Given
             String moduleId = "TEST_MODULE";
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
@@ -473,10 +483,8 @@ class SelfAwarenessServiceTests {
             when(sewMonitorKpisComponentsRepository.findByModuleId(eq(moduleId))).thenReturn(Optional.of(componentsEntity));
             when(modelMapper.map(eq(componentsEntity), eq(SewMonitorKpisComponentsDto.class))).thenReturn(componentsDto);
 
-            // When
             SewMonitorKpisComponentsDto result = selfAwarenessService.retrieveSelfAwarenessComponentListByModuleId(moduleId);
 
-            // Then
             assertNotNull(result);
             assertEquals("TEST_ID", result.getId());
             assertEquals("TEST_MODULE", result.getModuleId());
@@ -487,14 +495,12 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Retrieve component list when not found : Throw exception")
         void givenNonexistentModuleId_whenRetrieveComponentList_thenThrowException() {
-            // Given
             String moduleId = "NONEXISTENT_MODULE";
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
             when(sewMonitorKpisComponentsRepository.findByModuleId(eq(moduleId))).thenReturn(Optional.empty());
 
-            // When & Then
             assertThrows(ResourceNotFoundException.class, () ->
                 selfAwarenessService.retrieveSelfAwarenessComponentListByModuleId(moduleId));
 
@@ -504,17 +510,14 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Delete component list by module ID : Success")
         void givenModuleId_whenDeleteComponentList_thenDeleteSuccessfully() {
-            // Given
             String moduleId = "TEST_MODULE";
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
             when(sewMonitorKpisComponentsRepository.findByModuleId(eq(moduleId))).thenReturn(Optional.of(componentsEntity));
 
-            // When
             assertDoesNotThrow(() -> selfAwarenessService.deleteSelfAwarenessComponentListByModuleId(moduleId));
 
-            // Then
             verify(sewMonitorKpisComponentsRepository, times(1)).findByModuleId(eq(moduleId));
             verify(sewMonitorKpisComponentsRepository, times(1)).deleteByModuleId(eq(moduleId));
         }
@@ -522,14 +525,12 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Delete component list when not found : Throw exception")
         void givenNonexistentModuleId_whenDeleteComponentList_thenThrowException() {
-            // Given
             String moduleId = "NONEXISTENT_MODULE";
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
             when(sewMonitorKpisComponentsRepository.findByModuleId(eq(moduleId))).thenReturn(Optional.empty());
 
-            // When & Then
             assertThrows(ResourceNotFoundException.class, () ->
                 selfAwarenessService.deleteSelfAwarenessComponentListByModuleId(moduleId));
 
@@ -545,7 +546,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Handle null input parameters gracefully")
         void givenNullInput_whenInvokeAlgorithm_thenHandleGracefully() {
-            // When & Then
             assertThrows(CustomExceptions.SmartServiceInvocationException.class, () ->
                 selfAwarenessService.invokeSelfAwarenessMonitoringKpisAlgorithm(null));
         }
@@ -553,14 +553,12 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Handle repository exceptions during retrieval")
         void whenRepositoryThrowsException_thenPropagateException() {
-            // Given
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
             when(sewSelfAwarenessMonitoringKpisResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenThrow(new RuntimeException("Database error"));
 
-            // When & Then
             assertThrows(RuntimeException.class, () ->
                 selfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResults());
         }
@@ -568,7 +566,6 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Handle mapping exceptions during entity conversion")
         void whenMappingFails_thenPropagateException() {
-            // Given
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
@@ -576,7 +573,6 @@ class SelfAwarenessServiceTests {
             when(modelMapper.map(eq(monitoringKpisEntity), eq(SewSelfAwarenessMonitoringKpisResultsDto.class)))
                     .thenThrow(new RuntimeException("Mapping error"));
 
-            // When & Then
             assertThrows(RuntimeException.class, () ->
                 selfAwarenessService.retrieveLatestSelfAwarenessMonitoringKpisResults());
         }
@@ -584,20 +580,17 @@ class SelfAwarenessServiceTests {
         @Test
         @DisplayName("Handle component upload with null components list")
         void givenComponentsDataWithNullList_whenUploadComponentList_thenHandleGracefully() {
-            // Given
             SewMonitorKpisComponentsDto invalidDto = SewMonitorKpisComponentsDto.builder()
                     .moduleId("TEST_MODULE")
                     .components(null)
                     .build();
 
-            // Mock modelMapper to return null for invalid DTO
             when(modelMapper.map(invalidDto, SewMonitorKpisComponents.class)).thenReturn(null);
 
             when(exceptionHandler.handleOperation(any(), any())).thenAnswer(invocation -> {
                 return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
             });
 
-            // When & Then - Expect NullPointerException due to null entity
             assertThrows(NullPointerException.class, () ->
                 selfAwarenessService.uploadModuleComponentsList(invalidDto));
         }

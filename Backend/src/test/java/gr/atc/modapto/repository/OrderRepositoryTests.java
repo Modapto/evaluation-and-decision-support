@@ -17,9 +17,11 @@ import gr.atc.modapto.model.Assembly;
 import gr.atc.modapto.model.Component;
 import gr.atc.modapto.model.Order;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 @DataElasticsearchTest
 @ActiveProfiles("test")
+@Testcontainers
 class OrderRepositoryTests extends SetupTestContainersEnvironment {
 
     @Autowired

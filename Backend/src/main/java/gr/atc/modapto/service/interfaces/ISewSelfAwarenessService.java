@@ -5,11 +5,10 @@ import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringI
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
-import jakarta.validation.Valid;
 
 import java.util.List;
 
-public interface ISelfAwarenessService {
+public interface ISewSelfAwarenessService {
 
     void invokeSelfAwarenessMonitoringKpisAlgorithm(SewSelfAwarenessMonitoringKpisInputDto invocationData);
 

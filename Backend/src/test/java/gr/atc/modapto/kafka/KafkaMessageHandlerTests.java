@@ -62,7 +62,6 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume CRF simulation event : Success")
         void givenValidCrfSimulationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
-            // Given
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
@@ -74,10 +73,8 @@ class KafkaMessageHandlerTests {
             baseEvent.setResults(resultNode);
             String topic = "crf-simulation-topic";
 
-            // When
             kafkaMessageHandler.consume(baseEvent, topic);
 
-            // Then
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -90,7 +87,6 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume CRF simulation event from MQTT : Success")
         void givenValidCrfSimulationEventFromMqtt_whenConsume_thenUsesEventTopicInsteadOfMqtt(){
-            // Given
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("2")
                     .timestamp("2024-01-16T12:00:00.000Z")
@@ -102,10 +98,8 @@ class KafkaMessageHandlerTests {
             baseEvent.setResults(resultNode);
             String mqttTopic = "modapto-mqtt-topics";
 
-            // When
             kafkaMessageHandler.consume(baseEvent, mqttTopic);
 
-            // Then
             verify(webSocketService, times(1)).notifyInWebSocketTopic(anyString(), eq(WebSocketTopics.CRF_SIMULATION_RESULTS.toString()));
         }
     }
@@ -117,7 +111,6 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume CRF optimization event : Success")
         void givenValidCrfOptimizationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
-            // Given
             CrfOptimizationResultsDto optimizationResult = CrfOptimizationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
@@ -129,10 +122,8 @@ class KafkaMessageHandlerTests {
             baseEvent.setResults(resultNode);
             String topic = "crf-optimization-topic";
 
-            // When
             kafkaMessageHandler.consume(baseEvent, topic);
 
-            // Then
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -150,7 +141,6 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume SEW simulation event : Success")
         void givenValidSewSimulationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
-            // Given
             SewSimulationResultsDto simulationResult = SewSimulationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
@@ -161,10 +151,8 @@ class KafkaMessageHandlerTests {
             baseEvent.setResults(resultNode);
             String topic = "sew-simulation-topic";
 
-            // When
             kafkaMessageHandler.consume(baseEvent, topic);
 
-            // Then
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -182,7 +170,6 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume SEW optimization event : Success")
         void givenValidSewOptimizationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
-            // Given
             SewOptimizationResultsDto optimizationResult = SewOptimizationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
@@ -193,10 +180,8 @@ class KafkaMessageHandlerTests {
             baseEvent.setResults(resultNode);
             String topic = "sew-optimization-topic";
 
-            // When
             kafkaMessageHandler.consume(baseEvent, topic);
 
-            // Then
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -214,58 +199,48 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume event with missing priority : Error logged and no notification")
         void givenEventWithMissingPriority_whenConsume_thenLogErrorAndDoNotNotifyWebSocket() {
-            // Given
             EventDto invalidEvent = new EventDto();
             invalidEvent.setModule("ModuleA");
             invalidEvent.setTopic("test-topic");
             // Missing priority
             String topic = "test-kafka-topic";
 
-            // When
             kafkaMessageHandler.consume(invalidEvent, topic);
 
-            // Then
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
         }
 
         @Test
         @DisplayName("Consume event with missing module : Error logged and no notification")
         void givenEventWithMissingModule_whenConsume_thenLogErrorAndDoNotNotifyWebSocket() {
-            // Given
             EventDto invalidEvent = new EventDto();
             invalidEvent.setPriority(MessagePriority.HIGH);
             invalidEvent.setTopic("test-topic");
             // Missing module
             String topic = "test-kafka-topic";
 
-            // When
             kafkaMessageHandler.consume(invalidEvent, topic);
 
-            // Then
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
         }
 
         @Test
         @DisplayName("Consume event with missing topic : Error logged and no notification")
         void givenEventWithMissingTopic_whenConsume_thenLogErrorAndDoNotNotifyWebSocket() {
-            // Given
             EventDto invalidEvent = new EventDto();
             invalidEvent.setPriority(MessagePriority.HIGH);
             invalidEvent.setModule("ModuleA");
             // Missing topic
             String topic = "test-kafka-topic";
 
-            // When
             kafkaMessageHandler.consume(invalidEvent, topic);
 
-            // Then
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
         }
 
         @Test
         @DisplayName("Consume event with unknown result type : Error logged and no notification")
         void givenEventWithUnknownResultType_whenConsume_thenLogErrorAndDoNotNotifyWebSocket() {
-            // Given
             Map<String, Object> unknownResult = new HashMap<>();
             unknownResult.put("unknownField", "unknownValue");
             unknownResult.put("type", "UnknownType");
@@ -274,10 +249,8 @@ class KafkaMessageHandlerTests {
             baseEvent.setResults(resultNode);
             String topic = "test-kafka-topic";
 
-            // When
             kafkaMessageHandler.consume(baseEvent, topic);
 
-            // Then
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
         }
     }
@@ -289,7 +262,6 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume SEW grouping predictive maintenance event : Success")
         void givenValidSewGroupingPredictiveMaintenanceEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
-            // Given
             SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent component1 = SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent.builder()
                     .moduleId("12345")
                     .module("Motor Bearing Unit A1")
@@ -331,10 +303,8 @@ class KafkaMessageHandlerTests {
             baseEvent.setResults(resultNode);
             String topic = "sew-grouping-predictive-maintenance-topic";
 
-            // When
             kafkaMessageHandler.consume(baseEvent, topic);
 
-            // Then
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -352,7 +322,6 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume SEW self-awareness monitoring KPIs event : Success")
         void givenValidSewSelfAwarenessMonitoringKpisEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
-            // Given
             List<Double> dataList = Arrays.asList(85.5, 87.2, 89.1, 86.8, 88.5, 90.2, 89.7, 88.9);
             
             SewSelfAwarenessMonitoringKpisResultsDto kpisResult = SewSelfAwarenessMonitoringKpisResultsDto.builder()
@@ -374,10 +343,8 @@ class KafkaMessageHandlerTests {
             baseEvent.setResults(resultNode);
             String topic = "sew-self-awareness-monitoring-kpis-topic";
 
-            // When
             kafkaMessageHandler.consume(baseEvent, topic);
 
-            // Then
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -395,7 +362,6 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Validate that module field is used instead of productionModule : Success")
         void givenEventWithModuleField_whenConsume_thenProcessesCorrectly(){
-            // Given
             EventDto eventWithModule = EventDto.builder()
                     .priority(MessagePriority.HIGH)
                     .module("TestModule")
@@ -413,17 +379,14 @@ class KafkaMessageHandlerTests {
             eventWithModule.setResults(resultNode);
             String topic = "test-topic";
 
-            // When
             kafkaMessageHandler.consume(eventWithModule, topic);
 
-            // Then
             verify(webSocketService, times(1)).notifyInWebSocketTopic(anyString(), anyString());
         }
 
         @Test
         @DisplayName("Handle event with different priority levels : Success")
         void givenEventWithDifferentPriorities_whenConsume_thenProcessesAllCorrectly(){
-            // Given
             MessagePriority[] priorities = {MessagePriority.LOW, MessagePriority.MID, MessagePriority.HIGH};
             
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
@@ -436,7 +399,6 @@ class KafkaMessageHandlerTests {
             JsonNode resultNode = objectMapper.valueToTree(simulationResult);
 
             for (MessagePriority priority : priorities) {
-                // When
                 EventDto eventWithPriority = EventDto.builder()
                         .priority(priority)
                         .module("TestModule")
@@ -447,7 +409,6 @@ class KafkaMessageHandlerTests {
                 kafkaMessageHandler.consume(eventWithPriority, "test-topic");
             }
 
-            // Then
             verify(webSocketService, times(priorities.length)).notifyInWebSocketTopic(anyString(), anyString());
         }
     }
@@ -456,13 +417,13 @@ class KafkaMessageHandlerTests {
      * Helper Methods
      */
     private SewSimulationResultsDto.SimulationData createSampleSimulationData() {
-        SewSimulationResultsDto.MetricComparison makespan = new SewSimulationResultsDto.MetricComparison(
+        SewSimulationResultsDto.KpiMetric makespan = new SewSimulationResultsDto.KpiMetric(
                 240.0, 220.0, -20.0, -8.33
         );
-        SewSimulationResultsDto.MetricComparison machineUtilization = new SewSimulationResultsDto.MetricComparison(
+        SewSimulationResultsDto.KpiMetric machineUtilization = new SewSimulationResultsDto.KpiMetric(
                 85.5, 92.3, 6.8, 7.95
         );
-        SewSimulationResultsDto.MetricComparison throughputStdev = new SewSimulationResultsDto.MetricComparison(
+        SewSimulationResultsDto.KpiMetric throughputStdev = new SewSimulationResultsDto.KpiMetric(
                 12.5, 8.7, -3.8, -30.4
         );
 
@@ -470,28 +431,22 @@ class KafkaMessageHandlerTests {
     }
 
     private Map<String, SewOptimizationResultsDto.SolutionData> createSampleOptimizationData() {
-        // Create DTO structure matching the exact model structure
         Map<String, SewOptimizationResultsDto.SolutionData> data = new HashMap<>();
 
-        // Create MetricsData for DTO
-        SewOptimizationResultsDto.MetricsData metricsDto = new SewOptimizationResultsDto.MetricsData("240");
+        SewOptimizationResultsDto.KpiData kpiData = new SewOptimizationResultsDto.KpiData("240", 85.5);
 
-        // Create seq map for DTO
-        Map<String, Map<String, String>> seqDto = new HashMap<>();
-        Map<String, String> seqItemDto = new HashMap<>();
-        seqItemDto.put("operation", "cutting");
-        seqItemDto.put("duration", "30");
-        seqDto.put("seq_1", seqItemDto);
+        Map<String, Map<String, SewOptimizationResultsDto.OrderData>> scheduleDto = new HashMap<>();
+        Map<String, SewOptimizationResultsDto.OrderData> daySchedule = new HashMap<>();
 
-        // Create orders map for DTO
-        Map<String, Map<String, Map<String, Map<String, SewOptimizationResultsDto.TimeRange>>>> ordersDto = new HashMap<>();
+        SewOptimizationResultsDto.OrderData orderData = new SewOptimizationResultsDto.OrderData();
+        orderData.setOrderId("order_1");
+        orderData.setMachines(new HashMap<>());
 
-        // Create init order for DTO
-        List<String> initOrderDto = Arrays.asList("order_1", "order_2", "order_3");
+        daySchedule.put("order_1", orderData);
+        scheduleDto.put("day_1", daySchedule);
 
-        // Create SolutionData for DTO
         SewOptimizationResultsDto.SolutionData solutionDataDto = new SewOptimizationResultsDto.SolutionData(
-                metricsDto, seqDto, ordersDto, initOrderDto
+                kpiData, scheduleDto
         );
 
         data.put("solution_1", solutionDataDto);

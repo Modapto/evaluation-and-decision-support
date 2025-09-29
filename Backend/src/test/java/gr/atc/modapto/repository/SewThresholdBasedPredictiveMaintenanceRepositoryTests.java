@@ -31,7 +31,6 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
 
     @BeforeEach
     void setUp() {
-        // Given - Clean and setup test data
         repository.deleteAll();
 
         sampleResult1 = new SewThresholdBasedPredictiveMaintenanceResult();
@@ -56,10 +55,8 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Save result : Success")
         void givenValidResult_whenSave_thenPersistsSuccessfully() {
-            // When
             SewThresholdBasedPredictiveMaintenanceResult saved = repository.save(sampleResult1);
 
-            // Then
             assertThat(saved).isNotNull();
             assertThat(saved.getId()).isNotNull();
             assertThat(saved.getModuleId()).isEqualTo("TEST_MODULE_1");
@@ -72,13 +69,10 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Find by ID : Success")
         void givenSavedResult_whenFindById_thenReturnsResult() {
-            // Given
             SewThresholdBasedPredictiveMaintenanceResult saved = repository.save(sampleResult1);
 
-            // When
             Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findById(saved.getId());
 
-            // Then
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("TEST_MODULE_1");
             assertThat(found.get().getRecommendation()).isEqualTo("Replace bearing in motor unit within 72 hours");
@@ -87,13 +81,10 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Delete result : Success")
         void givenSavedResult_whenDelete_thenRemovesResult() {
-            // Given
             SewThresholdBasedPredictiveMaintenanceResult saved = repository.save(sampleResult1);
 
-            // When
             repository.delete(saved);
 
-            // Then
             Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findById(saved.getId());
             assertThat(found).isNotPresent();
         }
@@ -106,7 +97,6 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Find first by module ID : Success")
         void givenMultipleResults_whenFindFirstByModuleId_thenReturnsFirstResult() {
-            // Given
             SewThresholdBasedPredictiveMaintenanceResult result1 = new SewThresholdBasedPredictiveMaintenanceResult();
             result1.setModuleId("SHARED_MODULE");
             result1.setSmartServiceId("SERVICE_1");
@@ -121,39 +111,30 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
 
             repository.saveAll(Arrays.asList(result1, result2));
 
-            // When
             Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleId("SHARED_MODULE");
 
-            // Then
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("SHARED_MODULE");
-            // Note: The specific result returned depends on the repository implementation
             assertThat(found.get().getRecommendation()).isIn("First recommendation", "Second recommendation");
         }
 
         @Test
         @DisplayName("Find first by module ID : No results")
         void givenNoMatchingResults_whenFindFirstByModuleId_thenReturnsEmpty() {
-            // Given
             repository.save(sampleResult1);
 
-            // When
             Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleId("NON_EXISTENT_MODULE");
 
-            // Then
             assertThat(found).isNotPresent();
         }
 
         @Test
         @DisplayName("Find first by module ID : Single result")
         void givenSingleResult_whenFindFirstByModuleId_thenReturnsResult() {
-            // Given
             repository.save(sampleResult1);
 
-            // When
             Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleId("TEST_MODULE_1");
 
-            // Then
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("TEST_MODULE_1");
             assertThat(found.get().getRecommendation()).isEqualTo("Replace bearing in motor unit within 72 hours");
@@ -167,7 +148,6 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Save result with null optional fields : Success")
         void givenResultWithNullOptionalFields_whenSave_thenPersistsSuccessfully() {
-            // Given
             SewThresholdBasedPredictiveMaintenanceResult resultWithNulls = new SewThresholdBasedPredictiveMaintenanceResult();
             resultWithNulls.setModuleId("TEST_MODULE");
             resultWithNulls.setSmartServiceId("THRESHOLD_SERVICE");
@@ -175,10 +155,8 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
             resultWithNulls.setDetails(null);
             resultWithNulls.setTimestamp(LocalDateTime.now());
 
-            // When
             SewThresholdBasedPredictiveMaintenanceResult saved = repository.save(resultWithNulls);
 
-            // Then
             assertThat(saved).isNotNull();
             assertThat(saved.getModuleId()).isEqualTo("TEST_MODULE");
             assertThat(saved.getRecommendation()).isNull();
@@ -188,16 +166,13 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Update existing result : Success")
         void givenExistingResult_whenUpdate_thenUpdatesSuccessfully() {
-            // Given
             SewThresholdBasedPredictiveMaintenanceResult saved = repository.save(sampleResult1);
             String originalId = saved.getId();
 
-            // When
             saved.setRecommendation("Updated recommendation");
             saved.setDetails("Updated details");
             SewThresholdBasedPredictiveMaintenanceResult updated = repository.save(saved);
 
-            // Then
             assertThat(updated.getId()).isEqualTo(originalId);
             assertThat(updated.getRecommendation()).isEqualTo("Updated recommendation");
             assertThat(updated.getDetails()).isEqualTo("Updated details");
@@ -207,7 +182,6 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Save result with long text fields : Success")
         void givenResultWithLongTextFields_whenSave_thenPersistsSuccessfully() {
-            // Given
             String longRecommendation = "A".repeat(1000);
             String longDetails = "B".repeat(2000);
 
@@ -218,10 +192,8 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
             longResult.setDetails(longDetails);
             longResult.setTimestamp(LocalDateTime.now());
 
-            // When
             SewThresholdBasedPredictiveMaintenanceResult saved = repository.save(longResult);
 
-            // Then
             assertThat(saved).isNotNull();
             assertThat(saved.getRecommendation()).hasSize(1000);
             assertThat(saved.getDetails()).hasSize(2000);
@@ -230,7 +202,6 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Find by module ID with special characters : Success")
         void givenModuleIdWithSpecialCharacters_whenFindByModuleId_thenFindsCorrectly() {
-            // Given
             SewThresholdBasedPredictiveMaintenanceResult specialResult = new SewThresholdBasedPredictiveMaintenanceResult();
             specialResult.setModuleId("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
             specialResult.setSmartServiceId("THRESHOLD_SERVICE");
@@ -239,11 +210,9 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
 
             repository.save(specialResult);
 
-            // When
             Optional<SewThresholdBasedPredictiveMaintenanceResult> found = 
                     repository.findFirstByModuleId("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
 
-            // Then
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("MODULE@#$%^&*()_+-=[]{}|;':\",./<>?");
             assertThat(found.get().getRecommendation()).isEqualTo("Special characters test");
@@ -252,7 +221,6 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         @Test
         @DisplayName("Save multiple results for same module : Success")
         void givenMultipleResultsForSameModule_whenSave_thenAllPersistSuccessfully() {
-            // Given
             SewThresholdBasedPredictiveMaintenanceResult result1 = new SewThresholdBasedPredictiveMaintenanceResult();
             result1.setModuleId("SHARED_MODULE");
             result1.setSmartServiceId("SERVICE_1");
@@ -265,14 +233,11 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
             result2.setRecommendation("Second result");
             result2.setTimestamp(LocalDateTime.now().minusHours(1));
 
-            // When
             repository.saveAll(Arrays.asList(result1, result2));
 
-            // Then
             Optional<SewThresholdBasedPredictiveMaintenanceResult> found = repository.findFirstByModuleId("SHARED_MODULE");
             assertThat(found).isPresent();
 
-            // Verify count
             long count = repository.count();
             assertThat(count).isEqualTo(2);
         }

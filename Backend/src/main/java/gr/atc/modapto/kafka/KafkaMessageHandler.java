@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import gr.atc.modapto.dto.BaseEventResultsDto;
+import gr.atc.modapto.dto.serviceResults.crf.CrfKhEventNotificationDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
@@ -54,11 +55,12 @@ public class KafkaMessageHandler {
             return;
         }
 
-        // Check if received message on MQTT Topic in Kafka and change the topic to the internal one
-        if (topic.equalsIgnoreCase("modapto-mqtt-topics"))
-            topic = event.getTopic();
-
         String webSocketTopic;
+        // If no results are present then consume the message and return
+        if(event.getResults().isNull()){
+            return;
+        }
+
         try {
             // Check the instance of the Results
             BaseEventResultsDto result = objectMapper.treeToValue(event.getResults(), BaseEventResultsDto.class);
@@ -76,6 +78,8 @@ public class KafkaMessageHandler {
                         webSocketTopic = WebSocketTopics.SEW_GROUPING_PREDICTIVE_MAINTENANCE.toString();
                 case SewSelfAwarenessMonitoringKpisResultsDto ignored ->
                         webSocketTopic = WebSocketTopics.SEW_SELF_AWARENESS_MONITORING_KPIS.toString();
+                case CrfKhEventNotificationDto ignored ->
+                        webSocketTopic = WebSocketTopics.CRF_SELF_AWARENESS.toString();
                 default -> {
                     log.error("Unknown results data format provided. Results are discarded");
                     return;

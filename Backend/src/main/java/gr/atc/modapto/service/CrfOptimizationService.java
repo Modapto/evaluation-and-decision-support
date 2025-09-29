@@ -1,11 +1,11 @@
 package gr.atc.modapto.service;
 
-import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
+import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.model.serviceResults.CrfOptimizationResults;
 import gr.atc.modapto.repository.CrfOptimizationResultsRepository;
-import gr.atc.modapto.service.interfaces.IOptimizationService;
+import gr.atc.modapto.service.interfaces.IKhPickingSequenceOptimizationService;
 import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -15,8 +15,10 @@ import gr.atc.modapto.exception.CustomExceptions.*;
 
 import java.util.Optional;
 
+import static gr.atc.modapto.enums.OptEngineRoute.ROBOT_PICKING_SEQUENCE;
+
 @Service
-public class CrfOptimizationService implements IOptimizationService<CrfOptimizationResultsDto> {
+public class CrfOptimizationService implements IKhPickingSequenceOptimizationService {
 
     private final Logger log = LoggerFactory.getLogger(CrfOptimizationService.class);
 
@@ -24,10 +26,13 @@ public class CrfOptimizationService implements IOptimizationService<CrfOptimizat
 
     private final CrfOptimizationResultsRepository crfOptimizationResultsRepository;
 
+    private final SmartServicesInvocationService smartServicesInvocationService;
+
     private final ModelMapper modelMapper;
 
-    public CrfOptimizationService(CrfOptimizationResultsRepository crfOptimizationResultsRepository, ModelMapper modelMapper){
+    public CrfOptimizationService(CrfOptimizationResultsRepository crfOptimizationResultsRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService){
         this.crfOptimizationResultsRepository = crfOptimizationResultsRepository;
+        this.smartServicesInvocationService = smartServicesInvocationService;
         this.modelMapper = modelMapper;
     }
 
@@ -53,27 +58,32 @@ public class CrfOptimizationService implements IOptimizationService<CrfOptimizat
     /**
      * Retrieve latest results regarding CRF Optimization Smart Service for a specific MODAPTO module
      *
-     * @param productionModule MODAPTO module
+     * @param moduleId MODAPTO module
      * @throws  ResourceNotFoundException Thrown when the requested resource not found in Elasticsearch
      * @throws  ModelMappingException Thrown when a mismatch exists between DTO and Entity data
      * @return CrfOptimizationResultsDto
      */
     @Override
-    public CrfOptimizationResultsDto retrieveLatestOptimizationResultsByProductionModule(String productionModule) {
+    public CrfOptimizationResultsDto retrieveLatestOptimizationResultsByModuleId(String moduleId) {
         try {
-            Optional<CrfOptimizationResults> latestResult = crfOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            Optional<CrfOptimizationResults> latestResult = crfOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(moduleId);
             if (latestResult.isEmpty())
-                throw new ResourceNotFoundException("No CRF Optimization Results for Module: " + productionModule + " found");
+                throw new ResourceNotFoundException("No CRF Optimization Results for Module: " + moduleId + " found");
 
             return modelMapper.map(latestResult.get(), CrfOptimizationResultsDto.class);
         } catch (MappingException e){
-            log.error(MAPPING_ERROR + "for Module {} - {}", productionModule, e.getMessage());
-            throw new ModelMappingException("Unable to parse CRF Optimization Results to DTO for Module: " + productionModule + " - Error: " + e.getMessage());
+            log.error(MAPPING_ERROR + "for Module {} - {}", moduleId, e.getMessage());
+            throw new ModelMappingException("Unable to parse CRF Optimization Results to DTO for Module: " + moduleId + " - Error: " + e.getMessage());
         }
     }
 
+    /**
+     * Invoke Optimization of Kit Holder Picking Sequence
+     *
+     * @param invocationData Invocation Data
+     */
     @Override
-    public void uploadProductionSchedule(SewProductionScheduleDto schedule) {
-        // Do nothing
+    public void invokeOptimizationOfKhPickingSequence(CrfInvocationInputDto invocationData) {
+        smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, ROBOT_PICKING_SEQUENCE.toString(), "CRF KH Picking Sequence Optimization");
     }
 }

@@ -1,4 +1,4 @@
-package gr.atc.modapto.model;
+package gr.atc.modapto.model.sew;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,7 +21,7 @@ public class ProductionSchedule {
     @Id
     private String id;
 
-    @Field(type = FieldType.Object)
+    @Field(type = FieldType.Flattened)
     private Map<String, DailyData> data;
 
     @Data
@@ -38,10 +38,10 @@ public class ProductionSchedule {
         @Field(type = FieldType.Object)
         private General general;
 
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Map<String, WorkingOrder> orders;
 
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Map<String, Map<String, Map<String, Integer>>> processTimes;
 
         @Field(type = FieldType.Keyword)
@@ -52,10 +52,10 @@ public class ProductionSchedule {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class NewLayout {
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Map<String, Stage> stages;
 
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Map<String, Map<String, Integer>> transitionTimes;
     }
 
@@ -63,7 +63,7 @@ public class ProductionSchedule {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Stage {
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Map<String, ProductionCell> cells;
     }
 
@@ -85,7 +85,7 @@ public class ProductionSchedule {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Workers {
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Map<String, Double> productivity;
     }
 
@@ -110,7 +110,7 @@ public class ProductionSchedule {
         @Field(type = FieldType.Text)
         private String name;
 
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Map<String, JobConnect> jobs = new HashMap<>();
     }
 

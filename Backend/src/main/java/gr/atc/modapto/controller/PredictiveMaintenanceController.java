@@ -10,6 +10,7 @@ import gr.atc.modapto.dto.sew.SewComponentInfoDto;
 import gr.atc.modapto.dto.serviceInvocations.SewGroupingPredictiveMaintenanceInputDataDto;
 import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
 import gr.atc.modapto.service.interfaces.IScheduledTaskService;
+import gr.atc.modapto.util.PaginationUtils;
 import gr.atc.modapto.validation.ValidExcelFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,9 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +30,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -206,23 +204,16 @@ public class PredictiveMaintenanceController {
                                                                                                                                                               @RequestParam(required = false, defaultValue = "false") boolean isAscending) {
 
         // Fix the pagination parameters
-        Pageable pageable = createPaginationParameters(page, size, sortAttribute, isAscending, ScheduledTaskDto.class);
+        Pageable pageable = PaginationUtils.createPaginationParameters(page, size, sortAttribute, isAscending, ScheduledTaskDto.class);
         if (pageable == null)
             return new ResponseEntity<>(BaseResponse.error("Invalid pagination sort attributes"), HttpStatus.BAD_REQUEST);
 
         // Retrieve stored results in pages
         Page<ScheduledTaskDto> output = scheduledTaskService.retrieveScheduledTaskBySmartServiceType(pageable, THRESHOLD_BASED_TYPE);
 
-        // Fix the pagination class object
-        PaginatedResultsDto<ScheduledTaskDto> results = new PaginatedResultsDto<>(
-                output.getContent(),
-                output.getTotalPages(),
-                (int) output.getTotalElements(),
-                output.isLast());
-
         return new ResponseEntity<>(
                 BaseResponse.success(
-                        results,
+                        PaginationUtils.formulatePaginatedResults(output),
                         "Threshold-Based Scheduled Tasks retrieved successfully"),
                 HttpStatus.OK);
     }
@@ -326,7 +317,7 @@ public class PredictiveMaintenanceController {
     @Operation(summary = "Retrieve all uncompleted process drifts (paginated)", security = @SecurityRequirement(name = "bearerToken"))
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Uncompleted paginated process drifts retrieved successfully"),
-            @ApiResponse(responseCode = "400", description = "Validation error | Throws if file is not proper or data are missing"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination sort attributes"),
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "404", description = "Invalid pagination sort attributes")
     })
@@ -337,71 +328,51 @@ public class PredictiveMaintenanceController {
                                                                                                              @RequestParam(required = false, defaultValue = "false") boolean isAscending) {
 
         // Fix the pagination parameters
-        Pageable pageable = createPaginationParameters(page, size, sortAttribute, isAscending, MaintenanceDataDto.class);
+        Pageable pageable = PaginationUtils.createPaginationParameters(page, size, sortAttribute, isAscending, MaintenanceDataDto.class);
         if (pageable == null)
             return new ResponseEntity<>(BaseResponse.error("Invalid pagination sort attributes"), HttpStatus.BAD_REQUEST);
 
         // Retrieve stored results in pages
         Page<MaintenanceDataDto> output = predictiveMaintenanceService.retrievePaginatedUncompletedProcessDrifts(pageable);
 
-        // Fix the pagination class object
-        PaginatedResultsDto<MaintenanceDataDto> results = new PaginatedResultsDto<>(
-                output.getContent(),
-                output.getTotalPages(),
-                (int) output.getTotalElements(),
-                output.isLast());
-
         return new ResponseEntity<>(
-                BaseResponse.success(results, "Uncompleted paginated process drifts retrieved successfully"),
+                BaseResponse.success(PaginationUtils.formulatePaginatedResults(output), "Uncompleted paginated process drifts retrieved successfully"),
                 HttpStatus.OK);
     }
 
     /**
-     * Retrieve maintenance Data optionally filtered by Start and Finish datetimes
+     * Retrieve paginated maintenance data that are not process drifts
      *
-     * @param startDate : Initial Datetime filtering
-     * @param endDate : End Datetime filtering
-     * @return List of Maintenance Data
+     * @param page : Page Size
+     * @param size : Size of elements per page
+     * @param sortAttribute : Sort Attribute of Maintenance Data
+     * @param isAscending : Order of sorting
+     * @return Page of Maintenance Data
      */
-    @Operation(summary = "Retrieve maintenance Data optionally filtered by Start and Finish datetimes", security = @SecurityRequirement(name = "bearerToken"))
+    @Operation(summary = "Retrieve paginated maintenance data that are not process drifts", security = @SecurityRequirement(name = "bearerToken"))
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Maintenance data within given timeframe retrieved successfully"),
+            @ApiResponse(responseCode = "200", description = "Maintenance data retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination sort attributes"),
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
     @GetMapping("/data")
-    public ResponseEntity<BaseResponse<List<MaintenanceDataDto>>> retrieveMaintenanceDataByDateRange(
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
+    public ResponseEntity<BaseResponse<PaginatedResultsDto<MaintenanceDataDto>>> retrieveMaintenanceDataPaginated(
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "tsInterventionFinished") String sortAttribute,
+            @RequestParam(required = false, defaultValue = "false") boolean isAscending) {
+
+        // Fix the pagination parameters
+        Pageable pageable = PaginationUtils.createPaginationParameters(page, size, sortAttribute, isAscending, MaintenanceDataDto.class);
+        if (pageable == null)
+            return new ResponseEntity<>(BaseResponse.error("Invalid pagination sort attributes"), HttpStatus.BAD_REQUEST);
+
+        // Retrieve stored results in pages (completed process drifts)
+        Page<MaintenanceDataDto> output = predictiveMaintenanceService.retrieveMaintenanceDataPaginated(pageable);
+
         return new ResponseEntity<>(
-                BaseResponse.success(
-                        predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(startDate, endDate),
-                        "Maintenance data within given timeframe retrieved successfully"),
+                BaseResponse.success(PaginationUtils.formulatePaginatedResults(output), "Maintenance data retrieved successfully"),
                 HttpStatus.OK);
-    }
-
-    /**
-     * Create pagination parameters
-     *
-     * @param page : Page of results
-     * @param size : Results per page
-     * @param sortAttribute : Sort attribute
-     * @param isAscending : Sort order
-     * @return pageable : Pagination Object
-     */
-    private Pageable createPaginationParameters(int page, int size, String sortAttribute, boolean isAscending, Class<?> targetClass){
-        // Check if sort attribute is valid
-        boolean isValidField = Arrays.stream(targetClass.getDeclaredFields())
-                .anyMatch(field -> field.getName().equals(sortAttribute));
-
-        // If not valid, return null
-        if (!isValidField) {
-            return null;
-        }
-
-        // Create pagination parameters
-        return isAscending
-                ? PageRequest.of(page, size, Sort.by(sortAttribute).ascending())
-                : PageRequest.of(page, size, Sort.by(sortAttribute).descending());
     }
 }

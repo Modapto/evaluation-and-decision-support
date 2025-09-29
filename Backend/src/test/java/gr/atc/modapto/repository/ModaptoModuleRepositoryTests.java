@@ -31,7 +31,6 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
 
     @BeforeEach
     void setUp() {
-        // Given - Clean and setup test data
         repository.deleteAll();
 
         sampleModule1 = new ModaptoModule();
@@ -58,10 +57,8 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Save module : Success")
         void givenValidModule_whenSave_thenPersistsSuccessfully() {
-            // When
             ModaptoModule saved = repository.save(sampleModule1);
 
-            // Then
             assertThat(saved).isNotNull();
             assertThat(saved.getId()).isNotNull();
             assertThat(saved.getModuleId()).isEqualTo("TEST_MODULE_1");
@@ -74,13 +71,10 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by ID : Success")
         void givenSavedModule_whenFindById_thenReturnsModule() {
-            // Given
             ModaptoModule saved = repository.save(sampleModule1);
 
-            // When
             Optional<ModaptoModule> found = repository.findById(saved.getId());
 
-            // Then
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("TEST_MODULE_1");
             assertThat(found.get().getName()).isEqualTo("Test Module 1");
@@ -89,13 +83,10 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Delete module : Success")
         void givenSavedModule_whenDelete_thenRemovesModule() {
-            // Given
             ModaptoModule saved = repository.save(sampleModule1);
 
-            // When
             repository.delete(saved);
 
-            // Then
             Optional<ModaptoModule> found = repository.findById(saved.getId());
             assertThat(found).isNotPresent();
         }
@@ -103,13 +94,10 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Count modules : Success")
         void givenMultipleModules_whenCount_thenReturnsCorrectCount() {
-            // Given
             repository.saveAll(Arrays.asList(sampleModule1, sampleModule2));
 
-            // When
             long count = repository.count();
 
-            // Then
             assertThat(count).isEqualTo(2);
         }
     }
@@ -121,13 +109,10 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by module ID : Success")
         void givenExistingModule_whenFindByModuleId_thenReturnsModule() {
-            // Given
             repository.save(sampleModule1);
 
-            // When
             Optional<ModaptoModule> found = repository.findByModuleId("TEST_MODULE_1");
 
-            // Then
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("TEST_MODULE_1");
             assertThat(found.get().getName()).isEqualTo("Test Module 1");
@@ -139,27 +124,21 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by module ID : No match")
         void givenNonExistentModule_whenFindByModuleId_thenReturnsEmpty() {
-            // Given
             repository.save(sampleModule1);
 
-            // When
             Optional<ModaptoModule> found = repository.findByModuleId("NON_EXISTENT_MODULE");
 
-            // Then
             assertThat(found).isNotPresent();
         }
 
         @Test
         @DisplayName("Find by module ID : Case sensitivity")
         void givenCaseDifference_whenFindByModuleId_thenReturnsEmpty() {
-            // Given
             repository.save(sampleModule1);
 
-            // When
             Optional<ModaptoModule> foundLowerCase = repository.findByModuleId("test_module_1");
             Optional<ModaptoModule> foundMixedCase = repository.findByModuleId("Test_Module_1");
 
-            // Then
             assertThat(foundLowerCase).isNotPresent();
             assertThat(foundMixedCase).isNotPresent();
         }
@@ -167,7 +146,6 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by module ID : Multiple smart services")
         void givenModuleWithMultipleServices_whenFindByModuleId_thenReturnsModuleWithAllServices() {
-            // Given
             ModaptoModule moduleWithMultipleServices = new ModaptoModule();
             moduleWithMultipleServices.setModuleId("MULTI_SERVICE_MODULE");
             moduleWithMultipleServices.setName("Multi Service Module");
@@ -179,10 +157,8 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
             ));
             repository.save(moduleWithMultipleServices);
 
-            // When
             Optional<ModaptoModule> found = repository.findByModuleId("MULTI_SERVICE_MODULE");
 
-            // Then
             assertThat(found).isPresent();
             assertThat(found.get().getSmartServices()).hasSize(3);
             assertThat(found.get().getSmartServices())
@@ -198,17 +174,14 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Save module with null URL : Success")
         void givenModuleWithNullUrl_whenSave_thenPersistsSuccessfully() {
-            // Given
             ModaptoModule moduleWithNullUrl = new ModaptoModule();
             moduleWithNullUrl.setModuleId("NULL_URL_MODULE");
             moduleWithNullUrl.setName("Null URL Module");
             moduleWithNullUrl.setEndpoint(null);
             moduleWithNullUrl.setSmartServices(null);
 
-            // When
             ModaptoModule saved = repository.save(moduleWithNullUrl);
 
-            // Then
             assertThat(saved).isNotNull();
             assertThat(saved.getModuleId()).isEqualTo("NULL_URL_MODULE");
             assertThat(saved.getName()).isEqualTo("Null URL Module");
@@ -219,16 +192,13 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Update existing module : Success")
         void givenExistingModule_whenUpdate_thenUpdatesSuccessfully() {
-            // Given
             ModaptoModule saved = repository.save(sampleModule1);
             String originalId = saved.getId();
 
-            // When
             saved.setEndpoint("https://updated.example.com/module1");
             saved.setName("Updated Module Name");
             ModaptoModule updated = repository.save(saved);
 
-            // Then
             assertThat(updated.getId()).isEqualTo(originalId);
             assertThat(updated.getEndpoint()).isEqualTo("https://updated.example.com/module1");
             assertThat(updated.getName()).isEqualTo("Updated Module Name");
@@ -239,7 +209,6 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Save duplicate modules : Success")
         void givenDuplicateModules_whenSave_thenBothPersistSuccessfully() {
-            // Given - This tests that the repository allows duplicates (no unique constraints)
             ModaptoModule duplicate1 = new ModaptoModule();
             duplicate1.setModuleId("DUPLICATE_MODULE");
             duplicate1.setName("Duplicate Module 1");
@@ -252,20 +221,16 @@ class ModaptoModuleRepositoryTests extends SetupTestContainersEnvironment {
             duplicate2.setEndpoint("https://example.com/module/duplicate2");
             duplicate2.setSmartServices(List.of());
 
-            // When
             ModaptoModule saved1 = repository.save(duplicate1);
             ModaptoModule saved2 = repository.save(duplicate2);
 
-            // Then
             assertThat(saved1).isNotNull();
             assertThat(saved2).isNotNull();
             assertThat(saved1.getId()).isNotEqualTo(saved2.getId());
 
-            // Verify count
             long count = repository.count();
             assertThat(count).isEqualTo(2);
 
-            // Note: findByModuleId will return one of them (implementation dependent)
             Optional<ModaptoModule> found = repository.findByModuleId("DUPLICATE_MODULE");
             assertThat(found).isPresent();
         }

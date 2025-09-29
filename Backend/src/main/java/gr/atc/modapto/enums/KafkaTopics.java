@@ -13,7 +13,7 @@ public enum KafkaTopics {
     SEW_SELF_AWARENESS_MONITORING_KPIS("self-awareness-monitoring-kpis"),
     SEW_SELF_AWARENESS_REAL_TIME_MONITORING("self-awareness-real-time-monitoring"),
     SEW_PROCESS_DRIFT("process-drift"),
-    CRF_SELF_AWARENESS("crf-self-awareness");
+    CRF_SELF_AWARENESS_WEAR_DETECTION("self-awareness-wear-detection");
 
     private final String topic;
 

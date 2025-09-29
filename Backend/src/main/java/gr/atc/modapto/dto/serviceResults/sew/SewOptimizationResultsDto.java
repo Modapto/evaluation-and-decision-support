@@ -25,8 +25,8 @@ public class SewOptimizationResultsDto extends BaseEventResultsDto {
     @JsonProperty("timestamp")
     private String timestamp;
 
-    @JsonProperty("productionModule")
-    private String productionModule;
+    @JsonProperty("moduleId")
+    private String moduleId;
 
     @JsonProperty("data")
     private Map<String, SolutionData> data;
@@ -36,36 +36,46 @@ public class SewOptimizationResultsDto extends BaseEventResultsDto {
     @AllArgsConstructor
     public static class SolutionData {
 
-        @JsonProperty("metrics")
-        private MetricsData metrics;
+        @JsonProperty("KPIs")
+        private KpiData kpis;
 
-        @JsonProperty("seq")
-        private Map<String, Map<String, String>> seq;
-
-        @JsonProperty("orders")
-        private Map<String, Map<String, Map<String, Map<String, TimeRange>>>> orders;
-
-        @JsonProperty("init_order")
-        private List<String> initOrder;
+        @JsonProperty("schedule")
+        private Map<String, Map<String, OrderData>> schedule;
     }
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MetricsData {
+    public static class KpiData {
+
         @JsonProperty("makespan")
         private String makespan;
+
+        @JsonProperty("machine_utilization")
+        private Double machineUtilization;
     }
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TimeRange {
+    public static class OrderData {
+        @JsonProperty("OrderID")
+        private String orderId;
+
+        @JsonProperty("machines")
+        private Map<String, TimeRange> machines;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    class TimeRange {
+
         @JsonProperty("start")
         private String start;
 
         @JsonProperty("end")
         private String end;
     }
-
 }

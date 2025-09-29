@@ -65,14 +65,12 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload CORIM file : Success")
         void givenValidExcelFile_whenUploadCorimFile_thenReturnsSuccess() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "excel content".getBytes()
             );
             doNothing().when(predictiveMaintenanceService).storeCorimData(any());
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file)
                     .with(csrf()))
@@ -87,14 +85,12 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Upload CORIM file as Admin : Success")
         void givenValidExcelFileAsAdmin_whenUploadCorimFile_thenReturnsSuccess() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "file", "admin_test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "excel content".getBytes()
             );
             doNothing().when(predictiveMaintenanceService).storeCorimData(any());
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file)
                     .with(csrf()))
@@ -108,13 +104,11 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Upload CORIM file : Unauthorized")
         void givenNoAuthentication_whenUploadCorimFile_thenReturnsUnauthorized() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "excel content".getBytes()
             );
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file)
                     .with(csrf()))
@@ -127,13 +121,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload CORIM file : Invalid file type")
         void givenInvalidFileType_whenUploadCorimFile_thenReturnsBadRequest() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "file", "test.txt", "text/plain",
                     "not an excel file".getBytes()
             );
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file)
                     .with(csrf()))
@@ -146,7 +138,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload CORIM file : Service error")
         void givenServiceException_whenUploadCorimFile_thenReturnsInternalServerError() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "excel content".getBytes()
@@ -154,7 +145,6 @@ class PredictiveMaintenanceControllerTests {
             doThrow(new FileHandlingException("Processing error"))
                     .when(predictiveMaintenanceService).storeCorimData(any());
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file)
                     .with(csrf()))
@@ -169,13 +159,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload CORIM file : Wrong parameter name")
         void givenWrongParameterName_whenUploadCorimFile_thenReturnsBadRequest() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "wrongParamName", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "excel content".getBytes()
             );
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file)
                     .with(csrf()))
@@ -188,13 +176,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload CORIM file : Empty file")
         void givenEmptyFile_whenUploadCorimFile_thenReturnsBadRequest() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "file", "empty.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     new byte[0]
             );
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file)
                     .with(csrf()))
@@ -205,164 +191,107 @@ class PredictiveMaintenanceControllerTests {
     }
 
     @Nested
-    @DisplayName("Retrieve Maintenance Data")
-    class RetrieveMaintenanceData {
+    @DisplayName("Retrieve Maintenance Data Paginated")
+    class RetrieveMaintenanceDataPaginated {
 
         @Test
         @WithMockUser(roles = "USER")
-        @DisplayName("Retrieve maintenance data : Success with date range")
-        void givenStartAndEndDate_whenRetrieveMaintenanceData_thenReturnsDataWithinRange() throws Exception {
-            // Given
+        @DisplayName("Retrieve maintenance data : Success with pagination parameters")
+        void givenPaginationParams_whenRetrieveMaintenanceData_thenReturnsPagedData() throws Exception {
             List<MaintenanceDataDto> mockData = createMockMaintenanceData();
-            when(predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(
-                    anyString(), anyString())).thenReturn(mockData);
+            when(predictiveMaintenanceService.retrieveMaintenanceDataPaginated(any())).thenReturn(new PageImpl<>(mockData));
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/data")
-                    .param("startDate", "2024-01-01T00:00:00")
-                    .param("endDate", "2024-12-31T00:00:00"))
+                    .param("page", "0")
+                    .param("size", "10")
+                    .param("sortAttribute", "tsInterventionFinished")
+                    .param("isAscending", "false"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data").isNotEmpty())
-                    .andExpect(jsonPath("$.data[0].Stage").value("Stage1"))
-                    .andExpect(jsonPath("$.data[1].Stage").value("Stage2"))
-                    .andExpect(jsonPath("$.message").value("Maintenance data within given timeframe retrieved successfully"));
+                    .andExpect(jsonPath("$.data.results").isArray())
+                    .andExpect(jsonPath("$.data.results").isNotEmpty())
+                    .andExpect(jsonPath("$.data.results[0].Stage").value("Stage1"))
+                    .andExpect(jsonPath("$.data.results[1].Stage").value("Stage2"))
+                    .andExpect(jsonPath("$.message").value("Maintenance data retrieved successfully"));
 
-            verify(predictiveMaintenanceService).retrieveMaintenanceDataByDateRange("2024-01-01T00:00:00", "2024-12-31T00:00:00");
+            verify(predictiveMaintenanceService).retrieveMaintenanceDataPaginated(any());
         }
 
         @Test
         @WithMockUser(roles = "USER")
-        @DisplayName("Retrieve maintenance data : Success with start date only")
-        void givenStartDateOnly_whenRetrieveMaintenanceData_thenReturnsDataFromStartDate() throws Exception {
-            // Given
+        @DisplayName("Retrieve maintenance data : Success with default parameters")
+        void givenDefaultParams_whenRetrieveMaintenanceData_thenReturnsDataWithDefaults() throws Exception {
             List<MaintenanceDataDto> mockData = createMockMaintenanceData();
-            when(predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(
-                    eq("2024-01-01T00:00:00"), eq(null))).thenReturn(mockData);
+            when(predictiveMaintenanceService.retrieveMaintenanceDataPaginated(any())).thenReturn(new PageImpl<>(mockData));
 
-            // When & Then
-            mockMvc.perform(get("/api/eds/maintenance/data")
-                    .param("startDate", "2024-01-01T00:00:00"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data").isNotEmpty())
-                    .andExpect(jsonPath("$.message").value("Maintenance data within given timeframe retrieved successfully"));
-
-            verify(predictiveMaintenanceService).retrieveMaintenanceDataByDateRange("2024-01-01T00:00:00", null);
-        }
-
-        @Test
-        @WithMockUser(roles = "USER")
-        @DisplayName("Retrieve maintenance data : Success with end date only")
-        void givenEndDateOnly_whenRetrieveMaintenanceData_thenReturnsDataUntilEndDate() throws Exception {
-            // Given
-            List<MaintenanceDataDto> mockData = createMockMaintenanceData();
-            when(predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(
-                    eq(null), eq("2024-12-31T00:00:00"))).thenReturn(mockData);
-
-            // When & Then
-            mockMvc.perform(get("/api/eds/maintenance/data")
-                    .param("endDate", "2024-12-31T00:00:00"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data").isNotEmpty())
-                    .andExpect(jsonPath("$.message").value("Maintenance data within given timeframe retrieved successfully"));
-
-            verify(predictiveMaintenanceService).retrieveMaintenanceDataByDateRange(null, "2024-12-31T00:00:00");
-        }
-
-        @Test
-        @WithMockUser(roles = "USER")
-        @DisplayName("Retrieve maintenance data : Success with no dates")
-        void givenNoDates_whenRetrieveMaintenanceData_thenReturnsAllData() throws Exception {
-            // Given
-            List<MaintenanceDataDto> mockData = createMockMaintenanceData();
-            when(predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(
-                    eq(null), eq(null))).thenReturn(mockData);
-
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/data"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data").isNotEmpty())
-                    .andExpect(jsonPath("$.message").value("Maintenance data within given timeframe retrieved successfully"));
+                    .andExpect(jsonPath("$.data.results").isArray())
+                    .andExpect(jsonPath("$.data.results").isNotEmpty())
+                    .andExpect(jsonPath("$.message").value("Maintenance data retrieved successfully"));
 
-            verify(predictiveMaintenanceService).retrieveMaintenanceDataByDateRange(null, null);
+            verify(predictiveMaintenanceService).retrieveMaintenanceDataPaginated(any());
         }
 
         @Test
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve maintenance data : Empty result")
-        void givenDateRangeWithNoData_whenRetrieveMaintenanceData_thenReturnsEmptyList() throws Exception {
-            // Given
-            when(predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(
-                    eq("2024-01-01T00:00:00"), eq("2024-01-02T00:00:00"))).thenReturn(Collections.emptyList());
+        void givenNoData_whenRetrieveMaintenanceData_thenReturnsEmptyPage() throws Exception {
+            Page<MaintenanceDataDto> emptyPage = new PageImpl<>(Collections.emptyList());
+            when(predictiveMaintenanceService.retrieveMaintenanceDataPaginated(any())).thenReturn(emptyPage);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/data")
-                    .param("startDate", "2024-01-01T00:00:00")
-                    .param("endDate", "2024-01-02T00:00:00"))
+                    .param("page", "0")
+                    .param("size", "10"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data").isEmpty())
-                    .andExpect(jsonPath("$.message").value("Maintenance data within given timeframe retrieved successfully"));
+                    .andExpect(jsonPath("$.data.results").isArray())
+                    .andExpect(jsonPath("$.data.results").isEmpty())
+                    .andExpect(jsonPath("$.message").value("Maintenance data retrieved successfully"));
 
-            verify(predictiveMaintenanceService).retrieveMaintenanceDataByDateRange("2024-01-01T00:00:00", "2024-01-02T00:00:00");
+            verify(predictiveMaintenanceService).retrieveMaintenanceDataPaginated(any());
         }
 
         @Test
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve maintenance data as admin : Success")
         void givenAdminRole_whenRetrieveMaintenanceData_thenReturnsAllData() throws Exception {
-            // Given
             List<MaintenanceDataDto> mockData = createMockMaintenanceData();
-            when(predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(
-                    eq(null), eq(null))).thenReturn(mockData);
+            when(predictiveMaintenanceService.retrieveMaintenanceDataPaginated(any())).thenReturn(new PageImpl<>(mockData));
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/data"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data").isArray())
-                    .andExpect(jsonPath("$.data").isNotEmpty());
+                    .andExpect(jsonPath("$.data.results").isArray())
+                    .andExpect(jsonPath("$.data.results").isNotEmpty());
 
-            verify(predictiveMaintenanceService).retrieveMaintenanceDataByDateRange(null, null);
+            verify(predictiveMaintenanceService).retrieveMaintenanceDataPaginated(any());
         }
 
         @Test
         @DisplayName("Retrieve maintenance data : Unauthorized")
         void givenNoAuthentication_whenRetrieveMaintenanceData_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/data"))
                     .andExpect(status().isUnauthorized());
 
-            verify(predictiveMaintenanceService, never()).retrieveMaintenanceDataByDateRange(any(), any());
+            verify(predictiveMaintenanceService, never()).retrieveMaintenanceDataPaginated(any());
         }
 
         @Test
         @WithMockUser(roles = "USER")
-        @DisplayName("Retrieve maintenance data : Special characters in dates")
-        void givenSpecialCharactersInDates_whenRetrieveMaintenanceData_thenReturnsSuccess() throws Exception {
-            // Given
-            List<MaintenanceDataDto> mockData = createMockMaintenanceData();
-            when(predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(
-                    eq("2024-01-01T00:00:00"), eq("2024-12-31T23:59:59"))).thenReturn(mockData);
-
-            // When & Then
+        @DisplayName("Retrieve maintenance data : Invalid sort attribute")
+        void givenInvalidSortAttribute_whenRetrieveMaintenanceData_thenReturnsBadRequest() throws Exception {
             mockMvc.perform(get("/api/eds/maintenance/data")
-                    .param("startDate", "2024-01-01T00:00:00")
-                    .param("endDate", "2024-12-31T23:59:59"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data").isArray());
+                    .param("sortAttribute", "invalidAttribute"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false))
+                    .andExpect(jsonPath("$.message").value("Invalid pagination sort attributes"));
 
-            verify(predictiveMaintenanceService).retrieveMaintenanceDataByDateRange("2024-01-01T00:00:00", "2024-12-31T23:59:59");
+            verify(predictiveMaintenanceService, never()).retrieveMaintenanceDataPaginated(any());
         }
+
+
     }
 
     @Nested
@@ -372,7 +301,6 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Access endpoints : Authentication required")
         void givenNoAuthentication_whenAccessEndpoints_thenReturnsUnauthorized() throws Exception {
-            // Test upload endpoint
             MockMultipartFile file = new MockMultipartFile(
                     "file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "excel content".getBytes()
@@ -383,25 +311,22 @@ class PredictiveMaintenanceControllerTests {
                     .with(csrf()))
                     .andExpect(status().isUnauthorized());
 
-            // Test retrieve endpoint
             mockMvc.perform(get("/api/eds/maintenance/data"))
                     .andExpect(status().isUnauthorized());
 
             verify(predictiveMaintenanceService, never()).storeCorimData(any());
-            verify(predictiveMaintenanceService, never()).retrieveMaintenanceDataByDateRange(any(), any());
+            verify(predictiveMaintenanceService, never()).retrieveMaintenanceDataPaginated(any());
         }
 
         @Test
         @WithMockUser(roles = "USER")
         @DisplayName("Upload CORIM file : CSRF token required")
         void givenNoCsrfToken_whenUploadCorimFile_thenReturnsForbidden() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "excel content".getBytes()
             );
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file))
                     .andExpect(status().isForbidden());
@@ -418,12 +343,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve maintenance data : JSON content type")
         void givenValidRequest_whenRetrieveMaintenanceData_thenReturnsJsonContentType() throws Exception {
-            // Given
             List<MaintenanceDataDto> mockData = createMockMaintenanceData();
-            when(predictiveMaintenanceService.retrieveMaintenanceDataByDateRange(any(), any()))
-                    .thenReturn(mockData);
+            Page<MaintenanceDataDto> mockPage = new PageImpl<>(mockData);
+            when(predictiveMaintenanceService.retrieveMaintenanceDataPaginated(any()))
+                    .thenReturn(mockPage);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/data"))
                     .andExpect(status().isOk())
                     .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -434,14 +358,12 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload CORIM file : Multipart form data")
         void givenMultipartFormData_whenUploadCorimFile_thenReturnsSuccess() throws Exception {
-            // Given
             MockMultipartFile file = new MockMultipartFile(
                     "file", "test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     "excel content".getBytes()
             );
             doNothing().when(predictiveMaintenanceService).storeCorimData(any());
 
-            // When & Then
             mockMvc.perform(multipart("/api/eds/maintenance/uploadCorimFile")
                     .file(file)
                     .with(csrf())
@@ -458,7 +380,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload components list : Success")
         void givenValidComponentsList_whenUploadComponentsList_thenReturnsSuccess() throws Exception {
-            // Given
             List<SewComponentInfoDto> componentsList = Arrays.asList(
                     SewComponentInfoDto.builder()
                             .stage("Stage1")
@@ -485,7 +406,6 @@ class PredictiveMaintenanceControllerTests {
             doNothing().when(predictiveMaintenanceService).storeComponentsListData(any());
             doNothing().when(predictiveMaintenanceService).locateLastMaintenanceActionForStoredComponents();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/uploadComponentsList")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(componentsList))
@@ -502,12 +422,10 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload components list : Empty list")
         void givenEmptyComponentsList_whenUploadComponentsList_thenReturnsSuccess() throws Exception {
-            // Given
             List<SewComponentInfoDto> emptyList = Collections.emptyList();
             doNothing().when(predictiveMaintenanceService).storeComponentsListData(any());
             doNothing().when(predictiveMaintenanceService).locateLastMaintenanceActionForStoredComponents();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/uploadComponentsList")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(emptyList))
@@ -523,7 +441,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload components list : Validation error - Missing required fields")
         void givenInvalidComponentsList_whenUploadComponentsList_thenReturnsValidationError() throws Exception {
-            // Given - Component with missing required fields
             List<SewComponentInfoDto> invalidComponentsList = Arrays.asList(
                     SewComponentInfoDto.builder()
                             .stage("Stage1")
@@ -547,7 +464,6 @@ class PredictiveMaintenanceControllerTests {
                             .build()
             );
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/uploadComponentsList")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidComponentsList))
@@ -563,7 +479,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload components list : Validation error - Null list")
         void givenNullComponentsList_whenUploadComponentsList_thenReturnsValidationError() throws Exception {
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/uploadComponentsList")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("null")
@@ -577,12 +492,10 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Upload components list : Unauthorized")
         void givenNoAuthentication_whenUploadComponentsList_thenReturnsUnauthorized() throws Exception {
-            // Given
             List<SewComponentInfoDto> componentsList = Collections.singletonList(
                     SewComponentInfoDto.builder().stage("Stage1").build()
             );
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/uploadComponentsList")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(componentsList))
@@ -601,7 +514,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke grouping maintenance : Success")
         void givenValidInput_whenInvokeGroupingMaintenance_thenReturnsSuccess() throws Exception {
-            // Given
             SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("GROUPING_SERVICE")
@@ -614,7 +526,6 @@ class PredictiveMaintenanceControllerTests {
 
             doNothing().when(predictiveMaintenanceService).invokeGroupingPredictiveMaintenance(any());
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/grouping-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(inputData))
@@ -630,13 +541,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke grouping maintenance : Validation error - Missing moduleId")
         void givenMissingModuleId_whenInvokeGroupingMaintenance_thenReturnsValidationError() throws Exception {
-            // Given - Missing required moduleId
             SewGroupingPredictiveMaintenanceInputDataDto invalidInput = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .smartServiceId("GROUPING_SERVICE")
                     .setupCost(500.0)
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/grouping-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidInput))
@@ -651,14 +560,12 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke grouping maintenance : Validation error - Empty moduleId")
         void givenEmptyModuleId_whenInvokeGroupingMaintenance_thenReturnsValidationError() throws Exception {
-            // Given - Empty moduleId (violates @NotEmpty)
             SewGroupingPredictiveMaintenanceInputDataDto invalidInput = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("") // Empty string violates @NotEmpty
                     .smartServiceId("GROUPING_SERVICE")
                     .setupCost(500.0)
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/grouping-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidInput))
@@ -673,13 +580,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke grouping maintenance : Validation error - Missing smartServiceId")
         void givenMissingSmartServiceId_whenInvokeGroupingMaintenance_thenReturnsValidationError() throws Exception {
-            // Given - Missing required smartServiceId
             SewGroupingPredictiveMaintenanceInputDataDto invalidInput = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .setupCost(500.0)
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/grouping-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidInput))
@@ -693,13 +598,11 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Invoke grouping maintenance : Unauthorized")
         void givenNoAuthentication_whenInvokeGroupingMaintenance_thenReturnsUnauthorized() throws Exception {
-            // Given
             SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("GROUPING_SERVICE")
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/grouping-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(inputData))
@@ -718,7 +621,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke threshold maintenance : Success")
         void givenValidInput_whenInvokeThresholdMaintenance_thenReturnsResult() throws Exception {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
@@ -744,7 +646,6 @@ class PredictiveMaintenanceControllerTests {
             when(predictiveMaintenanceService.invokeAndRegisterThresholdBasedPredictiveMaintenance(any()))
                     .thenReturn(expectedOutput);
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/threshold-based-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(inputData))
@@ -764,12 +665,10 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke threshold maintenance : Validation error - Missing moduleId")
         void givenMissingModuleId_whenInvokeThresholdMaintenance_thenReturnsValidationError() throws Exception {
-            // Given - Missing required moduleId
             SewThresholdBasedMaintenanceInputDataDto invalidInput = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .smartServiceId("THRESHOLD_SERVICE")
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/threshold-based-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidInput))
@@ -784,13 +683,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke threshold maintenance : Validation error - Empty moduleId")
         void givenEmptyModuleId_whenInvokeThresholdMaintenance_thenReturnsValidationError() throws Exception {
-            // Given - Empty moduleId
             SewThresholdBasedMaintenanceInputDataDto invalidInput = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("") // Empty string
                     .smartServiceId("THRESHOLD_SERVICE")
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/threshold-based-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidInput))
@@ -805,12 +702,10 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke threshold maintenance : Validation error - Missing smartServiceId")
         void givenMissingSmartServiceId_whenInvokeThresholdMaintenance_thenReturnsValidationError() throws Exception {
-            // Given - Missing required smartServiceId
             SewThresholdBasedMaintenanceInputDataDto invalidInput = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/threshold-based-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidInput))
@@ -824,13 +719,11 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Invoke threshold maintenance : Unauthorized")
         void givenNoAuthentication_whenInvokeThresholdMaintenance_thenReturnsUnauthorized() throws Exception {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto inputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/threshold-based-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(inputData))
@@ -849,7 +742,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve grouping results : Success")
         void givenValidModuleId_whenRetrieveGroupingResults_thenReturnsResults() throws Exception {
-            // Given
             SewGroupingPredictiveMaintenanceOutputDto expectedOutput = SewGroupingPredictiveMaintenanceOutputDto.builder()
                     .id("result-id")
                     .moduleId("TEST_MODULE")
@@ -859,7 +751,6 @@ class PredictiveMaintenanceControllerTests {
             when(predictiveMaintenanceService.retrieveLatestGroupingMaintenanceResults("TEST_MODULE"))
                     .thenReturn(expectedOutput);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/grouping-maintenance/results")
                     .param("moduleId", "TEST_MODULE"))
                     .andExpect(status().isOk())
@@ -875,7 +766,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve threshold results : Success")
         void givenValidModuleId_whenRetrieveThresholdResults_thenReturnsResults() throws Exception {
-            // Given
             SewThresholdBasedPredictiveMaintenanceOutputDto expectedOutput = SewThresholdBasedPredictiveMaintenanceOutputDto.builder()
                     .id("result-id")
                     .moduleId("TEST_MODULE")
@@ -886,7 +776,6 @@ class PredictiveMaintenanceControllerTests {
             when(predictiveMaintenanceService.retrieveLatestThresholdBasedMaintenanceResults("TEST_MODULE"))
                     .thenReturn(expectedOutput);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/results")
                     .param("moduleId", "TEST_MODULE"))
                     .andExpect(status().isOk())
@@ -902,7 +791,6 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Retrieve results : Unauthorized")
         void givenNoAuthentication_whenRetrieveResults_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/grouping-maintenance/results")
                     .param("moduleId", "TEST_MODULE"))
                     .andExpect(status().isUnauthorized());
@@ -919,7 +807,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve results : Missing module ID")
         void givenMissingModuleId_whenRetrieveResults_thenReturnsBadRequest() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/grouping-maintenance/results"))
                     .andExpect(status().isBadRequest());
 
@@ -939,13 +826,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke grouping maintenance : Invalid Content-Type")
         void givenInvalidContentType_whenInvokeGroupingMaintenance_thenReturnsUnsupportedMediaType() throws Exception {
-            // Given
             SewGroupingPredictiveMaintenanceInputDataDto inputData = SewGroupingPredictiveMaintenanceInputDataDto.builder()
                     .moduleId("TEST_MODULE")
                     .smartServiceId("GROUPING_SERVICE")
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/grouping-maintenance")
                     .contentType(MediaType.APPLICATION_XML) // Wrong content type
                     .content(objectMapper.writeValueAsString(inputData))
@@ -959,7 +844,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Invoke threshold maintenance : Malformed JSON")
         void givenMalformedJson_whenInvokeThresholdMaintenance_thenReturnsBadRequest() throws Exception {
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/predict/threshold-based-maintenance")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content("{ \"moduleId\": \"TEST_MODULE\", \"smartServiceId\": }") // Malformed JSON
@@ -973,7 +857,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Upload components : Missing Content-Type")
         void givenMissingContentType_whenUploadComponents_thenReturnsUnsupportedMediaType() throws Exception {
-            // Given
             List<SewComponentInfoDto> componentsList = Collections.singletonList(
                     SewComponentInfoDto.builder()
                             .stage("Stage1")
@@ -983,7 +866,6 @@ class PredictiveMaintenanceControllerTests {
                             .build()
             );
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/uploadComponentsList")
                     // Missing content type
                     .content(objectMapper.writeValueAsString(componentsList))
@@ -997,7 +879,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve results : Invalid module ID parameter")
         void givenEmptyModuleIdParameter_whenRetrieveResults_thenHandlesGracefully() throws Exception {
-            // Given
             SewGroupingPredictiveMaintenanceOutputDto expectedOutput = SewGroupingPredictiveMaintenanceOutputDto.builder()
                     .id("result-id")
                     .moduleId("")
@@ -1007,7 +888,6 @@ class PredictiveMaintenanceControllerTests {
             when(predictiveMaintenanceService.retrieveLatestGroupingMaintenanceResults(""))
                     .thenReturn(expectedOutput);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/grouping-maintenance/results")
                     .param("moduleId", "")) // Empty parameter value
                     .andExpect(status().isOk())
@@ -1026,7 +906,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Declare process drift : Success")
         void givenValidProcessDriftData_whenDeclareProcessDrift_thenReturnsCreated() throws Exception {
-            // Given
             MaintenanceDataDto processDriftData = MaintenanceDataDto.builder()
                     .stage("TestStage")
                     .cell("TestCell")
@@ -1040,7 +919,6 @@ class PredictiveMaintenanceControllerTests {
             when(predictiveMaintenanceService.declareProcessDrift(any(MaintenanceDataDto.class)))
                     .thenReturn("generated-drift-id");
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/process-drifts/create")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(processDriftData))
@@ -1057,14 +935,12 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Declare process drift : Validation error - Missing required fields")
         void givenInvalidProcessDriftData_whenDeclareProcessDrift_thenReturnsValidationError() throws Exception {
-            // Given - Process drift with missing required fields
             MaintenanceDataDto invalidData = MaintenanceDataDto.builder()
                     .stage("") // Empty stage
                     .cell("TestCell")
                     .component("TestComponent")
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/process-drifts/create")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidData))
@@ -1078,14 +954,12 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Declare process drift : Unauthorized")
         void givenNoAuthentication_whenDeclareProcessDrift_thenReturnsUnauthorized() throws Exception {
-            // Given
             MaintenanceDataDto processDriftData = MaintenanceDataDto.builder()
                     .stage("TestStage")
                     .cell("TestCell")
                     .component("TestComponent")
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/maintenance/process-drifts/create")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(processDriftData))
@@ -1099,7 +973,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve process drift by ID : Success")
         void givenValidProcessDriftId_whenRetrieveProcessDriftById_thenReturnsProcessDrift() throws Exception {
-            // Given
             String driftId = "test-drift-id";
             MaintenanceDataDto expectedDto = MaintenanceDataDto.builder()
                     .stage("TestStage")
@@ -1111,7 +984,6 @@ class PredictiveMaintenanceControllerTests {
             when(predictiveMaintenanceService.retrieveProcessDriftById(driftId))
                     .thenReturn(expectedDto);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/process-drifts/{processDriftId}", driftId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
@@ -1127,7 +999,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve process drift by ID : Validation error - Empty ID")
         void givenEmptyProcessDriftId_whenRetrieveProcessDriftById_thenReturnsValidationError() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/process-drifts/{processDriftId}", ""))
                     .andExpect(status().isNotFound()); // Path variable empty results in 404
 
@@ -1137,10 +1008,8 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Retrieve process drift by ID : Unauthorized")
         void givenNoAuthentication_whenRetrieveProcessDriftById_thenReturnsUnauthorized() throws Exception {
-            // Given
             String driftId = "test-drift-id";
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/process-drifts/{processDriftId}", driftId))
                     .andExpect(status().isUnauthorized());
 
@@ -1151,13 +1020,11 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Complete process drift : Success")
         void givenValidIdAndEndTime_whenCompleteProcessDrift_thenReturnsSuccess() throws Exception {
-            // Given
             String driftId = "test-drift-id";
             String endDatetime = "2025-08-03T14:30:00";
             doNothing().when(predictiveMaintenanceService)
                     .completeProcessDrift(eq(driftId), any(LocalDateTime.class));
 
-            // When & Then
             mockMvc.perform(put("/api/eds/maintenance/process-drifts/{processDriftId}/complete", driftId)
                     .param("endDatetime", endDatetime)
                     .with(csrf()))
@@ -1172,10 +1039,8 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Complete process drift : Validation error - Missing end datetime")
         void givenMissingEndDatetime_whenCompleteProcessDrift_thenReturnsValidationError() throws Exception {
-            // Given
             String driftId = "test-drift-id";
 
-            // When & Then
             mockMvc.perform(put("/api/eds/maintenance/process-drifts/{processDriftId}/complete", driftId)
                     .with(csrf()))
                     .andExpect(status().isBadRequest());
@@ -1187,11 +1052,9 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Complete process drift : Validation error - Invalid datetime format")
         void givenInvalidDatetimeFormat_whenCompleteProcessDrift_thenReturnsValidationError() throws Exception {
-            // Given
             String driftId = "test-drift-id";
             String invalidEndDatetime = "invalid-datetime-format";
 
-            // When & Then
             mockMvc.perform(put("/api/eds/maintenance/process-drifts/{processDriftId}/complete", driftId)
                     .param("endDatetime", invalidEndDatetime)
                     .with(csrf()))
@@ -1203,11 +1066,9 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Complete process drift : Unauthorized")
         void givenNoAuthentication_whenCompleteProcessDrift_thenReturnsUnauthorized() throws Exception {
-            // Given
             String driftId = "test-drift-id";
             String endDatetime = "2025-08-03T14:30:00";
 
-            // When & Then
             mockMvc.perform(put("/api/eds/maintenance/process-drifts/{processDriftId}/complete", driftId)
                     .param("endDatetime", endDatetime)
                     .with(csrf()))
@@ -1220,7 +1081,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve paginated uncompleted process drifts : Success")
         void givenValidPaginationParams_whenRetrievePaginatedUncompletedProcessDrifts_thenReturnsPagedResults() throws Exception {
-            // Given
             List<MaintenanceDataDto> mockData = Arrays.asList(
                     MaintenanceDataDto.builder()
                             .stage("Stage1")
@@ -1242,7 +1102,6 @@ class PredictiveMaintenanceControllerTests {
             when(predictiveMaintenanceService.retrievePaginatedUncompletedProcessDrifts(any()))
                     .thenReturn(mockPage);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/process-drifts")
                     .param("page", "0")
                     .param("size", "10")
@@ -1263,12 +1122,10 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve paginated uncompleted process drifts : Default parameters")
         void givenNoParams_whenRetrievePaginatedUncompletedProcessDrifts_thenUsesDefaults() throws Exception {
-            // Given
             Page<MaintenanceDataDto> emptyPage = new PageImpl<>(Collections.emptyList());
             when(predictiveMaintenanceService.retrievePaginatedUncompletedProcessDrifts(any()))
                     .thenReturn(emptyPage);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/process-drifts"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
@@ -1283,7 +1140,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve paginated uncompleted process drifts : Invalid sort attribute")
         void givenInvalidSortAttribute_whenRetrievePaginatedUncompletedProcessDrifts_thenReturnsBadRequest() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/process-drifts")
                     .param("sortAttribute", "invalidAttribute"))
                     .andExpect(status().isBadRequest())
@@ -1296,7 +1152,6 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Retrieve paginated uncompleted process drifts : Unauthorized")
         void givenNoAuthentication_whenRetrievePaginatedUncompletedProcessDrifts_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/process-drifts"))
                     .andExpect(status().isUnauthorized());
 
@@ -1312,7 +1167,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve threshold-based scheduled tasks : Success")
         void givenValidPagination_whenRetrieveScheduledTasks_thenReturnsPagedResults() throws Exception {
-            // Given
             List<ScheduledTaskDto> mockTasks = Arrays.asList(
                     ScheduledTaskDto.builder()
                             .id("task-1")
@@ -1340,7 +1194,6 @@ class PredictiveMaintenanceControllerTests {
             when(scheduledTaskService.retrieveScheduledTaskBySmartServiceType(any(), eq("THRESHOLD_BASED_PREDICTIVE_MAINTENANCE")))
                     .thenReturn(mockPage);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks")
                     .param("page", "0")
                     .param("size", "10")
@@ -1362,12 +1215,10 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve scheduled tasks : Default parameters")
         void givenDefaultParams_whenRetrieveScheduledTasks_thenUsesDefaults() throws Exception {
-            // Given
             Page<ScheduledTaskDto> emptyPage = new PageImpl<>(Collections.emptyList());
             when(scheduledTaskService.retrieveScheduledTaskBySmartServiceType(any(), eq("THRESHOLD_BASED_PREDICTIVE_MAINTENANCE")))
                     .thenReturn(emptyPage);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
@@ -1382,7 +1233,6 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve scheduled tasks : Invalid sort attribute")
         void givenInvalidSortAttribute_whenRetrieveScheduledTasks_thenReturnsBadRequest() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks")
                     .param("sortAttribute", "invalidAttribute"))
                     .andExpect(status().isBadRequest())
@@ -1395,7 +1245,6 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Retrieve scheduled tasks : Unauthorized")
         void givenNoAuthentication_whenRetrieveScheduledTasks_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks"))
                     .andExpect(status().isUnauthorized());
 
@@ -1406,11 +1255,9 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Delete scheduled task : Success")
         void givenValidTaskId_whenDeleteScheduledTask_thenReturnsSuccess() throws Exception {
-            // Given
             String taskId = "task-id-123";
             doNothing().when(scheduledTaskService).deleteScheduledTaskById(taskId);
 
-            // When & Then
             mockMvc.perform(delete("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks/{taskId}", taskId)
                     .with(csrf()))
                     .andExpect(status().isOk())
@@ -1424,12 +1271,10 @@ class PredictiveMaintenanceControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Delete scheduled task : Task not found")
         void givenNonExistentTaskId_whenDeleteScheduledTask_thenReturnsNotFound() throws Exception {
-            // Given
             String taskId = "non-existent-task";
             doThrow(new gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException("Scheduled task not found"))
                     .when(scheduledTaskService).deleteScheduledTaskById(taskId);
 
-            // When & Then
             mockMvc.perform(delete("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks/{taskId}", taskId)
                     .with(csrf()))
                     .andExpect(status().isNotFound())
@@ -1441,10 +1286,8 @@ class PredictiveMaintenanceControllerTests {
         @Test
         @DisplayName("Delete scheduled task : Unauthorized")
         void givenNoAuthentication_whenDeleteScheduledTask_thenReturnsUnauthorized() throws Exception {
-            // Given
             String taskId = "task-id-123";
 
-            // When & Then
             mockMvc.perform(delete("/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks/{taskId}", taskId)
                     .with(csrf()))
                     .andExpect(status().isUnauthorized());

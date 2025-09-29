@@ -19,14 +19,14 @@ public class CrfOptimizationResults {
     @Id
     private String id;
 
-    @Field(name = "@timestamp", type = FieldType.Keyword)
+    @Field(name = "timestamp", type = FieldType.Keyword)
     private String timestamp;
 
     @Field(name = "message", type = FieldType.Text)
     private String message;
 
-    @Field(name = "productionModule", type = FieldType.Keyword)
-    private String productionModule;
+    @Field(name = "moduleId", type = FieldType.Keyword)
+    private String moduleId;
 
     @Field(name = "optimization_results", type = FieldType.Object)
     private OptimizationResults optimizationResults;

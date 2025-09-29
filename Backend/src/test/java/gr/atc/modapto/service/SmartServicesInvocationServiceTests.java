@@ -1,5 +1,6 @@
 package gr.atc.modapto.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.config.properties.KeycloakProperties;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
@@ -31,6 +32,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 // FIX: Add required import for eq()
 import static org.mockito.ArgumentMatchers.eq;
@@ -55,6 +57,9 @@ class SmartServicesInvocationServiceTests {
 
     @Mock
     private IModaptoModuleService modaptoModuleService;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @Mock
     private RestClient.RequestBodyUriSpec requestBodyUriSpec;
@@ -98,7 +103,6 @@ class SmartServicesInvocationServiceTests {
         expectedTokenForm.add("client_id", "test-client-id");
         expectedTokenForm.add("client_secret", "test-client-secret");
 
-        // Mock Keycloak properties - using lenient mode since not all tests use these
         lenient().when(keycloakProperties.clientId()).thenReturn("test-client-id");
         lenient().when(keycloakProperties.clientSecret()).thenReturn("test-client-secret");
         lenient().when(keycloakProperties.tokenUri()).thenReturn("https://keycloak.example.com/auth/realms/test/protocol/openid-connect/token");
@@ -123,7 +127,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Retrieve JWT token : Success (Full Invocation)")
         void givenValidKeycloakConfig_whenRetrieveToken_thenReturnsTokenSuccessfully() {
-            // Given
             stubSuccessfulTokenRetrieval();
             when(modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID))
                     .thenReturn(TEST_DTM_URL + "/api/services/threshold");
@@ -136,11 +139,9 @@ class SmartServicesInvocationServiceTests {
             when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
             when(responseSpec.toEntity(DtResponseDto.class)).thenReturn(sampleResponse);
 
-            // When
             ResponseEntity<DtResponseDto> result = smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
             verify(modaptoModuleService).retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID);
@@ -149,7 +150,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Retrieve JWT token : Authentication failure")
         void givenAuthenticationFailure_whenRetrieveToken_thenThrowsException() {
-            // Given
             when(restClient.post()).thenReturn(requestBodyUriSpec);
             when(requestBodyUriSpec.uri(keycloakProperties.tokenUri())).thenReturn(requestBodySpec);
             when(requestBodySpec.contentType(MediaType.APPLICATION_FORM_URLENCODED)).thenReturn(requestBodySpec);
@@ -158,7 +158,6 @@ class SmartServicesInvocationServiceTests {
             when(responseSpec.toEntity(any(ParameterizedTypeReference.class)))
                     .thenThrow(new RestClientException("Authentication failed"));
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -168,7 +167,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Retrieve JWT token : No token in response")
         void givenNoTokenInResponse_whenRetrieveToken_thenThrowsException() {
-            // Given
             ResponseEntity<Map<String, Object>> emptyTokenEntity = new ResponseEntity<>(new HashMap<>(), HttpStatus.OK);
 
             when(restClient.post()).thenReturn(requestBodyUriSpec);
@@ -178,7 +176,6 @@ class SmartServicesInvocationServiceTests {
             when(requestBodySpec.retrieve()).thenReturn(responseSpec);
             when(responseSpec.toEntity(any(ParameterizedTypeReference.class))).thenReturn(emptyTokenEntity);
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -193,7 +190,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke threshold maintenance service : Success")
         void givenValidInput_whenInvokeThresholdMaintenance_thenReturnsSuccess() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             when(modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID))
@@ -205,11 +201,9 @@ class SmartServicesInvocationServiceTests {
             when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
             when(responseSpec.toEntity(DtResponseDto.class)).thenReturn(sampleResponse);
 
-            // When
             ResponseEntity<DtResponseDto> result = smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(result.getBody()).isNotNull();
@@ -220,13 +214,11 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : DTM returns 4xx Client Error")
         void givenDtmReturns4xxError_whenInvoke_thenThrowsDtmClientErrorException() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             when(modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID))
                     .thenReturn(TEST_DTM_URL + "/api/services/threshold");
 
-            // Mock the service invocation call chain up to the point of failure
             when(requestBodyUriSpec.uri("/api/services/threshold/invoke/$value")).thenReturn(requestBodySpec);
             when(requestBodySpec.header(any(), any())).thenReturn(requestBodySpec);
             when(requestBodySpec.body(eq(sampleInputData))).thenReturn(requestBodySpec);
@@ -234,7 +226,6 @@ class SmartServicesInvocationServiceTests {
             when(responseSpec.toEntity(DtResponseDto.class))
                     .thenThrow(new DtmClientErrorException("Client error invoking smart service: " + TEST_SERVICE_ID));
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -245,13 +236,11 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : DTM returns 5xx Server Error")
         void givenDtmReturns5xxError_whenInvoke_thenThrowsDtmServerErrorException() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             when(modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID))
                     .thenReturn(TEST_DTM_URL + "/api/services/threshold");
 
-            // Mock the service invocation
             when(requestBodyUriSpec.uri("/api/services/threshold/invoke/$value")).thenReturn(requestBodySpec);
             when(requestBodySpec.header(any(), any())).thenReturn(requestBodySpec);
             when(requestBodySpec.body(eq(sampleInputData))).thenReturn(requestBodySpec);
@@ -261,7 +250,6 @@ class SmartServicesInvocationServiceTests {
             when(responseSpec.toEntity(DtResponseDto.class))
                     .thenThrow(new DtmServerErrorException("Server error invoking smart service: " + TEST_SERVICE_ID));
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -276,7 +264,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke grouping maintenance service : Success")
         void givenValidInput_whenInvokeGroupingMaintenance_thenReturnsSuccess() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             String groupingModuleId = "GROUPING_MODULE";
@@ -290,11 +277,9 @@ class SmartServicesInvocationServiceTests {
             when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
             when(responseSpec.toEntity(DtResponseDto.class)).thenReturn(sampleResponse);
 
-            // When
             ResponseEntity<DtResponseDto> result = smartServicesInvocationService.invokeSmartService(
                     groupingServiceId, groupingModuleId, sampleInputData, ModaptoHeader.ASYNC);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(result.getBody()).isNotNull();
@@ -310,7 +295,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : Null smart service ID")
         void givenNullSmartServiceId_whenInvoke_thenThrowsSmartServiceInvocationException() {
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     null, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -320,7 +304,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : Empty smart service ID")
         void givenEmptySmartServiceId_whenInvoke_thenThrowsSmartServiceInvocationException() {
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     "  ", TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -330,7 +313,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : Null module ID")
         void givenNullModuleId_whenInvoke_thenThrowsSmartServiceInvocationException() {
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, null, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -340,7 +322,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : Empty module ID")
         void givenEmptyModuleId_whenInvoke_thenThrowsSmartServiceInvocationException() {
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, "  ", sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -350,7 +331,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : Null invocation data")
         void givenNullInvocationData_whenInvoke_thenThrowsSmartServiceInvocationException() {
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, null, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -360,7 +340,6 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : Null MODAPTO header")
         void givenNullModaptoHeader_whenInvoke_thenThrowsSmartServiceInvocationException() {
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, null))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -375,13 +354,11 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke smart service : Invalid smart service URL")
         void givenInvalidSmartServiceUrl_whenInvokeSmartService_thenThrowsException() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             when(modaptoModuleService.retrieveSmartServiceUrl("INVALID_MODULE", "INVALID_SERVICE"))
                     .thenReturn("https://different-host.com/api/services/invalid");
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     "INVALID_SERVICE", "INVALID_MODULE", sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(SmartServiceInvocationException.class)
@@ -389,11 +366,17 @@ class SmartServicesInvocationServiceTests {
 
             verify(modaptoModuleService).retrieveSmartServiceUrl("INVALID_MODULE", "INVALID_SERVICE");
         }
+    }
+
+    // The integration is tested through the other service tests that call this method
+
+    @Nested
+    @DisplayName("Edge Cases Continued")
+    class EdgeCasesContinued {
 
         @Test
         @DisplayName("Invoke service : Module service fails to retrieve URL")
         void givenModuleServiceFails_whenInvoke_thenThrowsDtmClientErrorException() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             // Throw an exception
@@ -401,7 +384,6 @@ class SmartServicesInvocationServiceTests {
             when(modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID))
                     .thenThrow(new RuntimeException(errorMsg));
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(DtmClientErrorException.class)
@@ -411,14 +393,12 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : ResourceNotFoundException from module service")
         void givenResourceNotFoundException_whenInvoke_thenThrowsDtmClientErrorException() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             ResourceNotFoundException resourceNotFoundException = new ResourceNotFoundException("Module not found");
             when(modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID))
                     .thenThrow(resourceNotFoundException);
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(ResourceNotFoundException.class)
@@ -428,13 +408,11 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : Retrieved URL is null")
         void givenNullRetrievedUrl_whenInvoke_thenThrowsDtmClientErrorException() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             when(modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID))
                     .thenReturn(null);
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(DtmClientErrorException.class)
@@ -444,13 +422,11 @@ class SmartServicesInvocationServiceTests {
         @Test
         @DisplayName("Invoke service : Retrieved URL is empty")
         void givenEmptyRetrievedUrl_whenInvoke_thenThrowsDtmClientErrorException() {
-            // Given
             stubSuccessfulTokenRetrieval();
 
             when(modaptoModuleService.retrieveSmartServiceUrl(TEST_MODULE_ID, TEST_SERVICE_ID))
                     .thenReturn("  ");
 
-            // When & Then
             assertThatThrownBy(() -> smartServicesInvocationService.invokeSmartService(
                     TEST_SERVICE_ID, TEST_MODULE_ID, sampleInputData, ModaptoHeader.SYNC))
                     .isInstanceOf(DtmClientErrorException.class)

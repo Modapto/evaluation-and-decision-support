@@ -1,10 +1,11 @@
 package gr.atc.modapto.service;
 
+import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.model.serviceResults.CrfSimulationResults;
 import gr.atc.modapto.repository.CrfSimulationResultsRepository;
-import gr.atc.modapto.service.interfaces.ISimulationService;
+import gr.atc.modapto.service.interfaces.IKitHolderSimulationService;
 import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -14,8 +15,10 @@ import gr.atc.modapto.exception.CustomExceptions.*;
 
 import java.util.Optional;
 
+import static gr.atc.modapto.enums.OptEngineRoute.ROBOT_PICKING_SEQUENCE;
+
 @Service
-public class CrfSimulationService implements ISimulationService<CrfSimulationResultsDto> {
+public class CrfSimulationService implements IKitHolderSimulationService {
 
     private final Logger log = LoggerFactory.getLogger(CrfSimulationService.class);
 
@@ -23,11 +26,14 @@ public class CrfSimulationService implements ISimulationService<CrfSimulationRes
 
     private final CrfSimulationResultsRepository crfSimulationResultsRepository;
 
+    private final SmartServicesInvocationService smartServicesInvocationService;
+
     private final ModelMapper modelMapper;
 
-    public CrfSimulationService(CrfSimulationResultsRepository crfSimulationResultsRepository, ModelMapper modelMapper){
+    public CrfSimulationService(CrfSimulationResultsRepository crfSimulationResultsRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService){
         this.crfSimulationResultsRepository = crfSimulationResultsRepository;
         this.modelMapper = modelMapper;
+        this.smartServicesInvocationService = smartServicesInvocationService;
     }
 
     /**
@@ -60,7 +66,7 @@ public class CrfSimulationService implements ISimulationService<CrfSimulationRes
     @Override
     public CrfSimulationResultsDto retrieveLatestSimulationResultsByProductionModule(String productionModule) {
         try {
-            Optional<CrfSimulationResults> latestResult = crfSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            Optional<CrfSimulationResults> latestResult = crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule);
             if (latestResult.isEmpty())
                 throw new ResourceNotFoundException("No CRF Simulation Results for Module: " + productionModule + " found");
 
@@ -69,5 +75,15 @@ public class CrfSimulationService implements ISimulationService<CrfSimulationRes
             log.error(MAPPING_ERROR + "for Module {} - {}", productionModule, e.getMessage());
             throw new ModelMappingException("Unable to parse CRF Simulation Results to DTO for Module: " + productionModule + " - Error: " + e.getMessage());
         }
+    }
+
+    /**
+     * Invoke Simulation of Kit Holders Picking Sequence
+     *
+     * @param invocationData Invocation Data
+     */
+    @Override
+    public void invokeSimulationOfKhPickingSequence(CrfInvocationInputDto invocationData) {
+        smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, ROBOT_PICKING_SEQUENCE.toString(), "CRF KH Picking Sequence Simulation");
     }
 }

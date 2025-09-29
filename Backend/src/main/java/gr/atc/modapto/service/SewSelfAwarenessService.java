@@ -1,10 +1,5 @@
 package gr.atc.modapto.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.atc.modapto.dto.dt.DtInputDto;
-import gr.atc.modapto.dto.dt.DtResponseDto;
-import gr.atc.modapto.dto.dt.SmartServiceRequest;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringInputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
@@ -13,27 +8,23 @@ import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
 import gr.atc.modapto.model.sew.SewMonitorKpisComponents;
 import gr.atc.modapto.repository.SewMonitorKpisComponentsRepository;
 import gr.atc.modapto.repository.SewSelfAwarenessRealTimeMonitoringResultsRepository;
-import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.repository.SewSelfAwarenessMonitoringKpisResultsRepository;
-import gr.atc.modapto.service.interfaces.ISelfAwarenessService;
-import gr.atc.modapto.service.processors.NoOpResponseProcessor;
+import gr.atc.modapto.service.interfaces.ISewSelfAwarenessService;
 import gr.atc.modapto.exception.CustomExceptions.*;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
 import java.util.List;
 
 @Service
-public class SelfAwarenessService implements ISelfAwarenessService {
+public class SewSelfAwarenessService implements ISewSelfAwarenessService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SelfAwarenessService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SewSelfAwarenessService.class);
 
     private final SewSelfAwarenessMonitoringKpisResultsRepository sewSelfAwarenessMonitoringKpisResultsRepository;
 
@@ -47,26 +38,18 @@ public class SelfAwarenessService implements ISelfAwarenessService {
 
     private final ModelMapper modelMapper;
 
-    private final ObjectMapper objectMapper;
-
-    private final NoOpResponseProcessor noOpResponseProcessor;
-
-    public SelfAwarenessService(SewSelfAwarenessMonitoringKpisResultsRepository sewSelfAwarenessMonitoringKpisResultsRepository,
-                                SewSelfAwarenessRealTimeMonitoringResultsRepository sewSelfAwarenessRealTimeMonitoringResultsRepository,
-                                SewMonitorKpisComponentsRepository sewMonitorKpisComponentsRepository,
-                                SmartServicesInvocationService smartServicesInvocationService,
-                                ExceptionHandlerService exceptionHandler,
-                                ModelMapper modelMapper,
-                                ObjectMapper objectMapper,
-                                NoOpResponseProcessor noOpResponseProcessor){
+    public SewSelfAwarenessService(SewSelfAwarenessMonitoringKpisResultsRepository sewSelfAwarenessMonitoringKpisResultsRepository,
+                                   SewSelfAwarenessRealTimeMonitoringResultsRepository sewSelfAwarenessRealTimeMonitoringResultsRepository,
+                                   SewMonitorKpisComponentsRepository sewMonitorKpisComponentsRepository,
+                                   SmartServicesInvocationService smartServicesInvocationService,
+                                   ExceptionHandlerService exceptionHandler,
+                                   ModelMapper modelMapper){
         this.sewSelfAwarenessMonitoringKpisResultsRepository = sewSelfAwarenessMonitoringKpisResultsRepository;
         this.sewSelfAwarenessRealTimeMonitoringResultsRepository = sewSelfAwarenessRealTimeMonitoringResultsRepository;
         this.sewMonitorKpisComponentsRepository = sewMonitorKpisComponentsRepository;
         this.smartServicesInvocationService = smartServicesInvocationService;
         this.exceptionHandler = exceptionHandler;
         this.modelMapper = modelMapper;
-        this.objectMapper = objectMapper;
-        this.noOpResponseProcessor = noOpResponseProcessor;
     }
 
     /**
@@ -80,7 +63,7 @@ public class SelfAwarenessService implements ISelfAwarenessService {
         setComponentDataForInvocation(invocationData);
 
         // Invoke the algorithm
-        invokeAlgorithm(invocationData, "Self-Awareness Monitoring KPIs");
+        smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, null,"Self-Awareness Monitoring KPIs");
     }
 
     /**
@@ -149,7 +132,7 @@ public class SelfAwarenessService implements ISelfAwarenessService {
         setComponentDataForInvocation(invocationData);
 
         // Invoke the algorithm
-        invokeAlgorithm(invocationData, "Self-Awareness Real-Time Monitoring");
+        smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, null,"Self-Awareness Real-Time Monitoring");
     }
 
     /**
@@ -266,52 +249,6 @@ public class SelfAwarenessService implements ISelfAwarenessService {
         } catch (Exception e) {
             logger.error("Error setting component data for invocation: {}", e.getMessage());
             throw new SmartServiceInvocationException("Error setting component data for algorithm invocation");
-        }
-    }
-
-    /**
-     * Common algorithm invocation logic
-     *
-     * @param invocationData: Input data object
-     * @param algorithmType: Type of algorithm for logging purposes
-     */
-    private void invokeAlgorithm(Object invocationData, String algorithmType) {
-        SmartServiceRequest request;
-        try {
-            String encodedInput = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(invocationData).getBytes());
-            request = SmartServiceRequest.builder()
-                    .request(encodedInput)
-                    .build();
-        } catch (JsonProcessingException e) {
-            logger.error("Unable to convert {} input to Base64 Encoding", algorithmType);
-            throw new SmartServiceInvocationException("Unable to convert " + algorithmType + " input to Base64 Encoding");
-        }
-
-        try {
-            // Get smartServiceId and moduleId using reflection
-            String smartServiceId = (String) invocationData.getClass().getMethod("getSmartServiceId").invoke(invocationData);
-            String moduleId = (String) invocationData.getClass().getMethod("getModuleId").invoke(invocationData);
-
-            // Wrap Smart Service Input data to DtInputDto
-            DtInputDto<SmartServiceRequest> dtInput = DtInputDto.<SmartServiceRequest>builder()
-                    .inputArguments(request)
-                    .build();
-
-            // Invoke smart service
-            ResponseEntity<DtResponseDto> response = smartServicesInvocationService.invokeSmartService(
-                    smartServiceId,
-                    moduleId,
-                    dtInput,
-                    ModaptoHeader.ASYNC
-            );
-
-            logger.debug("Successfully invoked {} algorithm", algorithmType);
-
-            // Just discard the response as it will be handled via the MB
-            noOpResponseProcessor.processResponse(response, moduleId, smartServiceId);
-        } catch (Exception e) {
-            logger.error("Error invoking {} algorithm: {}", algorithmType, e.getMessage());
-            throw new SmartServiceInvocationException("Error invoking " + algorithmType + " algorithm");
         }
     }
 }

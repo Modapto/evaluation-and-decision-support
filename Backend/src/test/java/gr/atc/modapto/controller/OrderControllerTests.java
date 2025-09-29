@@ -105,19 +105,15 @@ class OrderControllerTests {
         //Given
         OrderDto request = OrderDto.builder().customer("CRF").documentNumber("Test").comments("Test Object").build();
 
-        // Mock JWT authentication
         JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
         SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
 
-        // When
         when(orderService.saveNewOrder(any(OrderDto.class))).thenReturn(true);
 
         ResultActions response = mockMvc.perform(post("/api/eds/orders/createOrder").with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)).content(objectMapper.writeValueAsString(request)).contentType(MediaType.APPLICATION_JSON));
 
-        // Then
         response.andExpect(status().isCreated()).andExpect(jsonPath("$.success", is(true))).andExpect(jsonPath("$.message", is("Order created successfully")));
 
-        // Verify
         verify(orderService, times(1)).saveNewOrder(any(OrderDto.class));
     }
 
@@ -125,22 +121,17 @@ class OrderControllerTests {
     @WithMockUser(roles = "USER")
     @Test
     void givenValidJwt_whenCreateNewOrder_thenErrorOnServer() throws Exception {
-        // Given
         OrderDto request = OrderDto.builder().customer("CRF").documentNumber("Test").comments("Test Object").build();
 
-        // Mock JWT authentication
         JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
         SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
 
-        // When
         when(orderService.saveNewOrder(any(OrderDto.class))).thenReturn(false);
 
         ResultActions response = mockMvc.perform(post("/api/eds/orders/createOrder").with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)).content(objectMapper.writeValueAsString(request)).contentType(MediaType.APPLICATION_JSON));
 
-        // Then
         response.andExpect(status().isInternalServerError()).andExpect(jsonPath("$.success", is(false))).andExpect(jsonPath("$.message", is("Unable to create new order in DB")));
 
-        // Verify
         verify(orderService, times(1)).saveNewOrder(any(OrderDto.class));
     }
 
@@ -148,19 +139,15 @@ class OrderControllerTests {
     @WithMockUser(roles = "USER")
     @Test
     void givenValidJwt_whenCreateMultipleOrders_thenSuccess() throws Exception {
-        // Given
         OrderDto request = OrderDto.builder().customer("CRF").documentNumber("Test").comments("Test Object").build();
         List<OrderDto> requestList = List.of(request);
 
-        // When
         when(orderService.saveListOfOrders(anyList())).thenReturn(true);
 
         ResultActions response = mockMvc.perform(post("/api/eds/orders/createOrders").with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)).content(objectMapper.writeValueAsString(requestList)).contentType(MediaType.APPLICATION_JSON));
 
-        // Then
         response.andExpect(status().isCreated()).andExpect(jsonPath("$.success", is(true))).andExpect(jsonPath("$.message", is("Orders created successfully")));
 
-        // Verify
         verify(orderService, times(1)).saveListOfOrders(anyList());
     }
 
@@ -168,18 +155,14 @@ class OrderControllerTests {
     @WithMockUser(roles = "USER")
     @Test
     void givenValidJwt_whenRetrieveOrderById_thenSuccess() throws Exception {
-        // Given
         OrderDto mockOrderDto = OrderDto.builder().customer("CRF").documentNumber("Test").comments("Test Object").build();
 
         when(orderService.retrieveOrderById(anyString())).thenReturn(mockOrderDto);
 
-        // When
         ResultActions response = mockMvc.perform(get("/api/eds/orders/1/pilot/CRF").with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)).contentType(MediaType.APPLICATION_JSON));
 
-        // Then
         response.andExpect(status().isOk()).andExpect(jsonPath("$.success", is(true))).andExpect(jsonPath("$.data.documentNumber", is(mockOrderDto.getDocumentNumber())));
 
-        // Verify
         verify(orderService, times(1)).retrieveOrderById(anyString());
     }
 
@@ -188,23 +171,19 @@ class OrderControllerTests {
     @Test
     void givenPaginationAndJwtToken_whenRetrievePaginatedOrders_thenSuccess() throws Exception {
         try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
-            // Given
             String pilotCode = "TEST_PILOT";
             Pageable pageable = PageRequest.of(0, 10);
             Page<OrderDto> orderPage = new PageImpl<>(List.of(new OrderDto()), pageable, 1);
 
-            // Mock JWT authentication
             JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_SUPER_ADMIN")));
             SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
 
-            // When
             when(JwtUtils.extractPilotCode(any(Jwt.class))).thenReturn(pilotCode);
             when(orderService.retrieveOrdersByCustomerFilteredByDates(anyString(), any(), any(), any())).thenReturn(orderPage);
 
             mockMvc.perform(get("/api/eds/orders/pilot/{pilotCode}", pilotCode)
                             .param("startDate", "2025-01-01").param("endDate", "2025-01-31")
                             .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(jwt)))
-                    // Then
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.message").value("Orders retrieved successfully"));
 
@@ -216,10 +195,8 @@ class OrderControllerTests {
     @Test
     void givenPaginationAndJwtToken_whenRetrievePaginatedOrders_thenForbidden() throws Exception {
         try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
-            // Mock static method
             mockedJwtUtils.when(() -> JwtUtils.extractPilotCode(any(Jwt.class))).thenReturn("DIFFERENT_PILOT");
 
-            // Mock JWT authentication
             JwtAuthenticationToken jwtAuthenticationToken = new JwtAuthenticationToken(jwt, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
             SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
 

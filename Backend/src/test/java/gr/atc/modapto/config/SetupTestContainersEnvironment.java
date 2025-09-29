@@ -12,16 +12,15 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 public abstract class SetupTestContainersEnvironment {
 
     protected static final ElasticsearchContainer elasticsearchContainer = ElasticsearchTestContainer.getInstance();
-    protected static final RestClient elasticsearchClient;
 
-    static {
+    protected static RestClient getElasticsearchClient() {
         final BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(
                 AuthScope.ANY,
                 new UsernamePasswordCredentials("elastic", "password")
         );
 
-        elasticsearchClient = RestClient.builder(HttpHost.create(elasticsearchContainer.getHttpHostAddress()))
+        return RestClient.builder(HttpHost.create(elasticsearchContainer.getHttpHostAddress()))
                 .setHttpClientConfigCallback(builder -> builder.setDefaultCredentialsProvider(credentialsProvider))
                 .build();
     }

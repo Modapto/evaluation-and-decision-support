@@ -82,12 +82,10 @@ class ModaptoModulesControllerTests {
         @WithMockUser
         @DisplayName("Retrieve paginated modules : Success")
         void givenValidPaginationParams_whenRetrievePaginatedModules_thenReturnsSuccess() throws Exception {
-            // Given
             Page<ModaptoModuleDto> modulePage = new PageImpl<>(Collections.singletonList(testModuleDto));
             given(modaptoModuleService.retrieveAllModulesPaginated(any(Pageable.class)))
                     .willReturn(modulePage);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/modules")
                             .param("page", "0")
                             .param("size", "10")
@@ -101,7 +99,6 @@ class ModaptoModulesControllerTests {
         @Test
         @DisplayName("Retrieve paginated modules : Unauthorized")
         void givenNoAuthentication_whenRetrievePaginatedModules_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/modules")
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isUnauthorized());
@@ -116,11 +113,9 @@ class ModaptoModulesControllerTests {
         @WithMockUser
         @DisplayName("Retrieve all modules : Success")
         void givenValidRequest_whenRetrieveAllModules_thenReturnsSuccess() throws Exception {
-            // Given
             List<ModaptoModuleDto> modules = Collections.singletonList(testModuleDto);
             given(modaptoModuleService.retrieveAllModules()).willReturn(modules);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/modules/all")
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
@@ -132,7 +127,6 @@ class ModaptoModulesControllerTests {
         @Test
         @DisplayName("Retrieve all modules : Unauthorized")
         void givenNoAuthentication_whenRetrieveAllModules_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/modules/all")
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isUnauthorized());
@@ -147,11 +141,9 @@ class ModaptoModulesControllerTests {
         @WithMockUser
         @DisplayName("Retrieve module by ID : Success")
         void givenValidModuleId_whenRetrieveModuleById_thenReturnsSuccess() throws Exception {
-            // Given
             given(modaptoModuleService.retrieveModuleByModuleId(TEST_MODULE_ID))
                     .willReturn(testModuleDto);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/modules/{moduleId}", TEST_MODULE_ID)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
@@ -163,7 +155,6 @@ class ModaptoModulesControllerTests {
         @Test
         @DisplayName("Retrieve module by ID : Unauthorized")
         void givenNoAuthentication_whenRetrieveModuleById_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/modules/{moduleId}", TEST_MODULE_ID)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isUnauthorized());
@@ -178,12 +169,10 @@ class ModaptoModulesControllerTests {
         @WithMockUser
         @DisplayName("Retrieve smart services : Success")
         void givenValidModuleId_whenRetrieveSmartServices_thenReturnsSuccess() throws Exception {
-            // Given
             List<ModaptoModuleDto.SmartServiceDto> smartServices = Collections.singletonList(testSmartServiceDto);
             given(modaptoModuleService.retrieveSmartServicesByModuleId(TEST_MODULE_ID))
                     .willReturn(smartServices);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/modules/{moduleId}/smart-services", TEST_MODULE_ID)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
@@ -195,7 +184,6 @@ class ModaptoModulesControllerTests {
         @Test
         @DisplayName("Retrieve smart services : Unauthorized")
         void givenNoAuthentication_whenRetrieveSmartServices_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/modules/{moduleId}/smart-services", TEST_MODULE_ID)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isUnauthorized());
@@ -210,12 +198,10 @@ class ModaptoModulesControllerTests {
 //        @WithMockUser
         @DisplayName("Retrieve modules by worker : Success")
         void givenValidRequest_whenRetrieveModulesByWorker_thenReturnsSuccess() throws Exception {
-            // Given
             Page<ModaptoModuleDto> modulePage = new PageImpl<>(Collections.singletonList(testModuleDto));
                 given(modaptoModuleService.retrieveModulesByWorkerPaginated(eq(TEST_WORKER), any(Pageable.class)))
                         .willReturn(modulePage);
 
-                // When & Then
                 mockMvc.perform(get("/api/eds/modules/working-modules/users/{workerName}", TEST_WORKER)
                                 .param("page", "0")
                                 .param("size", "10")
@@ -232,7 +218,6 @@ class ModaptoModulesControllerTests {
         @Test
         @DisplayName("Retrieve modules by worker : Unauthorized")
         void givenNoAuthentication_whenRetrieveModulesByWorker_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/modules/working-modules/users/{workerName}", TEST_WORKER)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isUnauthorized());
@@ -242,14 +227,11 @@ class ModaptoModulesControllerTests {
         @DisplayName("Declare work on module : Success")
         void givenValidModuleId_whenDeclareWorkOnModule_thenReturnsSuccess() throws Exception {
             try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
-                // Mock static method
                 mockedJwtUtils.when(() -> JwtUtils.extractUserId(any(Jwt.class))).thenReturn(TEST_WORKER);
 
-                // Given
                 given(modaptoModuleService.declareWorkOnModule(any(DeclarationOfWorkDto.class)))
                         .willReturn(testModuleDto);
 
-                // When & Then
                 DeclarationOfWorkDto workData = DeclarationOfWorkDto.builder()
                         .moduleId(TEST_MODULE_ID)
                         .workers(Arrays.asList(TEST_WORKER))
@@ -268,13 +250,11 @@ class ModaptoModulesControllerTests {
         @Test
         @DisplayName("Declare work on module : Forbidden")
         void givenNoAuthentication_whenDeclareWorkOnModule_thenReturnsForbidden() throws Exception {
-            // Given
             DeclarationOfWorkDto workData = DeclarationOfWorkDto.builder()
                     .moduleId(TEST_MODULE_ID)
                     .workers(Arrays.asList(TEST_WORKER))
                     .build();
 
-            // When & Then
             mockMvc.perform(post("/api/eds/modules/declare-work")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(workData)))
@@ -285,13 +265,10 @@ class ModaptoModulesControllerTests {
         @DisplayName("Undeclare work on module : Success")
         void givenValidModuleId_whenUndeclareWorkOnModule_thenReturnsSuccess() throws Exception {
             try (MockedStatic<JwtUtils> mockedJwtUtils = mockStatic(JwtUtils.class)) {
-                // Mock static method
                 mockedJwtUtils.when(() -> JwtUtils.extractUserId(any(Jwt.class))).thenReturn(TEST_WORKER);
-                // Given
                 given(modaptoModuleService.undeclareWorkOnModule(TEST_MODULE_ID, TEST_WORKER))
                         .willReturn(testModuleDto);
 
-                // When & Then
                 mockMvc.perform(post("/api/eds/modules/{moduleId}/undeclare-work/users/{workerName}", TEST_MODULE_ID, TEST_WORKER)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .with(jwt()))
@@ -304,7 +281,6 @@ class ModaptoModulesControllerTests {
         @Test
         @DisplayName("Undeclare work on module : Forbidden")
         void givenNoAuthentication_whenUndeclareWorkOnModule_thenReturnsForbidden() throws Exception {
-            // When & Then
             mockMvc.perform(post("/api/eds/modules/{moduleId}/undeclare-work/users/{workerName}", TEST_MODULE_ID, TEST_WORKER)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isForbidden());

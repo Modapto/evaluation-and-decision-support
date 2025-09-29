@@ -9,6 +9,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class ModaptoModule {
     private LocalDateTime timestampDt;
 
     @Field(name = "timestamp_elastic", type = FieldType.Date, format = DateFormat.epoch_millis)
-    private Long timestampElastic;
+    private Instant timestampElastic;
 
     @Field(type = FieldType.Keyword)
     private List<String> workers; // user IDs

@@ -18,7 +18,7 @@ public interface IPredictiveMaintenanceService {
 
     void storeComponentsListData(List<SewComponentInfoDto> componentInfoList);
 
-    List<MaintenanceDataDto> retrieveMaintenanceDataByDateRange(String startDate, String endDate);
+    Page<MaintenanceDataDto> retrieveMaintenanceDataPaginated(Pageable pageable);
 
     List<SewComponentInfoDto> retrieveComponentListGivenFilterAttributes(String stage, String cell, String module, String moduleId);
 

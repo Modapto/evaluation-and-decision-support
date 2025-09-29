@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataElasticsearchTest
 @ActiveProfiles("test")
+@Testcontainers
 @DisplayName("ScheduledTaskRepository Tests")
 class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
 
@@ -39,7 +41,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         // Clean repository before each test
         scheduledTaskRepository.deleteAll();
 
-        // Setup test data
         SewThresholdBasedMaintenanceInputDataDto sampleThresholdData = SewThresholdBasedMaintenanceInputDataDto.builder()
                 .moduleId("MODULE_1")
                 .smartServiceId("THRESHOLD_SERVICE")
@@ -88,7 +89,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by smart service type : Success with threshold-based tasks")
         void givenThresholdBasedTasks_whenFindBySmartServiceType_thenReturnsMatchingTasks() {
-            // Given
             scheduledTaskRepository.saveAll(List.of(sampleTask1, sampleTask2, sampleTask3));
             
             // Allow some time for indexing
@@ -100,10 +100,8 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
 
             Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
 
-            // When
             Page<ScheduledTask> result = scheduledTaskRepository.findBySmartServiceType(THRESHOLD_BASED_TYPE, pageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(2);
             assertThat(result.getContent())
@@ -117,7 +115,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by smart service type : Success with grouping-based tasks")
         void givenGroupingBasedTasks_whenFindBySmartServiceType_thenReturnsMatchingTasks() {
-            // Given
             scheduledTaskRepository.saveAll(List.of(sampleTask1, sampleTask2, sampleTask3));
             
             // Allow some time for indexing
@@ -129,10 +126,8 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
 
             Pageable pageable = PageRequest.of(0, 10);
 
-            // When
             Page<ScheduledTask> result = scheduledTaskRepository.findBySmartServiceType(GROUPING_BASED_TYPE, pageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().getFirst().getSmartServiceType()).isEqualTo(GROUPING_BASED_TYPE);
@@ -142,7 +137,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by smart service type : No matching tasks")
         void givenNoMatchingTasks_whenFindBySmartServiceType_thenReturnsEmptyPage() {
-            // Given
             scheduledTaskRepository.saveAll(List.of(sampleTask1, sampleTask2, sampleTask3));
             
             // Allow some time for indexing
@@ -155,10 +149,8 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
             Pageable pageable = PageRequest.of(0, 10);
             String nonExistentType = "NON_EXISTENT_SERVICE_TYPE";
 
-            // When
             Page<ScheduledTask> result = scheduledTaskRepository.findBySmartServiceType(nonExistentType, pageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).isEmpty();
             assertThat(result.getTotalElements()).isEqualTo(0);
@@ -167,13 +159,10 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by smart service type : Empty repository")
         void givenEmptyRepository_whenFindBySmartServiceType_thenReturnsEmptyPage() {
-            // Given - repository is empty (cleaned in setUp)
             Pageable pageable = PageRequest.of(0, 10);
 
-            // When
             Page<ScheduledTask> result = scheduledTaskRepository.findBySmartServiceType(THRESHOLD_BASED_TYPE, pageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).isEmpty();
             assertThat(result.getTotalElements()).isEqualTo(0);
@@ -182,8 +171,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by smart service type : Pagination")
         void givenMultipleTasks_whenFindBySmartServiceTypeWithPagination_thenRespectsPageSize() {
-            // Given
-            // Create multiple tasks of the same type
             ScheduledTask additionalTask1 = new ScheduledTask();
             additionalTask1.setId("task-4");
             additionalTask1.setModuleId("MODULE_4");
@@ -216,11 +203,9 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
             Pageable firstPage = PageRequest.of(0, 2);
             Pageable secondPage = PageRequest.of(1, 2);
 
-            // When
             Page<ScheduledTask> firstPageResult = scheduledTaskRepository.findBySmartServiceType(THRESHOLD_BASED_TYPE, firstPage);
             Page<ScheduledTask> secondPageResult = scheduledTaskRepository.findBySmartServiceType(THRESHOLD_BASED_TYPE, secondPage);
 
-            // Then
             assertThat(firstPageResult.getContent()).hasSize(2);
             assertThat(secondPageResult.getContent()).hasSize(2);
             assertThat(firstPageResult.getTotalElements()).isEqualTo(4);
@@ -230,7 +215,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by smart service type : Sorting")
         void givenMultipleTasks_whenFindBySmartServiceTypeWithSorting_thenReturnsSortedResults() {
-            // Given
             scheduledTaskRepository.saveAll(List.of(sampleTask1, sampleTask2, sampleTask3));
             
             // Allow some time for indexing
@@ -243,15 +227,12 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
             Pageable pageableAsc = PageRequest.of(0, 10, Sort.by("createdAt").ascending());
             Pageable pageableDesc = PageRequest.of(0, 10, Sort.by("createdAt").descending());
 
-            // When
             Page<ScheduledTask> ascendingResult = scheduledTaskRepository.findBySmartServiceType(THRESHOLD_BASED_TYPE, pageableAsc);
             Page<ScheduledTask> descendingResult = scheduledTaskRepository.findBySmartServiceType(THRESHOLD_BASED_TYPE, pageableDesc);
 
-            // Then
             assertThat(ascendingResult.getContent()).hasSize(2);
             assertThat(descendingResult.getContent()).hasSize(2);
             
-            // Verify sorting order
             List<LocalDateTime> ascDates = ascendingResult.getContent().stream()
                     .map(ScheduledTask::getCreatedAt)
                     .toList();
@@ -271,10 +252,8 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Save scheduled task : Success")
         void givenValidScheduledTask_whenSave_thenPersistsSuccessfully() {
-            // When
             ScheduledTask savedTask = scheduledTaskRepository.save(sampleTask1);
 
-            // Then
             assertThat(savedTask).isNotNull();
             assertThat(savedTask.getId()).isEqualTo("task-1");
             assertThat(savedTask.getModuleId()).isEqualTo("MODULE_1");
@@ -284,13 +263,10 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by ID : Success")
         void givenExistingTask_whenFindById_thenReturnsTask() {
-            // Given
             scheduledTaskRepository.save(sampleTask1);
 
-            // When
             Optional<ScheduledTask> result = scheduledTaskRepository.findById("task-1");
 
-            // Then
             assertThat(result).isPresent();
             assertThat(result.get().getId()).isEqualTo("task-1");
             assertThat(result.get().getModuleId()).isEqualTo("MODULE_1");
@@ -300,42 +276,33 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by ID : Not found")
         void givenNonExistentTask_whenFindById_thenReturnsEmpty() {
-            // When
             Optional<ScheduledTask> result = scheduledTaskRepository.findById("non-existent-task");
 
-            // Then
             assertThat(result).isEmpty();
         }
 
         @Test
         @DisplayName("Delete scheduled task : Success")
         void givenExistingTask_whenDelete_thenRemovesFromRepository() {
-            // Given
             scheduledTaskRepository.save(sampleTask1);
             assertThat(scheduledTaskRepository.findById("task-1")).isPresent();
 
-            // When
             scheduledTaskRepository.deleteById("task-1");
 
-            // Then
             assertThat(scheduledTaskRepository.findById("task-1")).isEmpty();
         }
 
         @Test
         @DisplayName("Update scheduled task : Success")
         void givenExistingTask_whenUpdate_thenPersistsChanges() {
-            // Given
             ScheduledTask savedTask = scheduledTaskRepository.save(sampleTask1);
             
-            // When
             savedTask.setFrequencyValue(12); // Change from 24 to 12 hours
             savedTask.setNextExecutionTime(LocalDateTime.now().plusHours(12));
             ScheduledTask updatedTask = scheduledTaskRepository.save(savedTask);
 
-            // Then
             assertThat(updatedTask.getFrequencyValue()).isEqualTo(12);
             
-            // Verify persistence
             Optional<ScheduledTask> retrievedTask = scheduledTaskRepository.findById("task-1");
             assertThat(retrievedTask).isPresent();
             assertThat(retrievedTask.get().getFrequencyValue()).isEqualTo(12);
@@ -345,7 +312,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Disabled
         @DisplayName("Find all : Success")
         void givenMultipleTasks_whenFindAll_thenReturnsAllTasks() {
-            // Given
             scheduledTaskRepository.saveAll(List.of(sampleTask1, sampleTask2, sampleTask3));
             
             // Allow some time for indexing
@@ -355,10 +321,8 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
                 Thread.currentThread().interrupt();
             }
 
-            // When
             Iterable<ScheduledTask> result = scheduledTaskRepository.findAll();
 
-            // Then
             List<ScheduledTask> tasks = (List<ScheduledTask>) result;
             assertThat(tasks).hasSize(3);
             assertThat(tasks).extracting(ScheduledTask::getId)
@@ -368,7 +332,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Count : Success")
         void givenMultipleTasks_whenCount_thenReturnsCorrectCount() {
-            // Given
             scheduledTaskRepository.saveAll(List.of(sampleTask1, sampleTask2, sampleTask3));
             
             // Allow some time for indexing
@@ -378,10 +341,8 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
                 Thread.currentThread().interrupt();
             }
 
-            // When
             long count = scheduledTaskRepository.count();
 
-            // Then
             assertThat(count).isEqualTo(3);
         }
     }
@@ -393,7 +354,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Save task with complex threshold data : Success")
         void givenTaskWithComplexThresholdData_whenSave_thenPersistsCorrectly() {
-            // Given
             SewThresholdBasedMaintenanceInputDataDto complexData = SewThresholdBasedMaintenanceInputDataDto.builder()
                     .moduleId("COMPLEX_MODULE")
                     .smartServiceId("COMPLEX_SERVICE")
@@ -403,10 +363,8 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
 
             sampleTask1.setRequestBody(complexData);
 
-            // When
             ScheduledTask savedTask = scheduledTaskRepository.save(sampleTask1);
 
-            // Then
             assertThat(savedTask.getThresholdBasedData()).isNotNull();
             assertThat(savedTask.getThresholdBasedData().getModuleId()).isEqualTo("COMPLEX_MODULE");
             assertThat(savedTask.getThresholdBasedData().getSmartServiceId()).isEqualTo("COMPLEX_SERVICE");
@@ -415,13 +373,10 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Save task with null threshold data : Success")
         void givenTaskWithNullThresholdData_whenSave_thenPersistsCorrectly() {
-            // Given
             sampleTask3.setRequestBody(null); // Grouping task might not have threshold data
 
-            // When
             ScheduledTask savedTask = scheduledTaskRepository.save(sampleTask3);
 
-            // Then
             assertThat(savedTask.getThresholdBasedData()).isNull();
             assertThat(savedTask.getSmartServiceType()).isEqualTo(GROUPING_BASED_TYPE);
         }
@@ -429,7 +384,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by smart service type : Case sensitivity")
         void givenMixedCaseTasks_whenFindBySmartServiceType_thenMatchesExactCase() {
-            // Given
             sampleTask1.setSmartServiceType("threshold_based_predictive_maintenance"); // lowercase
             scheduledTaskRepository.save(sampleTask1);
             
@@ -442,11 +396,9 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
 
             Pageable pageable = PageRequest.of(0, 10);
 
-            // When
             Page<ScheduledTask> upperCaseResult = scheduledTaskRepository.findBySmartServiceType(THRESHOLD_BASED_TYPE, pageable);
             Page<ScheduledTask> lowerCaseResult = scheduledTaskRepository.findBySmartServiceType("threshold_based_predictive_maintenance", pageable);
 
-            // Then
             assertThat(upperCaseResult.getContent()).isEmpty();
             assertThat(lowerCaseResult.getContent()).hasSize(1);
         }
@@ -454,7 +406,6 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
         @Test
         @DisplayName("Find by smart service type with special characters : Success")
         void givenTasksWithSpecialCharacters_whenFindBySmartServiceType_thenHandlesCorrectly() {
-            // Given
             String specialType = "SPECIAL-TYPE_WITH@CHARS";
             sampleTask1.setSmartServiceType(specialType);
             scheduledTaskRepository.save(sampleTask1);
@@ -468,10 +419,8 @@ class ScheduledTaskRepositoryTests extends SetupTestContainersEnvironment {
 
             Pageable pageable = PageRequest.of(0, 10);
 
-            // When
             Page<ScheduledTask> result = scheduledTaskRepository.findBySmartServiceType(specialType, pageable);
 
-            // Then
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().getFirst().getSmartServiceType()).isEqualTo(specialType);
         }

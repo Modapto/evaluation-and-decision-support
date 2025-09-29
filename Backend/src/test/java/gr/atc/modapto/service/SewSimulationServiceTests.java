@@ -40,31 +40,26 @@ class SewSimulationServiceTests {
 
     @BeforeEach
     void setUp() {
-        // Given - Setup test data
         sampleTimestamp = "2025-07-17T10:30:00Z";
 
-        // Create MetricComparison objects for the entity
-        SewSimulationResults.MetricComparison makespanMetric = new SewSimulationResults.MetricComparison(
+        SewSimulationResults.KpiMetric makespanMetric = new SewSimulationResults.KpiMetric(
                 240.0, 220.0, -20.0, -8.33
         );
 
-        SewSimulationResults.MetricComparison machineUtilizationMetric = new SewSimulationResults.MetricComparison(
+        SewSimulationResults.KpiMetric machineUtilizationMetric = new SewSimulationResults.KpiMetric(
                 85.5, 92.3, 6.8, 7.95
         );
 
-        SewSimulationResults.MetricComparison throughputStdevMetric = new SewSimulationResults.MetricComparison(
+        SewSimulationResults.KpiMetric throughputStdevMetric = new SewSimulationResults.KpiMetric(
                 12.5, 8.7, -3.8, -30.4
         );
 
-        // Create SimulationData
         SewSimulationResults.SimulationData simulationData = new SewSimulationResults.SimulationData(
                 makespanMetric, machineUtilizationMetric, throughputStdevMetric
         );
 
-        // Create main entity
         sampleEntity = new SewSimulationResults("1", sampleTimestamp, simulationData, "test_module");
 
-        // Create corresponding DTO structure
         sampleDto = createSampleDto();
     }
 
@@ -75,17 +70,14 @@ class SewSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Success")
         void givenExistingSimulationResults_whenRetrieveLatestSimulationResults_thenReturnsLatestResult() {
-            // Given
             when(sewSimulationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewSimulationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
             SewSimulationResultsDto result = sewSimulationService.retrieveLatestSimulationResults();
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
@@ -98,11 +90,9 @@ class SewSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : No results found")
         void givenNoSimulationResults_whenRetrieveLatestSimulationResults_thenThrowsResourceNotFoundException() {
-            // Given
             when(sewSimulationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> sewSimulationService.retrieveLatestSimulationResults())
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No SEW Simulation Results found");
@@ -114,14 +104,12 @@ class SewSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Mapping exception")
         void givenMappingError_whenRetrieveLatestSimulationResults_thenThrowsModelMappingException() {
-            // Given
             when(sewSimulationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewSimulationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse SEW Simulation Results to DTO - Error: Mapping error occurred"));
 
-            // When & Then
             assertThatThrownBy(() -> sewSimulationService.retrieveLatestSimulationResults())
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse SEW Simulation Results to DTO - Error: Mapping error occurred");
@@ -133,11 +121,9 @@ class SewSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Repository exception")
         void givenRepositoryError_whenRetrieveLatestSimulationResults_thenThrowsException() {
-            // Given
             when(sewSimulationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            // When & Then
             assertThatThrownBy(() -> sewSimulationService.retrieveLatestSimulationResults())
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
@@ -154,78 +140,69 @@ class SewSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results by module : Success")
         void givenExistingModuleResults_whenRetrieveLatestSimulationResultsByProductionModule_thenReturnsLatestResult() {
-            // Given
             String productionModule = "sewing_module_1";
-            when(sewSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(sewSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewSimulationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
             SewSimulationResultsDto result = sewSimulationService.retrieveLatestSimulationResultsByProductionModule(productionModule);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
             assertThat(result.getSimulationData()).isNotNull();
 
-            verify(sewSimulationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(sewSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, SewSimulationResultsDto.class);
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : No results found")
         void givenNoModuleResults_whenRetrieveLatestSimulationResultsByProductionModule_thenThrowsResourceNotFoundException() {
-            // Given
             String productionModule = "non_existing_module";
-            when(sewSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(sewSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> sewSimulationService.retrieveLatestSimulationResultsByProductionModule(productionModule))
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No SEW Simulation Results for Module: " + productionModule + " found");
 
-            verify(sewSimulationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(sewSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : Mapping exception")
         void givenMappingError_whenRetrieveLatestSimulationResultsByProductionModule_thenThrowsModelMappingException() {
-            // Given
             String productionModule = "sewing_module_1";
-            when(sewSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(sewSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewSimulationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse SEW Simulation Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred"));
 
-            // When & Then
             assertThatThrownBy(() -> sewSimulationService.retrieveLatestSimulationResultsByProductionModule(productionModule))
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse SEW Simulation Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred");
 
-            verify(sewSimulationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(sewSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, SewSimulationResultsDto.class);
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : Repository exception")
         void givenRepositoryError_whenRetrieveLatestSimulationResultsByProductionModule_thenThrowsException() {
-            // Given
             String productionModule = "sewing_module_1";
-            when(sewSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(sewSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            // When & Then
             assertThatThrownBy(() -> sewSimulationService.retrieveLatestSimulationResultsByProductionModule(productionModule))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
 
-            verify(sewSimulationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(sewSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
         }
     }
@@ -234,9 +211,9 @@ class SewSimulationServiceTests {
      * Helper methods
      */
     private SewSimulationResultsDto createSampleDto() {
-        SewSimulationResultsDto.MetricComparison makespan = new SewSimulationResultsDto.MetricComparison(240.0, 220.0, -20.0, -8.33);
-        SewSimulationResultsDto.MetricComparison utilization = new SewSimulationResultsDto.MetricComparison(85.5, 92.3, 6.8, 7.95);
-        SewSimulationResultsDto.MetricComparison throughput = new SewSimulationResultsDto.MetricComparison(12.5, 8.7, -3.8, -30.4);
+        SewSimulationResultsDto.KpiMetric makespan = new SewSimulationResultsDto.KpiMetric(240.0, 220.0, -20.0, -8.33);
+        SewSimulationResultsDto.KpiMetric utilization = new SewSimulationResultsDto.KpiMetric(85.5, 92.3, 6.8, 7.95);
+        SewSimulationResultsDto.KpiMetric throughput = new SewSimulationResultsDto.KpiMetric(12.5, 8.7, -3.8, -30.4);
         SewSimulationResultsDto.SimulationData data = new SewSimulationResultsDto.SimulationData(makespan, utilization, throughput);
         return SewSimulationResultsDto.builder().id("1").timestamp(sampleTimestamp).simulationData(data).build();
     }

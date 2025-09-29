@@ -20,11 +20,11 @@ public class SewOptimizationResults {
     @Id
     private String id;
 
-    @Field(name = "@timestamp", type = FieldType.Keyword)
+    @Field(name = "timestamp", type = FieldType.Keyword)
     private String timestamp;
 
-    @Field(name = "productionModule", type = FieldType.Keyword)
-    private String productionModule;
+    @Field(name = "moduleId", type = FieldType.Keyword)
+    private String moduleId;
 
     @Field(name = "data", type = FieldType.Object)
     private Map<String, SolutionData> data;

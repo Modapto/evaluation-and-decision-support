@@ -66,6 +66,9 @@ class ModaptoEvaluationAndDecisionSupportApplicationTests {
     @MockitoBean
     private SewMonitorKpisComponentsRepository sewMonitorKpisComponentsRepository;
 
+    @MockitoBean
+    private CrfKitHolderEventRepository crfKitHolderEventRepository;
+
 	@Test
 	void contextLoads() {
 		Assertions.assertNotNull(ApplicationContext.class);

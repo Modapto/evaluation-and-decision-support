@@ -1,8 +1,17 @@
 package gr.atc.modapto.service;
 
-import java.util.Map;
-import java.util.Optional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.atc.modapto.config.properties.KeycloakProperties;
+import gr.atc.modapto.dto.dt.DtInputDto;
+import gr.atc.modapto.dto.dt.DtResponseDto;
+import static gr.atc.modapto.exception.CustomExceptions.*;
 
+import gr.atc.modapto.dto.dt.SmartServiceRequest;
+import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
+import gr.atc.modapto.enums.ModaptoHeader;
+import gr.atc.modapto.service.interfaces.IModaptoModuleService;
+import gr.atc.modapto.service.processors.NoOpResponseProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,14 +25,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import gr.atc.modapto.config.properties.KeycloakProperties;
-import gr.atc.modapto.dto.dt.DtResponseDto;
-import gr.atc.modapto.enums.ModaptoHeader;
-import gr.atc.modapto.exception.CustomExceptions.DtmClientErrorException;
-import gr.atc.modapto.exception.CustomExceptions.DtmServerErrorException;
-import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
-import gr.atc.modapto.exception.CustomExceptions.SmartServiceInvocationException;
-import gr.atc.modapto.service.interfaces.IModaptoModuleService;
+import java.util.Base64;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class SmartServicesInvocationService {
@@ -36,16 +40,22 @@ public class SmartServicesInvocationService {
     
     private final IModaptoModuleService modaptoModuleService;
 
+    private final NoOpResponseProcessor noOpResponseProcessor;
+
+    private final ObjectMapper objectMapper;
+
     @Value("${dt.management.url}")
     private String dtmUrl;
     
     private static final String TOKEN = "access_token";
     private static final String MODAPTO_HEADER = "X-MODAPTO-Invocation-Id";
 
-    public SmartServicesInvocationService(RestClient restClient, KeycloakProperties keycloakProperties, IModaptoModuleService modaptoModuleService) {
+    public SmartServicesInvocationService(RestClient restClient, KeycloakProperties keycloakProperties, IModaptoModuleService modaptoModuleService, NoOpResponseProcessor noOpResponseProcessor, ObjectMapper objectMapper) {
         this.restClient = restClient;
         this.keycloakProperties = keycloakProperties;
         this.modaptoModuleService = modaptoModuleService;
+        this.noOpResponseProcessor = noOpResponseProcessor;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -133,7 +143,6 @@ public class SmartServicesInvocationService {
                     .body(invocationData)
                     .retrieve();
 
-            logger.debug("Successfully invoked smart service: {} for module: {} - Response: {}", smartServiceId, moduleId, responseSpec);
             return responseSpec
                     .onStatus(HttpStatusCode::is4xxClientError, (request, errorResponse) -> {
                         throw new DtmClientErrorException("Client error invoking smart service: " + smartServiceId);
@@ -144,8 +153,8 @@ public class SmartServicesInvocationService {
                     .toEntity(DtResponseDto.class);
                     
         } catch (Exception e) {
-            logger.error("Error invoking smart service: {} for module: {} - {}", smartServiceId, moduleId, e);
-            throw new SmartServiceInvocationException("Unable to invoke smart service - Error: " + e);
+            logger.error("Error invoking smart service: {} for module: {} - {}", smartServiceId, moduleId, e.getMessage());
+            throw new SmartServiceInvocationException("Unable to invoke smart service - Error: " + e.getMessage());
         }
     }
 
@@ -200,5 +209,71 @@ public class SmartServicesInvocationService {
             return uri.startsWith("/") ? uri : "/" + uri;
         }
         throw new SmartServiceInvocationException("Invalid smart service URL: '" + smartServiceUrl +"'. URL must be a combination of DTM URL.");
+    }
+
+
+    /**
+     * Common algorithm processing and invocation logic for Async Processing
+     *
+     * @param invocationData: Input data object
+     * @param algorithmType: Type of algorithm for logging purposes
+     */
+    void formulateAndImplementSmartServiceRequest(Object invocationData, String route, String algorithmType) {
+        SmartServiceRequest request;
+        try {
+            // Check CRF Case Input Format structure
+            String encodedInput;
+            if (invocationData instanceof CrfInvocationInputDto crfOptData)
+                encodedInput = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(crfOptData.getData()).getBytes());
+            else
+                encodedInput = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(invocationData).getBytes());
+
+            // Route corresponds to AUEB services, thus the format changes
+            if (route != null){
+                request = SmartServiceRequest.builder()
+                        .request(null)
+                        .route(route)
+                        .data(SmartServiceRequest.Base64Data.builder()
+                                .base64(encodedInput)
+                                .build())
+                        .build();
+            } else {
+                request = SmartServiceRequest.builder()
+                        .request(encodedInput)
+                        .build();
+            }
+
+
+        } catch (JsonProcessingException e) {
+            logger.error("Unable to convert {} input to Base64 Encoding", algorithmType);
+            throw new SmartServiceInvocationException("Unable to convert " + algorithmType + " input to Base64 Encoding");
+        }
+
+        try {
+            // Get smartServiceId and moduleId using reflection
+            String smartServiceId = (String) invocationData.getClass().getMethod("getSmartServiceId").invoke(invocationData);
+            String moduleId = (String) invocationData.getClass().getMethod("getModuleId").invoke(invocationData);
+
+            // Wrap Smart Service Input data to DtInputDto
+            DtInputDto<SmartServiceRequest> dtInput = DtInputDto.<SmartServiceRequest>builder()
+                    .inputArguments(request)
+                    .build();
+
+            // Invoke smart service
+            ResponseEntity<DtResponseDto> response = invokeSmartService(
+                    smartServiceId,
+                    moduleId,
+                    dtInput,
+                    ModaptoHeader.ASYNC
+            );
+
+            logger.debug("Successfully invoked {} algorithm", algorithmType);
+
+            // Just discard the response as it will be handled via the MB
+            noOpResponseProcessor.processResponse(response, moduleId, smartServiceId);
+        } catch (Exception e) {
+            logger.error("Error invoking {} algorithm: {}", algorithmType, e.getMessage());
+            throw new SmartServiceInvocationException("Error invoking " + algorithmType + " algorithm");
+        }
     }
 }

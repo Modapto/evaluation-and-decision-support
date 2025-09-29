@@ -38,17 +38,14 @@ class RateLimitingFilterTests {
 
     @BeforeEach
     void setUp() {
-        // Mock bucket consumption behavior
         lenient().when(bucket.tryConsume(1)).thenReturn(true);
     }
 
     @DisplayName("Rate Limiting Filter: Success")
     @Test
     void givenRequestWithinLimit_whenDoFilter_thenContinueFilterChain() throws ServletException, IOException {
-        // Execute filter
         rateLimitingFilter.doFilterInternal(request, response, filterChain);
 
-        // Verify that the request is forwarded to the next filter
         verify(filterChain, times(1)).doFilter(request, response);
     }
 }

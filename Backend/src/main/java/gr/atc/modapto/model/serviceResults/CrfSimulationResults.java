@@ -20,14 +20,14 @@ public class CrfSimulationResults {
     @Id
     private String id;
 
-    @Field(name = "@timestamp", type = FieldType.Keyword)
+    @Field(name = "timestamp", type = FieldType.Keyword)
     private String timestamp;
 
     @Field(type = FieldType.Text)
     private String message;
 
-    @Field(name = "productionModule", type = FieldType.Keyword)
-    private String productionModule;
+    @Field(name = "moduleId", type = FieldType.Keyword)
+    private String moduleId;
 
     @Field(name = "simulation_run", type = FieldType.Boolean)
     private Boolean simulationRun;

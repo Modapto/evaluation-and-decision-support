@@ -2,7 +2,8 @@ package gr.atc.modapto.controller;
 
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
-import gr.atc.modapto.service.interfaces.ISimulationService;
+import gr.atc.modapto.service.interfaces.IKitHolderSimulationService;
+import gr.atc.modapto.service.interfaces.IProductionScheduleSimulationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,10 +28,10 @@ class SimulationControllerTests {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ISimulationService<CrfSimulationResultsDto> crfSimulationService;
+    private IKitHolderSimulationService crfSimulationService;
 
     @MockitoBean
-    private ISimulationService<SewSimulationResultsDto> sewSimulationService;
+    private IProductionScheduleSimulationService sewSimulationService;
 
     @Nested
     @DisplayName("Retrieve Latest CRF Simulation Results")
@@ -40,7 +41,6 @@ class SimulationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest CRF results : Success")
         void givenValidRequest_whenRetrieveLatestCrfResults_thenReturnsSuccess() throws Exception {
-            // Given
             CrfSimulationResultsDto mockResult = CrfSimulationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
@@ -51,7 +51,6 @@ class SimulationControllerTests {
                     .build();
             when(crfSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -68,7 +67,6 @@ class SimulationControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve latest CRF results as Admin : Success")
         void givenValidRequestAsAdmin_whenRetrieveLatestCrfResults_thenReturnsSuccess() throws Exception {
-            // Given
             CrfSimulationResultsDto mockResult = CrfSimulationResultsDto.builder()
                     .id("2")
                     .timestamp("2024-01-16T12:00:00.000Z")
@@ -77,7 +75,6 @@ class SimulationControllerTests {
                     .build();
             when(crfSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -90,7 +87,6 @@ class SimulationControllerTests {
         @Test
         @DisplayName("Retrieve latest CRF results : Unauthorized")
         void givenUnauthorizedRequest_whenRetrieveLatestCrfResults_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/latest"))
                     .andExpect(status().isUnauthorized());
         }
@@ -104,7 +100,6 @@ class SimulationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest CRF results by module : Success")
         void givenValidModuleId_whenRetrieveLatestCrfResultsByProductionModule_thenReturnsSuccess() throws Exception {
-            // Given
             String moduleId = "crf_module_1";
             CrfSimulationResultsDto mockResult = CrfSimulationResultsDto.builder()
                     .id("1")
@@ -114,7 +109,6 @@ class SimulationControllerTests {
                     .build();
             when(crfSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId)).thenReturn(mockResult);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -129,7 +123,6 @@ class SimulationControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve latest CRF results by module as Admin : Success")
         void givenValidModuleIdAsAdmin_whenRetrieveLatestCrfResultsByProductionModule_thenReturnsSuccess() throws Exception {
-            // Given
             String moduleId = "admin_crf_module";
             CrfSimulationResultsDto mockResult = CrfSimulationResultsDto.builder()
                     .id("2")
@@ -139,7 +132,6 @@ class SimulationControllerTests {
                     .build();
             when(crfSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId)).thenReturn(mockResult);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -152,7 +144,6 @@ class SimulationControllerTests {
         @Test
         @DisplayName("Retrieve latest CRF results by module : Unauthorized")
         void givenUnauthorizedRequest_whenRetrieveLatestCrfResultsByProductionModule_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/modules/test_module/latest"))
                     .andExpect(status().isUnauthorized());
         }
@@ -166,7 +157,6 @@ class SimulationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest SEW results : Success")
         void givenValidRequest_whenRetrieveLatestSewResults_thenReturnsSuccess() throws Exception {
-            // Given
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
@@ -174,7 +164,6 @@ class SimulationControllerTests {
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -190,7 +179,6 @@ class SimulationControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve latest SEW results as Admin : Success")
         void givenValidRequestAsAdmin_whenRetrieveLatestSewResults_thenReturnsSuccess() throws Exception {
-            // Given
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("2")
                     .timestamp("2024-01-16T12:00:00.000Z")
@@ -198,7 +186,6 @@ class SimulationControllerTests {
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -211,7 +198,6 @@ class SimulationControllerTests {
         @Test
         @DisplayName("Retrieve latest SEW results : Unauthorized")
         void givenUnauthorizedRequest_whenRetrieveLatestSewResults_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/latest"))
                     .andExpect(status().isUnauthorized());
         }
@@ -225,7 +211,6 @@ class SimulationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest SEW results by module : Success")
         void givenValidModuleId_whenRetrieveLatestSewResultsByProductionModule_thenReturnsSuccess() throws Exception {
-            // Given
             String moduleId = "sew_module_1";
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("1")
@@ -234,7 +219,6 @@ class SimulationControllerTests {
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId)).thenReturn(mockResult);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -249,7 +233,6 @@ class SimulationControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve latest SEW results by module as Admin : Success")
         void givenValidModuleIdAsAdmin_whenRetrieveLatestSewResultsByProductionModule_thenReturnsSuccess() throws Exception {
-            // Given
             String moduleId = "admin_sew_module";
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("2")
@@ -258,7 +241,6 @@ class SimulationControllerTests {
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId)).thenReturn(mockResult);
 
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -271,7 +253,6 @@ class SimulationControllerTests {
         @Test
         @DisplayName("Retrieve latest SEW results by module : Unauthorized")
         void givenUnauthorizedRequest_whenRetrieveLatestSewResultsByProductionModule_thenReturnsUnauthorized() throws Exception {
-            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/modules/test_module/latest"))
                     .andExpect(status().isUnauthorized());
         }
@@ -281,13 +262,13 @@ class SimulationControllerTests {
      * Helper Methods
      */
     private SewSimulationResultsDto.SimulationData createSampleSimulationData() {
-        SewSimulationResultsDto.MetricComparison makespan = new SewSimulationResultsDto.MetricComparison(
+        SewSimulationResultsDto.KpiMetric makespan = new SewSimulationResultsDto.KpiMetric(
                 240.0, 220.0, -20.0, -8.33
         );
-        SewSimulationResultsDto.MetricComparison machineUtilization = new SewSimulationResultsDto.MetricComparison(
+        SewSimulationResultsDto.KpiMetric machineUtilization = new SewSimulationResultsDto.KpiMetric(
                 85.5, 92.3, 6.8, 7.95
         );
-        SewSimulationResultsDto.MetricComparison throughputStdev = new SewSimulationResultsDto.MetricComparison(
+        SewSimulationResultsDto.KpiMetric throughputStdev = new SewSimulationResultsDto.KpiMetric(
                 12.5, 8.7, -3.8, -30.4
         );
 

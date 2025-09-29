@@ -1,9 +1,12 @@
 package gr.atc.modapto.controller;
 
+import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
+import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
-import gr.atc.modapto.service.interfaces.IOptimizationService;
+import gr.atc.modapto.service.interfaces.IKhPickingSequenceOptimizationService;
+import gr.atc.modapto.service.interfaces.IProductionScheduleOptimizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -18,14 +21,16 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Optimization Controller", description = "Handles optimization functionalities amongst Pilot Cases")
 public class OptimizationController {
 
-    private final IOptimizationService<CrfOptimizationResultsDto> crfOptimizationService;
+    private final IKhPickingSequenceOptimizationService khPickingSequenceOptimizationService;
 
-    private final IOptimizationService<SewOptimizationResultsDto> sewOptimizationService;
+    private final IProductionScheduleOptimizationService productionScheduleOptimizationService;
 
-    public OptimizationController(IOptimizationService<CrfOptimizationResultsDto> crfOptimizationService, IOptimizationService<SewOptimizationResultsDto> sewOptimizationService) {
-        this.crfOptimizationService = crfOptimizationService;
-        this.sewOptimizationService = sewOptimizationService;
+    public OptimizationController(IKhPickingSequenceOptimizationService khPickingSequenceOptimizationService, IProductionScheduleOptimizationService productionScheduleOptimizationService) {
+        this.khPickingSequenceOptimizationService = khPickingSequenceOptimizationService;
+        this.productionScheduleOptimizationService = productionScheduleOptimizationService;
     }
+
+    //--------------------------------------------- CRF -----------------------------------------------------------
 
     /**
      * Retrieve latest CRF Optimization Results
@@ -41,7 +46,7 @@ public class OptimizationController {
     })
     @GetMapping("/pilots/crf/latest")
     public ResponseEntity<BaseResponse<CrfOptimizationResultsDto>> retrieveLatestCrfResults() {
-        return new ResponseEntity<>(BaseResponse.success(crfOptimizationService.retrieveLatestOptimizationResults(),
+        return new ResponseEntity<>(BaseResponse.success(khPickingSequenceOptimizationService.retrieveLatestOptimizationResults(),
                 "Latest CRF Optimization results retrieved successfully"), HttpStatus.OK);
     }
 
@@ -59,10 +64,31 @@ public class OptimizationController {
     })
     @GetMapping("/pilots/crf/modules/{moduleId}/latest")
     public ResponseEntity<BaseResponse<CrfOptimizationResultsDto>> retrieveLatestCrfResultsByProductionModule(@PathVariable String moduleId) {
-        return new ResponseEntity<>(BaseResponse.success(crfOptimizationService.retrieveLatestOptimizationResultsByProductionModule(moduleId),
+        return new ResponseEntity<>(BaseResponse.success(khPickingSequenceOptimizationService.retrieveLatestOptimizationResultsByModuleId(moduleId),
                 "Latest CRF Optimization results for Module " + moduleId + " retrieved successfully"), HttpStatus.OK);
     }
 
+    /**
+     * Invoke Optimization algorithm to optimize KH Picking Sequence
+     *
+     * @param invocationData : CRF Invocation Data
+     * @return Message of Success or Error
+     */
+    @Operation(summary = "Invoke Optimization service for CRF for KH Picking Sequence", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request for optimization of CRF KH Picking Sequence has been successfully submitted"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Unable to invoke designated smart service"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/pilots/crf/kh-picking-sequence/optimize")
+    public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> invokeOptimizationOfKhPickingSequence(@RequestBody CrfInvocationInputDto invocationData) {
+        khPickingSequenceOptimizationService.invokeOptimizationOfKhPickingSequence(invocationData);
+        return new ResponseEntity<>(BaseResponse.success(null,
+                "Request for optimization of CRF KH Picking Sequence has been successfully submitted"), HttpStatus.OK);
+    }
+
+    //--------------------------------------------- SEW -----------------------------------------------------------
     /**
      * Retrieve latest SEW Optimization Results
      *
@@ -77,7 +103,7 @@ public class OptimizationController {
     })
     @GetMapping("/pilots/sew/latest")
     public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> retrieveLatestSewResults() {
-        return new ResponseEntity<>(BaseResponse.success(sewOptimizationService.retrieveLatestOptimizationResults(),
+        return new ResponseEntity<>(BaseResponse.success(productionScheduleOptimizationService.retrieveLatestOptimizationResults(),
                 "Latest SEW Optimization results retrieved successfully"), HttpStatus.OK);
     }
 
@@ -95,7 +121,7 @@ public class OptimizationController {
     })
     @GetMapping("/pilots/sew/modules/{moduleId}/latest")
     public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> retrieveLatestSewResultsByProductionModule(@PathVariable String moduleId) {
-        return new ResponseEntity<>(BaseResponse.success(sewOptimizationService.retrieveLatestOptimizationResultsByProductionModule(moduleId),
+        return new ResponseEntity<>(BaseResponse.success(productionScheduleOptimizationService.retrieveLatestOptimizationResultsByModuleId(moduleId),
                 "Latest SEW Optimization results for Module " + moduleId + " retrieved successfully"), HttpStatus.OK);
     }
 
@@ -111,10 +137,49 @@ public class OptimizationController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @PostMapping("/pilots/sew/uploadProductionSchedule")
+    @PostMapping("/pilots/sew/schedules/upload")
     public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> uploadSewProductionSchedule(@RequestBody SewProductionScheduleDto scheduleDto) {
-        sewOptimizationService.uploadProductionSchedule(scheduleDto);
+        productionScheduleOptimizationService.uploadProductionSchedule(scheduleDto);
         return new ResponseEntity<>(BaseResponse.success(null,
                 "SEW Production Schedule has been successfully uploaded"), HttpStatus.OK);
+    }
+
+    /**
+     * Retrieve latest SEW stored Prod. Schedule
+     *
+     * @return SewProductionScheduleDto
+     */
+    @Operation(summary = "Retrieve latest SEW stored Prod. Schedule", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Latest SEW Production Schedule retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Resource not found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/pilots/sew/schedules/latest")
+    public ResponseEntity<BaseResponse<SewProductionScheduleDto>> retrieveLatestProductionSchedule() {
+        SewProductionScheduleDto latestSchedule = productionScheduleOptimizationService.retrieveLatestProductionSchedule();
+        return new ResponseEntity<>(BaseResponse.success(latestSchedule,
+                "Latest SEW Production Schedule retrieved successfully"), HttpStatus.OK);
+    }
+
+    /**
+     * Invoke Optimization algorithm to optimize Production Schedules
+     *
+     * @param invocationData : SEW Production Schedule Optimization Input
+     * @return Message of Success or Error
+     */
+    @Operation(summary = "Upload JSON Production Schedule for the weekly plan of SEW", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request for optimization of SEW production schedules has been successfully submitted"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Unable to invoke designated smart service"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/pilots/sew/schedules/optimize")
+    public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> invokeOptimizationOfProductionSchedules(@RequestBody SewOptimizationInputDto invocationData) {
+        productionScheduleOptimizationService.invokeOptimizationOfProductionSchedules(invocationData);
+        return new ResponseEntity<>(BaseResponse.success(null,
+                "Request for optimization of SEW production schedules has been successfully submitted"), HttpStatus.OK);
     }
 }

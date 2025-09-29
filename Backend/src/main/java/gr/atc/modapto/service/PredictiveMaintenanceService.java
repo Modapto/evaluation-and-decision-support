@@ -25,7 +25,6 @@ import gr.atc.modapto.repository.SewComponentInfoRepository;
 import gr.atc.modapto.repository.SewGroupingBasedPredictiveMaintenanceRepository;
 import gr.atc.modapto.repository.SewThresholdBasedPredictiveMaintenanceRepository;
 import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
-import gr.atc.modapto.service.processors.NoOpResponseProcessor;
 import gr.atc.modapto.service.processors.ThresholdBasedMaintenanceResponseProcessor;
 import gr.atc.modapto.util.ExcelFilesUtils;
 
@@ -77,8 +76,6 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
 
     private final ThresholdBasedMaintenanceResponseProcessor thresholdMaintenanceResponseProcessor;
 
-    private final NoOpResponseProcessor noOpResponseProcessor;
-
     private final ModelMapper modelMapper;
 
     private final ObjectMapper objectMapper;
@@ -101,7 +98,6 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
                                         SewGroupingBasedPredictiveMaintenanceRepository sewGroupingBasedPredictiveMaintenanceRepository,
                                         SewThresholdBasedPredictiveMaintenanceRepository sewThresholdBasedPredictiveMaintenanceRepository,
                                         ThresholdBasedMaintenanceResponseProcessor thresholdBasedMaintenanceResponseProcessor,
-                                        NoOpResponseProcessor noOpResponseProcessor,
                                         ObjectMapper objectMapper,
                                         ApplicationEventPublisher eventPublisher,
                                         KafkaMessageProducer kafkaMessageProducer) {
@@ -113,7 +109,6 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         this.sewGroupingBasedPredictiveMaintenanceRepository = sewGroupingBasedPredictiveMaintenanceRepository;
         this.sewThresholdBasedPredictiveMaintenanceRepository = sewThresholdBasedPredictiveMaintenanceRepository;
         this.thresholdMaintenanceResponseProcessor = thresholdBasedMaintenanceResponseProcessor;
-        this.noOpResponseProcessor = noOpResponseProcessor;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
         this.kafkaMessageProducer = kafkaMessageProducer;
@@ -176,44 +171,28 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
     }
 
     /**
-     * Retrieve all maintenance data for SEW plant, optionally filtered by date range
+     * Retrieve all completed maintenance data for SEW plant (process drifts completed)
      *
-     * @param startDate : Start date of the maintenance
-     * @param endDate   : Finish data of the maintenance
-     * @return List<MaintenanceData>
+     * @param pageable: Pagination attributes
+     * @return Page<MaintenanceData>
      */
     @Override
-    public List<MaintenanceDataDto> retrieveMaintenanceDataByDateRange(String startDate, String endDate) {
-        CriteriaQuery query;
-
-        if (startDate != null && endDate != null) {
-            query = new CriteriaQuery(
-                    new Criteria("tsInterventionStarted").greaterThanEqual(startDate)
-                            .and(new Criteria("tsInterventionFinished").lessThanEqual(endDate)), Pageable.unpaged()
-            );
-        } else if (startDate != null) {
-            query = new CriteriaQuery(
-                    new Criteria("tsInterventionStarted").greaterThanEqual(startDate), Pageable.unpaged()
-            );
-        } else if (endDate != null) {
-            query = new CriteriaQuery(
-                    new Criteria("tsInterventionFinished").lessThanEqual(endDate), Pageable.unpaged()
-            );
-        } else {
-            return maintenanceDataRepository.findAll(Pageable.unpaged())
-                    .getContent()
-                    .stream()
-                    .map(data -> modelMapper.map(data, MaintenanceDataDto.class))
-                    .toList();
-        }
+    public Page<MaintenanceDataDto> retrieveMaintenanceDataPaginated(Pageable pageable) {
+        // Set the criteria to find sorted all data that include the "tsInterventionFinished" field (not null)
+        // This retrieves only completed process drifts as intended
+        CriteriaQuery query = new CriteriaQuery(new Criteria("tsInterventionFinished").exists(), pageable);
 
         SearchHits<MaintenanceData> searchHits = elasticsearchOperations.search(query, MaintenanceData.class);
+
         try {
-            return searchHits.getSearchHits()
+            List<MaintenanceDataDto> dtoList = searchHits.getSearchHits()
                     .stream()
                     .map(SearchHit::getContent)
                     .map(data -> modelMapper.map(data, MaintenanceDataDto.class))
                     .toList();
+
+            // Create PageImpl with the results
+            return new PageImpl<>(dtoList, pageable, searchHits.getTotalHits());
         } catch (MappingException e) {
             throw new ModelMappingException("Unable to parse Maintenance Data to DTO - Error: " + e.getMessage());
         }
@@ -280,7 +259,6 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
      */
     @Override
     public void invokeGroupingPredictiveMaintenance(SewGroupingPredictiveMaintenanceInputDataDto invocationData) {
-        SmartServiceRequest request;
         try {
             // Retrieve Component List
             List<SewComponentInfoDto> componentInfoDto = componentInfoRepository.findAll(Pageable.unpaged())
@@ -291,35 +269,13 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
 
             invocationData.setComponentList(componentInfoDto);
 
-            // Encode the invocationData to Base64
-            String encodedInput = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(invocationData).getBytes());
-            request = SmartServiceRequest.builder()
-                    .request(encodedInput)
-                    .build();
+
         } catch (MappingException e) {
             logger.error("Exception occurred while mapping Grouping Predictive Maintenance Entity to DTO: {}", e.getMessage());
             throw new ModelMappingException("Exception occurred while mapping Grouping Predictive Maintenance Entity to DTO: " + e.getMessage());
-        } catch (JsonProcessingException e) {
-            logger.error("Unable to convert Grouping Predictive Maintenance input to Base64 Encoding");
-            throw new SmartServiceInvocationException("Unable to convert Grouping Predictive Maintenance input to Base64 Encoding");
         }
-        // Wrap Smart Service Input data to DtInputDto
-        DtInputDto<SmartServiceRequest> dtInput = DtInputDto.<SmartServiceRequest>builder()
-                .inputArguments(request)
-                .build();
 
-        // Invoke smart service
-        ResponseEntity<DtResponseDto> response = smartServicesInvocationService.invokeSmartService(
-                invocationData.getSmartServiceId(),
-                invocationData.getModuleId(),
-                dtInput,
-                ModaptoHeader.ASYNC
-        );
-
-        logger.debug("Successfully invoked grouping predictive maintenance service");
-
-        // Just discard the response as it will be handled via the MB
-        noOpResponseProcessor.processResponse(response, invocationData.getModuleId(), invocationData.getSmartServiceId());
+        smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, null, "Grouping Predictive Maintenance");
     }
 
     /**
@@ -404,7 +360,7 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
         logger.debug("Successfully invoked threshold-based predictive maintenance service..Processing results..");
 
         // Use processor for the important response type
-        SewThresholdBasedPredictiveMaintenanceOutputDto results =  thresholdMaintenanceResponseProcessor.processResponse(
+        SewThresholdBasedPredictiveMaintenanceOutputDto results = thresholdMaintenanceResponseProcessor.processResponse(
                 response,
                 invocationData.getModuleId(),
                 invocationData.getSmartServiceId()

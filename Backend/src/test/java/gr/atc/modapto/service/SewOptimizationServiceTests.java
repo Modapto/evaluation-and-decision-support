@@ -1,8 +1,14 @@
 package gr.atc.modapto.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
+import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
+import gr.atc.modapto.model.sew.ProductionSchedule;
 import gr.atc.modapto.model.serviceResults.SewOptimizationResults;
+import gr.atc.modapto.repository.ProductionScheduleRepository;
 import gr.atc.modapto.repository.SewOptimizationResultsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +24,9 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,7 +37,19 @@ class SewOptimizationServiceTests {
     private SewOptimizationResultsRepository sewOptimizationResultsRepository;
 
     @Mock
+    private ProductionScheduleRepository productionScheduleRepository;
+
+    @Mock
+    private SmartServicesInvocationService smartServicesInvocationService;
+
+    @Mock
+    private ExceptionHandlerService exceptionHandlerService;
+
+    @Mock
     private ModelMapper modelMapper;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private SewOptimizationService sewOptimizationService;
@@ -37,55 +57,76 @@ class SewOptimizationServiceTests {
     private SewOptimizationResults sampleEntity;
     private SewOptimizationResultsDto sampleDto;
     private String sampleTimestamp;
+    private SewProductionScheduleDto sampleScheduleDto;
+    private ProductionSchedule sampleScheduleEntity;
+    private SewOptimizationInputDto sampleOptimizationInput;
 
     @BeforeEach
     void setUp() {
-        // Given - Setup test data
         sampleTimestamp = "2025-07-17T10:30:00Z";
 
-        // Create nested data structures
         SewOptimizationResults.TimeRange timeRange1 = new SewOptimizationResults.TimeRange("08:00", "10:30");
         SewOptimizationResults.TimeRange timeRange2 = new SewOptimizationResults.TimeRange("10:30", "12:00");
 
         SewOptimizationResults.MetricsData metrics = new SewOptimizationResults.MetricsData("240");
 
-        // Create seq map
         Map<String, Map<String, String>> seq = new HashMap<>();
-        Map<String, String> seqItem1 = new HashMap<>();
-        seqItem1.put("operation", "cutting");
-        seqItem1.put("duration", "30");
-        seq.put("seq_1", seqItem1);
+        Map<String, String> seqItem = new HashMap<>();
+        seqItem.put("operation", "sewing");
+        seq.put("seq_1", seqItem);
 
-        // Create orders map
         Map<String, Map<String, Map<String, Map<String, SewOptimizationResults.TimeRange>>>> orders = new HashMap<>();
-        Map<String, Map<String, Map<String, SewOptimizationResults.TimeRange>>> orderLevel1 = new HashMap<>();
-        Map<String, Map<String, SewOptimizationResults.TimeRange>> orderLevel2 = new HashMap<>();
-        Map<String, SewOptimizationResults.TimeRange> orderLevel3 = new HashMap<>();
-        orderLevel3.put("task_1", timeRange1);
-        orderLevel3.put("task_2", timeRange2);
-        orderLevel2.put("machine_1", orderLevel3);
-        orderLevel1.put("order_1", orderLevel2);
-        orders.put("production_line_1", orderLevel1);
 
-        // Create init order
-        List<String> initOrder = Arrays.asList("order_1", "order_2", "order_3");
+        List<String> initOrder = Arrays.asList("order_1", "order_2");
 
         SewOptimizationResults.SolutionData solutionData = new SewOptimizationResults.SolutionData(
                 metrics, seq, orders, initOrder
         );
 
-        // Create data map
         Map<String, SewOptimizationResults.SolutionData> data = new HashMap<>();
         data.put("solution_1", solutionData);
 
-        // Create entity
         sampleEntity = new SewOptimizationResults("1", sampleTimestamp, "test_module", data);
 
-        // Create corresponding DTO
         sampleDto = SewOptimizationResultsDto.builder()
                 .id("1")
                 .timestamp(sampleTimestamp)
                 .data(createSampleDtoData())
+                .build();
+
+        Map<String, SewProductionScheduleDto.DailyDataDto> scheduleDtoData = new HashMap<>();
+        SewProductionScheduleDto.DailyDataDto dailyDataDto = new SewProductionScheduleDto.DailyDataDto();
+        dailyDataDto.setGivenOrder(Arrays.asList("order1", "order2"));
+        scheduleDtoData.put("day1", dailyDataDto);
+
+        sampleScheduleDto = new SewProductionScheduleDto();
+        sampleScheduleDto.setData(scheduleDtoData);
+
+        Map<String, ProductionSchedule.DailyData> scheduleEntityData = new HashMap<>();
+        ProductionSchedule.DailyData dailyDataEntity = new ProductionSchedule.DailyData();
+        dailyDataEntity.setGivenOrder(Arrays.asList("order1", "order2"));
+        scheduleEntityData.put("day1", dailyDataEntity);
+
+        sampleScheduleEntity = new ProductionSchedule();
+        sampleScheduleEntity.setId("latest-production-schedule");
+        sampleScheduleEntity.setData(scheduleEntityData);
+
+        SewOptimizationInputDto.Config config = SewOptimizationInputDto.Config.builder()
+                .timeLimit(30.0)
+                .returnedSols(2)
+                .kpis(Set.of("makespan", "machine_utilization"))
+                .build();
+
+        Map<String, SewProductionScheduleDto.DailyDataDto> inputData = new HashMap<>();
+        SewProductionScheduleDto.DailyDataDto dailyData = new SewProductionScheduleDto.DailyDataDto();
+        dailyData.setGivenOrder(Arrays.asList("order1", "order2"));
+        inputData.put("day1", dailyData);
+
+        sampleOptimizationInput = SewOptimizationInputDto.builder()
+                .moduleId("TEST_MODULE")
+                .smartServiceId("SEW_OPT_SERVICE")
+                .config(config)
+                .input(inputData)
                 .build();
     }
 
@@ -96,17 +137,14 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Success")
         void givenExistingOptimizationResults_whenRetrieveLatestOptimizationResults_thenReturnsLatestResult() {
-            // Given
             when(sewOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewOptimizationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
             SewOptimizationResultsDto result = sewOptimizationService.retrieveLatestOptimizationResults();
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
@@ -120,24 +158,20 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Success with complex data structure")
         void givenComplexOptimizationResults_whenRetrieveLatestOptimizationResults_thenReturnsCompleteStructure() {
-            // Given
             when(sewOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewOptimizationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
             SewOptimizationResultsDto result = sewOptimizationService.retrieveLatestOptimizationResults();
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
             assertThat(result.getData()).isNotNull();
             assertThat(result.getData()).hasSize(1);
 
-            // Verify
             assertThat(result.getData().get("solution_1")).isNotNull();
 
             verify(sewOptimizationResultsRepository).findFirstByOrderByTimestampDesc();
@@ -147,11 +181,9 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : No results found")
         void givenNoOptimizationResults_whenRetrieveLatestOptimizationResults_thenThrowsResourceNotFoundException() {
-            // Given
             when(sewOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResults())
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No SEW Optimization Results found");
@@ -163,14 +195,12 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Mapping exception")
         void givenMappingError_whenRetrieveLatestOptimizationResults_thenThrowsModelMappingException() {
-            // Given
             when(sewOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewOptimizationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse SEW Optimization Results to DTO - Error: Mapping error occurred"));
 
-            // When & Then
             assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResults())
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse SEW Optimization Results to DTO - Error: Mapping error occurred");
@@ -182,11 +212,9 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Repository exception")
         void givenRepositoryError_whenRetrieveLatestOptimizationResults_thenThrowsException() {
-            // Given
             when(sewOptimizationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            // When & Then
             assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResults())
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
@@ -198,7 +226,6 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Multiple solutions in data")
         void givenMultipleSolutionsInData_whenRetrieveLatestOptimizationResults_thenReturnsAllSolutions() {
-            // Given
             Map<String, SewOptimizationResults.SolutionData> multipleData = new HashMap<>();
             multipleData.put("solution_1", createSampleSolutionData("180"));
             multipleData.put("solution_2", createSampleSolutionData("220"));
@@ -216,10 +243,8 @@ class SewOptimizationServiceTests {
             when(modelMapper.map(entityWithMultipleSolutions, SewOptimizationResultsDto.class))
                     .thenReturn(dtoWithMultipleSolutions);
 
-            // When
             SewOptimizationResultsDto result = sewOptimizationService.retrieveLatestOptimizationResults();
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("3");
             assertThat(result.getData()).hasSize(2);
@@ -232,7 +257,6 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Latest timestamp ordering")
         void givenMultipleResultsWithDifferentTimestamps_whenRetrieveLatestOptimizationResults_thenReturnsLatestByTimestamp() {
-            // Given
             String laterTimestamp = "2024-01-16T12:00:00Z";
             SewOptimizationResults latestEntity = new SewOptimizationResults("4", laterTimestamp, "test_module", createSampleDataMap());
             SewOptimizationResultsDto latestDto = SewOptimizationResultsDto.builder()
@@ -247,10 +271,8 @@ class SewOptimizationServiceTests {
             when(modelMapper.map(latestEntity, SewOptimizationResultsDto.class))
                     .thenReturn(latestDto);
 
-            // When
             SewOptimizationResultsDto result = sewOptimizationService.retrieveLatestOptimizationResults();
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("4");
             assertThat(result.getTimestamp()).isEqualTo(laterTimestamp);
@@ -268,78 +290,69 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results by module : Success")
         void givenExistingModuleResults_whenRetrieveLatestOptimizationResultsByProductionModule_thenReturnsLatestResult() {
-            // Given
             String productionModule = "sewing_module_1";
-            when(sewOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(sewOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewOptimizationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
-            SewOptimizationResultsDto result = sewOptimizationService.retrieveLatestOptimizationResultsByProductionModule(productionModule);
+            SewOptimizationResultsDto result = sewOptimizationService.retrieveLatestOptimizationResultsByModuleId(productionModule);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
             assertThat(result.getData()).isNotNull();
 
-            verify(sewOptimizationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(sewOptimizationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, SewOptimizationResultsDto.class);
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : No results found")
         void givenNoModuleResults_whenRetrieveLatestOptimizationResultsByProductionModule_thenThrowsResourceNotFoundException() {
-            // Given
             String productionModule = "non_existing_module";
-            when(sewOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(sewOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.empty());
 
-            // When & Then
-            assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResultsByModuleId(productionModule))
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No SEW Optimization Results for Module: " + productionModule + " found");
 
-            verify(sewOptimizationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(sewOptimizationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : Mapping exception")
         void givenMappingError_whenRetrieveLatestOptimizationResultsByProductionModule_thenThrowsModelMappingException() {
-            // Given
             String productionModule = "sewing_module_1";
-            when(sewOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(sewOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, SewOptimizationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse SEW Optimization Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred"));
 
-            // When & Then
-            assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResultsByModuleId(productionModule))
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse SEW Optimization Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred");
 
-            verify(sewOptimizationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(sewOptimizationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, SewOptimizationResultsDto.class);
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : Repository exception")
         void givenRepositoryError_whenRetrieveLatestOptimizationResultsByProductionModule_thenThrowsException() {
-            // Given
             String productionModule = "sewing_module_1";
-            when(sewOptimizationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(sewOptimizationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            // When & Then
-            assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> sewOptimizationService.retrieveLatestOptimizationResultsByModuleId(productionModule))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
 
-            verify(sewOptimizationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(sewOptimizationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
         }
     }
@@ -357,6 +370,7 @@ class SewOptimizationServiceTests {
         seq.put("seq_1", seqItem);
 
         Map<String, Map<String, Map<String, Map<String, SewOptimizationResults.TimeRange>>>> orders = new HashMap<>();
+
         List<String> initOrder = Arrays.asList("order_1", "order_2");
 
         return new SewOptimizationResults.SolutionData(metrics, seq, orders, initOrder);
@@ -369,31 +383,28 @@ class SewOptimizationServiceTests {
     }
 
     private Map<String, SewOptimizationResultsDto.SolutionData> createSampleDtoData() {
-        // Create DTO structure matching the exact model structure
         Map<String, SewOptimizationResultsDto.SolutionData> data = new HashMap<>();
 
-        // Create MetricsData for DTO
-        SewOptimizationResultsDto.MetricsData metricsDto = new SewOptimizationResultsDto.MetricsData("240");
+        SewOptimizationResultsDto.KpiData kpiData = new SewOptimizationResultsDto.KpiData();
+        kpiData.setMakespan("240");
+        kpiData.setMachineUtilization(0.85);
 
-        // Create seq map for DTO
-        Map<String, Map<String, String>> seqDto = new HashMap<>();
-        Map<String, String> seqItemDto = new HashMap<>();
-        seqItemDto.put("operation", "cutting");
-        seqItemDto.put("duration", "30");
-        seqDto.put("seq_1", seqItemDto);
+        Map<String, Map<String, SewOptimizationResultsDto.OrderData>> scheduleData = new HashMap<>();
+        Map<String, SewOptimizationResultsDto.OrderData> daySchedule = new HashMap<>();
 
-        // Create orders map for DTO
-        Map<String, Map<String, Map<String, Map<String, SewOptimizationResultsDto.TimeRange>>>> ordersDto = new HashMap<>();
+        SewOptimizationResultsDto.OrderData orderData = new SewOptimizationResultsDto.OrderData();
+        orderData.setOrderId("order_1");
 
-        // Create init order for DTO
-        List<String> initOrderDto = Arrays.asList("order_1", "order_2", "order_3");
+        orderData.setMachines(new HashMap<>());
 
-        // Create SolutionData for DTO
-        SewOptimizationResultsDto.SolutionData solutionDataDto = new SewOptimizationResultsDto.SolutionData(
-                metricsDto, seqDto, ordersDto, initOrderDto
-        );
+        daySchedule.put("order_1", orderData);
+        scheduleData.put("day_1", daySchedule);
 
-        data.put("solution_1", solutionDataDto);
+        SewOptimizationResultsDto.SolutionData solutionData = new SewOptimizationResultsDto.SolutionData();
+        solutionData.setKpis(kpiData);
+        solutionData.setSchedule(scheduleData);
+
+        data.put("solution_1", solutionData);
         return data;
     }
 
@@ -401,19 +412,154 @@ class SewOptimizationServiceTests {
         Map<String, SewOptimizationResultsDto.SolutionData> data = new HashMap<>();
 
         // Solution 1
-        SewOptimizationResultsDto.MetricsData metrics1 = new SewOptimizationResultsDto.MetricsData("180");
-        SewOptimizationResultsDto.SolutionData solution1 = new SewOptimizationResultsDto.SolutionData(
-                metrics1, new HashMap<>(), new HashMap<>(), new ArrayList<>()
-        );
+        SewOptimizationResultsDto.KpiData kpi1 = new SewOptimizationResultsDto.KpiData();
+        kpi1.setMakespan("180");
+        kpi1.setMachineUtilization(0.80);
+        SewOptimizationResultsDto.SolutionData solution1 = new SewOptimizationResultsDto.SolutionData();
+        solution1.setKpis(kpi1);
+        solution1.setSchedule(new HashMap<>());
 
         // Solution 2
-        SewOptimizationResultsDto.MetricsData metrics2 = new SewOptimizationResultsDto.MetricsData("220");
-        SewOptimizationResultsDto.SolutionData solution2 = new SewOptimizationResultsDto.SolutionData(
-                metrics2, new HashMap<>(), new HashMap<>(), new ArrayList<>()
-        );
+        SewOptimizationResultsDto.KpiData kpi2 = new SewOptimizationResultsDto.KpiData();
+        kpi2.setMakespan("220");
+        kpi2.setMachineUtilization(0.75);
+        SewOptimizationResultsDto.SolutionData solution2 = new SewOptimizationResultsDto.SolutionData();
+        solution2.setKpis(kpi2);
+        solution2.setSchedule(new HashMap<>());
 
         data.put("solution_1", solution1);
         data.put("solution_2", solution2);
         return data;
     }
+
+    @Nested
+    @DisplayName("Upload Production Schedule")
+    class UploadProductionSchedule {
+
+        @Test
+        @DisplayName("Upload production schedule : Success")
+        void givenValidScheduleDto_whenUploadProductionSchedule_thenSavesSuccessfully() {
+            when(modelMapper.map(sampleScheduleDto, ProductionSchedule.class))
+                    .thenReturn(sampleScheduleEntity);
+            when(exceptionHandlerService.handleOperation(any(), eq("uploadProductionSchedule")))
+                    .thenAnswer(invocation -> {
+                        return ((java.util.function.Supplier<?>) invocation.getArgument(0)).get();
+                    });
+            when(productionScheduleRepository.save(any(ProductionSchedule.class)))
+                    .thenReturn(sampleScheduleEntity);
+
+            assertDoesNotThrow(() -> sewOptimizationService.uploadProductionSchedule(sampleScheduleDto));
+
+            verify(modelMapper).map(sampleScheduleDto, ProductionSchedule.class);
+            verify(productionScheduleRepository).save(any(ProductionSchedule.class));
+            verify(exceptionHandlerService).handleOperation(any(), eq("uploadProductionSchedule"));
+        }
+
+        @Test
+        @DisplayName("Upload production schedule : Exception handler catches error")
+        void givenExceptionDuringUpload_whenUploadProductionSchedule_thenExceptionHandlerCatchesError() {
+            when(exceptionHandlerService.handleOperation(any(), eq("uploadProductionSchedule")))
+                    .thenThrow(new RuntimeException("Database error"));
+
+            assertThatThrownBy(() -> sewOptimizationService.uploadProductionSchedule(sampleScheduleDto))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Database error");
+
+            verify(exceptionHandlerService).handleOperation(any(), eq("uploadProductionSchedule"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Retrieve Latest Production Schedule")
+    class RetrieveLatestProductionSchedule {
+
+        @Test
+        @DisplayName("Retrieve latest production schedule : Success")
+        void givenExistingProductionSchedule_whenRetrieveLatestProductionSchedule_thenReturnsSchedule() {
+            when(productionScheduleRepository.findById("latest-production-schedule"))
+                    .thenReturn(Optional.of(sampleScheduleEntity));
+            when(modelMapper.map(sampleScheduleEntity, SewProductionScheduleDto.class))
+                    .thenReturn(sampleScheduleDto);
+
+            SewProductionScheduleDto result = sewOptimizationService.retrieveLatestProductionSchedule();
+
+            assertThat(result).isNotNull();
+            assertThat(result.getData()).isNotEmpty();
+            verify(productionScheduleRepository).findById("latest-production-schedule");
+            verify(modelMapper).map(sampleScheduleEntity, SewProductionScheduleDto.class);
+        }
+
+        @Test
+        @DisplayName("Retrieve latest production schedule : No schedule found")
+        void givenNoProductionSchedule_whenRetrieveLatestProductionSchedule_thenThrowsResourceNotFoundException() {
+            when(productionScheduleRepository.findById("latest-production-schedule"))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> sewOptimizationService.retrieveLatestProductionSchedule())
+                    .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
+                    .hasMessage("There is no stored production schedule in the DB");
+
+            verify(productionScheduleRepository).findById("latest-production-schedule");
+            verify(modelMapper, never()).map(any(), eq(SewProductionScheduleDto.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Invoke Optimization of Production Schedules")
+    class InvokeOptimizationOfProductionSchedules {
+
+        @Test
+        @DisplayName("Invoke optimization : Success with provided data")
+        void givenInvocationDataWithProvidedData_whenInvokeOptimization_thenInvokesSmartService() throws Exception {
+
+            sewOptimizationService.invokeOptimizationOfProductionSchedules(sampleOptimizationInput);
+
+            verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
+                    eq(sampleOptimizationInput),
+                    eq("hffs"),
+                    eq("SEW Optimization of Production Schedules")
+            );
+            verify(productionScheduleRepository, never()).findById(any());
+            verify(objectMapper, never()).valueToTree(any());
+        }
+
+        @Test
+        @DisplayName("Invoke optimization : Success with empty input retrieves from DB")
+        void givenInvocationDataWithEmptyInput_whenInvokeOptimization_thenRetrievesFromDbAndInvokes() throws Exception {
+            sampleOptimizationInput.setInput(new HashMap<>());
+            when(productionScheduleRepository.findById("latest-production-schedule"))
+                    .thenReturn(Optional.of(sampleScheduleEntity));
+            when(modelMapper.map(sampleScheduleEntity, SewProductionScheduleDto.class))
+                    .thenReturn(sampleScheduleDto);
+            JsonNode jsonData = objectMapper.createObjectNode();
+            when(objectMapper.valueToTree(any())).thenReturn(jsonData);
+
+            sewOptimizationService.invokeOptimizationOfProductionSchedules(sampleOptimizationInput);
+
+            verify(productionScheduleRepository).findById("latest-production-schedule");
+            verify(modelMapper).map(sampleScheduleEntity, SewProductionScheduleDto.class);
+            verify(objectMapper).valueToTree(any());
+            verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
+                    eq(sampleOptimizationInput),
+                    eq("hffs"),
+                    eq("SEW Optimization of Production Schedules")
+            );
+        }
+
+        @Test
+        @DisplayName("Invoke optimization : ResourceNotFoundException when no schedule found")
+        void givenEmptyInputAndNoScheduleInDb_whenInvokeOptimization_thenThrowsResourceNotFoundException() {
+            sampleOptimizationInput.setInput(new HashMap<>());
+            when(productionScheduleRepository.findById("latest-production-schedule"))
+                    .thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> sewOptimizationService.invokeOptimizationOfProductionSchedules(sampleOptimizationInput))
+                    .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
+                    .hasMessage("There is no stored production schedule in the DB");
+
+            verify(productionScheduleRepository).findById("latest-production-schedule");
+            verify(smartServicesInvocationService, never()).formulateAndImplementSmartServiceRequest(any(), any(), any());
+        }
+    }
+
 }

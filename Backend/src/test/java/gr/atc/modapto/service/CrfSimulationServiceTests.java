@@ -40,32 +40,26 @@ class CrfSimulationServiceTests {
 
     @BeforeEach
     void setUp() {
-        // Given
         sampleTimestamp = "2025-07-17T10:30:00Z";
 
-        // Create GR sequence data
         List<Map<String, String>> grSequence = Arrays.asList(
                 Map.of("operation", "cutting", "order", "1"),
                 Map.of("operation", "sewing", "order", "2")
         );
 
-        // Create Baseline
         CrfSimulationResults.Baseline.Exact exact = new CrfSimulationResults.Baseline.Exact("1250.50");
         CrfSimulationResults.Baseline.Linear linear = new CrfSimulationResults.Baseline.Linear("1300.75");
         CrfSimulationResults.Baseline baseline = new CrfSimulationResults.Baseline(exact, linear, grSequence);
 
-        // Create BestPhase
         CrfSimulationResults.BestPhase bestPhase = new CrfSimulationResults.BestPhase(
                 "1100.25", grSequence, 12.5f, 15.3f, 3L
         );
 
-        // Create entity
         sampleEntity = new CrfSimulationResults(
                 "1", sampleTimestamp, "Simulation completed successfully", "test_module",
                 true, 5000L, 8000L, baseline, bestPhase
         );
 
-        // Create corresponding DTO
         sampleDto = createSampleDto();
     }
 
@@ -76,17 +70,14 @@ class CrfSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Success")
         void givenExistingSimulationResults_whenRetrieveLatestSimulationResults_thenReturnsLatestResult() {
-            // Given
             when(crfSimulationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, CrfSimulationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
             CrfSimulationResultsDto result = crfSimulationResultsService.retrieveLatestSimulationResults();
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
@@ -104,11 +95,9 @@ class CrfSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : No results found")
         void givenNoSimulationResults_whenRetrieveLatestSimulationResults_thenThrowsResourceNotFoundException() {
-            // Given
             when(crfSimulationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResults())
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No CRF Simulation Results found");
@@ -120,14 +109,12 @@ class CrfSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Mapping exception")
         void givenMappingError_whenRetrieveLatestSimulationResults_thenThrowsModelMappingException() {
-            // Given
             when(crfSimulationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, CrfSimulationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse CRF Simulation Results to DTO - Error: Mapping error occurred"));
 
-            // When & Then
             assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResults())
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse CRF Simulation Results to DTO - Error: Mapping error occurred");
@@ -139,11 +126,9 @@ class CrfSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Repository exception")
         void givenRepositoryError_whenRetrieveLatestSimulationResults_thenThrowsException() {
-            // Given
             when(crfSimulationResultsRepository.findFirstByOrderByTimestampDesc())
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            // When & Then
             assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResults())
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
@@ -160,18 +145,15 @@ class CrfSimulationServiceTests {
         @Test
         @DisplayName("Retrieve latest results by module : Success")
         void givenExistingModuleResults_whenRetrieveLatestSimulationResultsByProductionModule_thenReturnsLatestResult() {
-            // Given
             String productionModule = "crf_module_1";
-            when(crfSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, CrfSimulationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            // When
             CrfSimulationResultsDto result = crfSimulationResultsService.retrieveLatestSimulationResultsByProductionModule(productionModule);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
@@ -182,61 +164,55 @@ class CrfSimulationServiceTests {
             assertThat(result.getBaseline()).isNotNull();
             assertThat(result.getBestPhase()).isNotNull();
 
-            verify(crfSimulationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(crfSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, CrfSimulationResultsDto.class);
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : No results found")
         void givenNoModuleResults_whenRetrieveLatestSimulationResultsByProductionModule_thenThrowsResourceNotFoundException() {
-            // Given
             String productionModule = "non_existing_module";
-            when(crfSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByProductionModule(productionModule))
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No CRF Simulation Results for Module: " + productionModule + " found");
 
-            verify(crfSimulationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(crfSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : Mapping exception")
         void givenMappingError_whenRetrieveLatestSimulationResultsByProductionModule_thenThrowsModelMappingException() {
-            // Given
             String productionModule = "crf_module_1";
-            when(crfSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.of(sampleEntity));
 
             when(modelMapper.map(sampleEntity, CrfSimulationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse CRF Simulation Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred"));
 
-            // When & Then
             assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByProductionModule(productionModule))
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse CRF Simulation Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred");
 
-            verify(crfSimulationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(crfSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, CrfSimulationResultsDto.class);
         }
 
         @Test
         @DisplayName("Retrieve latest results by module : Repository exception")
         void givenRepositoryError_whenRetrieveLatestSimulationResultsByProductionModule_thenThrowsException() {
-            // Given
             String productionModule = "crf_module_1";
-            when(crfSimulationResultsRepository.findFirstByProductionModuleOrderByTimestampDesc(productionModule))
+            when(crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            // When & Then
             assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByProductionModule(productionModule))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
 
-            verify(crfSimulationResultsRepository).findFirstByProductionModuleOrderByTimestampDesc(productionModule);
+            verify(crfSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
         }
     }

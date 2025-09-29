@@ -11,5 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface SewOptimizationResultsRepository extends ElasticsearchRepository<SewOptimizationResults, String> {
     Optional<SewOptimizationResults> findFirstByOrderByTimestampDesc();
 
-    Optional<SewOptimizationResults> findFirstByProductionModuleOrderByTimestampDesc(String productionModule);
+    Optional<SewOptimizationResults> findFirstByModuleIdOrderByTimestampDesc(String moduleId);
 }
