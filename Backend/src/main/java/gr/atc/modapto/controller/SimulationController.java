@@ -1,5 +1,6 @@
 package gr.atc.modapto.controller;
 
+import gr.atc.modapto.dto.crf.CrfSimulationKittingConfigDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSimulationInputDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
@@ -88,6 +89,24 @@ public class SimulationController {
                 "Request for simulation of CRF KH Picking Sequence has been successfully submitted"), HttpStatus.OK);
     }
 
+
+    /**
+     *  Retrieve stored Kitting Config [CRF]
+     *
+     * @return CrfSimulationKittingConfigDto
+     */
+    @Operation(summary = "Retrieve stored Kitting Config [CRF]", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Kitting Configs retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "No CRF Simulation Kitting Config found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/pilots/crf/kitting-configs")
+    public ResponseEntity<BaseResponse<CrfSimulationKittingConfigDto>> retrieveSimulationKittingConfig() {
+        return new ResponseEntity<>(BaseResponse.success(crfSimulationService.retrieveSimulationKittingConfig(),
+                "Kitting Configs retrieved successfully"), HttpStatus.OK);
+    }
     //--------------------------------------------- SEW -----------------------------------------------------------
     /**
      * Retrieve latest SEW Simulation Results

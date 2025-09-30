@@ -69,6 +69,12 @@ class ModaptoEvaluationAndDecisionSupportApplicationTests {
     @MockitoBean
     private CrfKitHolderEventRepository crfKitHolderEventRepository;
 
+    @MockitoBean
+    private CrfSimulationKittingConfigRepository crfSimulationKittingConfigRepository;
+
+    @MockitoBean
+    private CrfOptimizationKittingConfigRepository crfOptimizationKittingConfigRepository;
+
 	@Test
 	void contextLoads() {
 		Assertions.assertNotNull(ApplicationContext.class);

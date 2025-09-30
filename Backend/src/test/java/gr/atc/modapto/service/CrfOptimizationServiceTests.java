@@ -1,9 +1,12 @@
 package gr.atc.modapto.service;
 
+import gr.atc.modapto.dto.crf.CrfOptimizationKittingConfigDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
+import gr.atc.modapto.model.crf.CrfOptimizationKittingConfig;
 import gr.atc.modapto.model.serviceResults.CrfOptimizationResults;
+import gr.atc.modapto.repository.CrfOptimizationKittingConfigRepository;
 import gr.atc.modapto.repository.CrfOptimizationResultsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +18,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +27,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,10 +38,16 @@ class CrfOptimizationServiceTests {
     private CrfOptimizationResultsRepository crfOptimizationResultsRepository;
 
     @Mock
+    private CrfOptimizationKittingConfigRepository crfOptimizationKittingConfigRepository;
+
+    @Mock
     private ModelMapper modelMapper;
 
     @Mock
     private SmartServicesInvocationService smartServicesInvocationService;
+
+    @Mock
+    private ExceptionHandlerService exceptionHandlerService;
 
     @InjectMocks
     private CrfOptimizationService crfOptimizationService;
@@ -265,6 +277,58 @@ class CrfOptimizationServiceTests {
                     "robot-picking-seq",
                     "CRF KH Picking Sequence Optimization"
             );
+        }
+    }
+
+    @Nested
+    @DisplayName("Retrieve Optimization Kitting Config")
+    class RetrieveOptimizationKittingConfig {
+
+        @Test
+        @DisplayName("Retrieve kitting config : Success")
+        void givenExistingConfig_whenRetrieveOptimizationKittingConfig_thenReturnsConfig() {
+            // Given
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+            CrfOptimizationKittingConfig configEntity = new CrfOptimizationKittingConfig();
+            configEntity.setId("opt-current");
+            configEntity.setFilename("kitting-config.json");
+            configEntity.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            configEntity.setConfigCase("production");
+
+            CrfOptimizationKittingConfigDto configDto = new CrfOptimizationKittingConfigDto();
+            configDto.setId("opt-current");
+            configDto.setFilename("kitting-config.json");
+            configDto.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            configDto.setConfigCase("production");
+
+            when(exceptionHandlerService.handleOperation(any(), eq("retrieveOptimizationKittingConfig")))
+                    .thenReturn(configDto);
+
+            // When
+            CrfOptimizationKittingConfigDto result = crfOptimizationService.retrieveOptimizationKittingConfig();
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getId()).isEqualTo("opt-current");
+            assertThat(result.getFilename()).isEqualTo("kitting-config.json");
+            assertThat(result.getConfigCase()).isEqualTo("production");
+            verify(exceptionHandlerService).handleOperation(any(), eq("retrieveOptimizationKittingConfig"));
+        }
+
+        @Test
+        @DisplayName("Retrieve kitting config : Handles exception via exception handler")
+        void givenExceptionHandlerError_whenRetrieveOptimizationKittingConfig_thenPropagatesException() {
+            // Given
+            when(exceptionHandlerService.handleOperation(any(), eq("retrieveOptimizationKittingConfig")))
+                    .thenThrow(new CustomExceptions.ResourceNotFoundException("Config not found"));
+
+            // When & Then
+            assertThatThrownBy(() -> crfOptimizationService.retrieveOptimizationKittingConfig())
+                    .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
+                    .hasMessage("Config not found");
+
+            verify(exceptionHandlerService).handleOperation(any(), eq("retrieveOptimizationKittingConfig"));
         }
     }
 

@@ -1,8 +1,11 @@
 package gr.atc.modapto.service;
 
+import gr.atc.modapto.dto.crf.CrfSimulationKittingConfigDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
+import gr.atc.modapto.model.crf.CrfSimulationKittingConfig;
 import gr.atc.modapto.model.serviceResults.CrfSimulationResults;
+import gr.atc.modapto.repository.CrfSimulationKittingConfigRepository;
 import gr.atc.modapto.repository.CrfSimulationResultsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,11 +17,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,7 +35,13 @@ class CrfSimulationServiceTests {
     private CrfSimulationResultsRepository crfSimulationResultsRepository;
 
     @Mock
+    private CrfSimulationKittingConfigRepository crfSimulationKittingConfigRepository;
+
+    @Mock
     private ModelMapper modelMapper;
+
+    @Mock
+    private ExceptionHandlerService exceptionHandlerService;
 
     @InjectMocks
     private CrfSimulationService crfSimulationResultsService;
@@ -214,6 +226,58 @@ class CrfSimulationServiceTests {
 
             verify(crfSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper, never()).map(any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Retrieve Simulation Kitting Config")
+    class RetrieveSimulationKittingConfig {
+
+        @Test
+        @DisplayName("Retrieve simulation kitting config : Success")
+        void givenExistingConfig_whenRetrieveSimulationKittingConfig_thenReturnsConfig() {
+            // Given
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+
+            CrfSimulationKittingConfig configEntity = new CrfSimulationKittingConfig();
+            configEntity.setId("sim-current");
+            configEntity.setFilename("simulation-config.json");
+            configEntity.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            configEntity.setConfigCase("testing");
+
+            CrfSimulationKittingConfigDto configDto = new CrfSimulationKittingConfigDto();
+            configDto.setId("sim-current");
+            configDto.setFilename("simulation-config.json");
+            configDto.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            configDto.setConfigCase("testing");
+
+            when(exceptionHandlerService.handleOperation(any(), eq("retrieveSimulationKittingConfig")))
+                    .thenReturn(configDto);
+
+            // When
+            CrfSimulationKittingConfigDto result = crfSimulationResultsService.retrieveSimulationKittingConfig();
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.getId()).isEqualTo("sim-current");
+            assertThat(result.getFilename()).isEqualTo("simulation-config.json");
+            assertThat(result.getConfigCase()).isEqualTo("testing");
+            verify(exceptionHandlerService).handleOperation(any(), eq("retrieveSimulationKittingConfig"));
+        }
+
+        @Test
+        @DisplayName("Retrieve simulation kitting config : Handles exception via exception handler")
+        void givenExceptionHandlerError_whenRetrieveSimulationKittingConfig_thenPropagatesException() {
+            // Given
+            when(exceptionHandlerService.handleOperation(any(), eq("retrieveSimulationKittingConfig")))
+                    .thenThrow(new CustomExceptions.ResourceNotFoundException("Config not found"));
+
+            // When & Then
+            assertThatThrownBy(() -> crfSimulationResultsService.retrieveSimulationKittingConfig())
+                    .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
+                    .hasMessage("Config not found");
+
+            verify(exceptionHandlerService).handleOperation(any(), eq("retrieveSimulationKittingConfig"));
         }
     }
 

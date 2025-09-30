@@ -1,9 +1,11 @@
 package gr.atc.modapto.service;
 
+import gr.atc.modapto.dto.crf.CrfSimulationKittingConfigDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.model.serviceResults.CrfSimulationResults;
+import gr.atc.modapto.repository.CrfSimulationKittingConfigRepository;
 import gr.atc.modapto.repository.CrfSimulationResultsRepository;
 import gr.atc.modapto.service.interfaces.IKitHolderSimulationService;
 import org.modelmapper.MappingException;
@@ -24,16 +26,24 @@ public class CrfSimulationService implements IKitHolderSimulationService {
 
     private final String MAPPING_ERROR = "Unable to parse CRF Simulation Results to DTO - Error: ";
 
+    private final String SIM_CONFIG_ID = "sim-current";
+
     private final CrfSimulationResultsRepository crfSimulationResultsRepository;
+
+    private final CrfSimulationKittingConfigRepository crfSimulationKittingConfigRepository;
 
     private final SmartServicesInvocationService smartServicesInvocationService;
 
+    private final ExceptionHandlerService exceptionHandlerService;
+
     private final ModelMapper modelMapper;
 
-    public CrfSimulationService(CrfSimulationResultsRepository crfSimulationResultsRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService){
+    public CrfSimulationService(ExceptionHandlerService exceptionHandlerService, CrfSimulationKittingConfigRepository crfSimulationKittingConfigRepository, CrfSimulationResultsRepository crfSimulationResultsRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService){
         this.crfSimulationResultsRepository = crfSimulationResultsRepository;
         this.modelMapper = modelMapper;
         this.smartServicesInvocationService = smartServicesInvocationService;
+        this.exceptionHandlerService = exceptionHandlerService;
+        this.crfSimulationKittingConfigRepository = crfSimulationKittingConfigRepository;
     }
 
     /**
@@ -85,5 +95,19 @@ public class CrfSimulationService implements IKitHolderSimulationService {
     @Override
     public void invokeSimulationOfKhPickingSequence(CrfInvocationInputDto invocationData) {
         smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, ROBOT_PICKING_SEQUENCE.toString(), "CRF KH Picking Sequence Simulation");
+    }
+
+    /**
+     * Retrieve CRF Simulation Kitting Config
+     *
+     * @return CrfSimulationKittingConfigDto
+     */
+    @Override
+    public CrfSimulationKittingConfigDto retrieveSimulationKittingConfig() {
+        return exceptionHandlerService.handleOperation(() -> {
+            return crfSimulationKittingConfigRepository.findById(SIM_CONFIG_ID)
+                    .map(config -> modelMapper.map(config, CrfSimulationKittingConfigDto.class))
+                    .get();
+        }, "retrieveSimulationKittingConfig");
     }
 }

@@ -1,7 +1,6 @@
 package gr.atc.modapto.service;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.AllArgsConstructor;
 import org.modelmapper.MappingException;
 import org.slf4j.Logger;
@@ -26,6 +25,9 @@ public class ExceptionHandlerService {
         } catch (MappingException e) {
             logger.error("Mapping error in {}: {}", context, e.getMessage(), e);
             throw new ModelMappingException("Data mapping failed - Error: " + e.getMessage());
+        } catch (ResourceNotFoundException e){
+            logger.error("Resource in {} not found: {}", context, e.getMessage());
+            throw new ResourceNotFoundException("Resource not found in DB - Error: " + e.getMessage());
         } catch (Exception e) {
             logger.error("Unexpected error in {}: {}", context, e.getMessage(), e);
             throw new ServiceOperationException("Operation failed - Error: " + e.getMessage());

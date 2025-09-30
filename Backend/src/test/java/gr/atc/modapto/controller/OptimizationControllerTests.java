@@ -1,5 +1,6 @@
 package gr.atc.modapto.controller;
 
+import gr.atc.modapto.dto.crf.CrfOptimizationKittingConfigDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
@@ -18,6 +19,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -194,6 +197,45 @@ class OptimizationControllerTests {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(inputDto)))
                     .andExpect(status().isForbidden());
+        }
+    }
+
+    @Nested
+    @DisplayName("Retrieve Optimization Kitting Config")
+    class RetrieveOptimizationKittingConfig {
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Retrieve optimization kitting config : Success")
+        void givenValidRequest_whenRetrieveOptimizationKittingConfig_thenReturnsConfig() throws Exception {
+            // Given
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            CrfOptimizationKittingConfigDto mockConfig = new CrfOptimizationKittingConfigDto();
+            mockConfig.setId("opt-current");
+            mockConfig.setFilename("optimization-config.json");
+            mockConfig.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            mockConfig.setConfigCase("production");
+
+            when(khPickingSequenceOptimizationService.retrieveOptimizationKittingConfig()).thenReturn(mockConfig);
+
+            // When & Then
+            mockMvc.perform(get("/api/eds/optimization/pilots/crf/kitting-configs")
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Kitting Configs retrieved successfully"))
+                    .andExpect(jsonPath("$.data.id").value("opt-current"))
+                    .andExpect(jsonPath("$.data.filename").value("optimization-config.json"));
+
+            verify(khPickingSequenceOptimizationService).retrieveOptimizationKittingConfig();
+        }
+
+        @Test
+        @DisplayName("Retrieve optimization kitting config : Unauthorized")
+        void givenUnauthorizedRequest_whenRetrieveOptimizationKittingConfig_thenReturnsUnauthorized() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/api/eds/optimization/pilots/crf/kitting-configs"))
+                    .andExpect(status().isUnauthorized());
         }
     }
 

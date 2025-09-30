@@ -1,5 +1,7 @@
 package gr.atc.modapto.controller;
 
+import gr.atc.modapto.dto.crf.CrfOptimizationKittingConfigDto;
+import gr.atc.modapto.dto.crf.CrfSimulationKittingConfigDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
@@ -86,6 +88,24 @@ public class OptimizationController {
         khPickingSequenceOptimizationService.invokeOptimizationOfKhPickingSequence(invocationData);
         return new ResponseEntity<>(BaseResponse.success(null,
                 "Request for optimization of CRF KH Picking Sequence has been successfully submitted"), HttpStatus.OK);
+    }
+
+    /**
+     *  Retrieve stored Kitting Config [CRF]
+     *
+     * @return CrfOptimizationKittingConfigDto
+     */
+    @Operation(summary = "Retrieve stored Kitting Config [CRF]", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Kitting Configs retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "No CRF Simulation Kitting Config found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/pilots/crf/kitting-configs")
+    public ResponseEntity<BaseResponse<CrfOptimizationKittingConfigDto>> retrieveSimulationKittingConfig() {
+        return new ResponseEntity<>(BaseResponse.success(khPickingSequenceOptimizationService.retrieveOptimizationKittingConfig(),
+                "Kitting Configs retrieved successfully"), HttpStatus.OK);
     }
 
     //--------------------------------------------- SEW -----------------------------------------------------------

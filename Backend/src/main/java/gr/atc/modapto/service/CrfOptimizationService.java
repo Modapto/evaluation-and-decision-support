@@ -1,9 +1,12 @@
 package gr.atc.modapto.service;
 
+import gr.atc.modapto.dto.crf.CrfOptimizationKittingConfigDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
+import gr.atc.modapto.model.crf.CrfOptimizationKittingConfig;
 import gr.atc.modapto.model.serviceResults.CrfOptimizationResults;
+import gr.atc.modapto.repository.CrfOptimizationKittingConfigRepository;
 import gr.atc.modapto.repository.CrfOptimizationResultsRepository;
 import gr.atc.modapto.service.interfaces.IKhPickingSequenceOptimizationService;
 import org.modelmapper.MappingException;
@@ -24,16 +27,24 @@ public class CrfOptimizationService implements IKhPickingSequenceOptimizationSer
 
     private final String MAPPING_ERROR = "Unable to parse CRF Optimization Results to DTO - Error: ";
 
+    private final String OPT_CONFIG_ID = "opt-current";
+
     private final CrfOptimizationResultsRepository crfOptimizationResultsRepository;
+
+    private final CrfOptimizationKittingConfigRepository crfOptimizationKittingConfigRepository;
 
     private final SmartServicesInvocationService smartServicesInvocationService;
 
+    private final ExceptionHandlerService exceptionHandlerService;
+
     private final ModelMapper modelMapper;
 
-    public CrfOptimizationService(CrfOptimizationResultsRepository crfOptimizationResultsRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService){
+    public CrfOptimizationService(CrfOptimizationKittingConfigRepository crfOptimizationKittingConfigRepository,ExceptionHandlerService exceptionHandlerService, CrfOptimizationResultsRepository crfOptimizationResultsRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService){
         this.crfOptimizationResultsRepository = crfOptimizationResultsRepository;
         this.smartServicesInvocationService = smartServicesInvocationService;
         this.modelMapper = modelMapper;
+        this.exceptionHandlerService = exceptionHandlerService;
+        this.crfOptimizationKittingConfigRepository = crfOptimizationKittingConfigRepository;
     }
 
     /**
@@ -85,5 +96,19 @@ public class CrfOptimizationService implements IKhPickingSequenceOptimizationSer
     @Override
     public void invokeOptimizationOfKhPickingSequence(CrfInvocationInputDto invocationData) {
         smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, ROBOT_PICKING_SEQUENCE.toString(), "CRF KH Picking Sequence Optimization");
+    }
+
+    /**
+     * Retrieve CRF Optimization Kitting Config
+     *
+     * @return CrfOptimizationKittingConfigDto
+     */
+    @Override
+    public CrfOptimizationKittingConfigDto retrieveOptimizationKittingConfig() {
+        return exceptionHandlerService.handleOperation(() -> {
+           return crfOptimizationKittingConfigRepository.findById(OPT_CONFIG_ID)
+                   .map(config -> modelMapper.map(config, CrfOptimizationKittingConfigDto.class))
+                   .get();
+        }, "retrieveOptimizationKittingConfig");
     }
 }

@@ -1,5 +1,6 @@
 package gr.atc.modapto.controller;
 
+import gr.atc.modapto.dto.crf.CrfSimulationKittingConfigDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.service.interfaces.IKitHolderSimulationService;
@@ -13,6 +14,10 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -145,6 +150,45 @@ class SimulationControllerTests {
         @DisplayName("Retrieve latest CRF results by module : Unauthorized")
         void givenUnauthorizedRequest_whenRetrieveLatestCrfResultsByProductionModule_thenReturnsUnauthorized() throws Exception {
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/modules/test_module/latest"))
+                    .andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Nested
+    @DisplayName("Retrieve Simulation Kitting Config")
+    class RetrieveSimulationKittingConfig {
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Retrieve simulation kitting config : Success")
+        void givenValidRequest_whenRetrieveSimulationKittingConfig_thenReturnsConfig() throws Exception {
+            // Given
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            CrfSimulationKittingConfigDto mockConfig = new CrfSimulationKittingConfigDto();
+            mockConfig.setId("sim-current");
+            mockConfig.setFilename("simulation-config.json");
+            mockConfig.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            mockConfig.setConfigCase("testing");
+
+            when(crfSimulationService.retrieveSimulationKittingConfig()).thenReturn(mockConfig);
+
+            // When & Then
+            mockMvc.perform(get("/api/eds/simulation/pilots/crf/kitting-configs")
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Kitting Configs retrieved successfully"))
+                    .andExpect(jsonPath("$.data.id").value("sim-current"))
+                    .andExpect(jsonPath("$.data.filename").value("simulation-config.json"));
+
+            verify(crfSimulationService).retrieveSimulationKittingConfig();
+        }
+
+        @Test
+        @DisplayName("Retrieve simulation kitting config : Unauthorized")
+        void givenUnauthorizedRequest_whenRetrieveSimulationKittingConfig_thenReturnsUnauthorized() throws Exception {
+            // When & Then
+            mockMvc.perform(get("/api/eds/simulation/pilots/crf/kitting-configs"))
                     .andExpect(status().isUnauthorized());
         }
     }
