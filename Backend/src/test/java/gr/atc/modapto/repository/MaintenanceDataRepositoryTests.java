@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
 @DataElasticsearchTest
 @ActiveProfiles("test")
 @Testcontainers
-@DisplayName("MaintenanceDataRepository Tests with Testcontainers")
+@DisplayName("MaintenanceDataRepository Tests")
 class MaintenanceDataRepositoryTests extends SetupTestContainersEnvironment {
 
     @Autowired

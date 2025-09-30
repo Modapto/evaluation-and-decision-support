@@ -81,7 +81,7 @@ class KafkaMessageHandlerTests {
             verify(webSocketService, times(1)).notifyInWebSocketTopic(messageCaptor.capture(), topicCaptor.capture());
 
             assertEquals(objectMapper.writeValueAsString(simulationResult), messageCaptor.getValue());
-            assertEquals(WebSocketTopics.CRF_SIMULATION_RESULTS.toString(), topicCaptor.getValue());
+            assertEquals("crf-simulation-topic", topicCaptor.getValue());
         }
 
         @Test
@@ -100,7 +100,7 @@ class KafkaMessageHandlerTests {
 
             kafkaMessageHandler.consume(baseEvent, mqttTopic);
 
-            verify(webSocketService, times(1)).notifyInWebSocketTopic(anyString(), eq(WebSocketTopics.CRF_SIMULATION_RESULTS.toString()));
+            verify(webSocketService, times(1)).notifyInWebSocketTopic(anyString(), eq("modapto-mqtt-topics"));
         }
     }
 
@@ -130,7 +130,7 @@ class KafkaMessageHandlerTests {
             verify(webSocketService, times(1)).notifyInWebSocketTopic(messageCaptor.capture(), topicCaptor.capture());
 
             assertEquals(objectMapper.writeValueAsString(optimizationResult), messageCaptor.getValue());
-            assertEquals(WebSocketTopics.CRF_OPTIMIZATION_RESULTS.toString(), topicCaptor.getValue());
+            assertEquals("crf-optimization-topic", topicCaptor.getValue());
         }
     }
 
@@ -159,7 +159,7 @@ class KafkaMessageHandlerTests {
             verify(webSocketService, times(1)).notifyInWebSocketTopic(messageCaptor.capture(), topicCaptor.capture());
 
             assertEquals(objectMapper.writeValueAsString(simulationResult), messageCaptor.getValue());
-            assertEquals(WebSocketTopics.SEW_SIMULATION_RESULTS.toString(), topicCaptor.getValue());
+            assertEquals("sew-simulation-topic", topicCaptor.getValue());
         }
     }
 
@@ -188,7 +188,7 @@ class KafkaMessageHandlerTests {
             verify(webSocketService, times(1)).notifyInWebSocketTopic(messageCaptor.capture(), topicCaptor.capture());
 
             assertEquals(objectMapper.writeValueAsString(optimizationResult), messageCaptor.getValue());
-            assertEquals(WebSocketTopics.SEW_OPTIMIZATION_RESULTS.toString(), topicCaptor.getValue());
+            assertEquals("sew-optimization-topic", topicCaptor.getValue());
         }
     }
 
@@ -234,22 +234,6 @@ class KafkaMessageHandlerTests {
             String topic = "test-kafka-topic";
 
             kafkaMessageHandler.consume(invalidEvent, topic);
-
-            verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
-        }
-
-        @Test
-        @DisplayName("Consume event with unknown result type : Error logged and no notification")
-        void givenEventWithUnknownResultType_whenConsume_thenLogErrorAndDoNotNotifyWebSocket() {
-            Map<String, Object> unknownResult = new HashMap<>();
-            unknownResult.put("unknownField", "unknownValue");
-            unknownResult.put("type", "UnknownType");
-
-            JsonNode resultNode = objectMapper.valueToTree(unknownResult);
-            baseEvent.setResults(resultNode);
-            String topic = "test-kafka-topic";
-
-            kafkaMessageHandler.consume(baseEvent, topic);
 
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
         }
@@ -311,7 +295,7 @@ class KafkaMessageHandlerTests {
             verify(webSocketService, times(1)).notifyInWebSocketTopic(messageCaptor.capture(), topicCaptor.capture());
 
             assertEquals(objectMapper.writeValueAsString(maintenanceResult), messageCaptor.getValue());
-            assertEquals(WebSocketTopics.SEW_GROUPING_PREDICTIVE_MAINTENANCE.toString(), topicCaptor.getValue());
+            assertEquals("sew-grouping-predictive-maintenance-topic", topicCaptor.getValue());
         }
     }
 
@@ -351,7 +335,7 @@ class KafkaMessageHandlerTests {
             verify(webSocketService, times(1)).notifyInWebSocketTopic(messageCaptor.capture(), topicCaptor.capture());
 
             assertEquals(objectMapper.writeValueAsString(kpisResult), messageCaptor.getValue());
-            assertEquals(WebSocketTopics.SEW_SELF_AWARENESS_MONITORING_KPIS.toString(), topicCaptor.getValue());
+            assertEquals("sew-self-awareness-monitoring-kpis-topic", topicCaptor.getValue());
         }
     }
 

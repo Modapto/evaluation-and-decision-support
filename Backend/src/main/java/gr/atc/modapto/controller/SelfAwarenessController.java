@@ -3,8 +3,11 @@ package gr.atc.modapto.controller;
 import gr.atc.modapto.dto.PaginatedResultsDto;
 import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
+import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
+import gr.atc.modapto.dto.serviceInvocations.SewLocalAnalyticsInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringInputDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewFilteringOptionsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
@@ -278,6 +281,47 @@ public class SelfAwarenessController {
         sewSelfAwarenessService.deleteSelfAwarenessComponentListByModuleId(moduleId);
         return new ResponseEntity<>(
                 BaseResponse.success(null, "Self-Awareness component list for module '" + moduleId + "' deleted successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Retrieve filtering options from Local Analytics Service [SEW]
+     *
+     * @param request : Smart Service ID and Modapto Module ID
+     * @return SewFilteringOptionsDto
+     */
+    @Operation(summary = "Retrieve filtering options from Local Analytics Service [SEW]", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Filtering options retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/pilots/sew/analytics/filtering-options")
+    public ResponseEntity<BaseResponse<SewFilteringOptionsDto>> generateFilteringOptionsForLocalAnalytics(@RequestBody @Valid GlobalRequestDto request) {
+        SewFilteringOptionsDto filteringOptions = sewSelfAwarenessService.retrieveFilteringOptionsForLocalAnalytics(request);
+        return new ResponseEntity<>(
+                BaseResponse.success(filteringOptions, "Filtering options retrieved successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Generate Histogram of Comparison of Modules from Local Analytics
+     *
+     * @param request : Filtering Options
+     * @return Encoded image of Histogram
+     */
+    @Operation(summary = "Generate Histogram of Comparison of Modules from Local Analytics [SEW]", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Histogram from Local Analytics generated successfully"),
+            @ApiResponse(responseCode = "400", description = "Validation error | Throws if file is not proper or data are missing"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/pilots/sew/analytics/generate-histogram")
+    public ResponseEntity<BaseResponse<String>> generateHistogramForComparingModules(@Valid @RequestBody GlobalRequestDto<SewLocalAnalyticsInputDto> request) {
+        String encodedImage = sewSelfAwarenessService.generateHistogramForComparingModules(request);
+        return new ResponseEntity<>(
+                BaseResponse.success(encodedImage, "Histogram from Local Analytics generated successfully"),
                 HttpStatus.OK);
     }
 

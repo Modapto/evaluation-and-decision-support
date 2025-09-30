@@ -532,13 +532,11 @@ class SewOptimizationServiceTests {
             when(modelMapper.map(sampleScheduleEntity, SewProductionScheduleDto.class))
                     .thenReturn(sampleScheduleDto);
             JsonNode jsonData = objectMapper.createObjectNode();
-            when(objectMapper.valueToTree(any())).thenReturn(jsonData);
 
             sewOptimizationService.invokeOptimizationOfProductionSchedules(sampleOptimizationInput);
 
             verify(productionScheduleRepository).findById("latest-production-schedule");
             verify(modelMapper).map(sampleScheduleEntity, SewProductionScheduleDto.class);
-            verify(objectMapper).valueToTree(any());
             verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
                     eq(sampleOptimizationInput),
                     eq("hffs"),

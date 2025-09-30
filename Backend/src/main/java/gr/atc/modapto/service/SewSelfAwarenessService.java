@@ -1,25 +1,42 @@
 package gr.atc.modapto.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.atc.modapto.dto.dt.DtInputDto;
+import gr.atc.modapto.dto.dt.DtResponseDto;
+import gr.atc.modapto.dto.dt.SmartServiceRequest;
+import gr.atc.modapto.dto.dt.SmartServiceResponse;
+import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
+import gr.atc.modapto.dto.serviceInvocations.SewLocalAnalyticsInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringInputDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewFilteringOptionsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintenanceOutputDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
+import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.model.sew.SewMonitorKpisComponents;
 import gr.atc.modapto.repository.SewMonitorKpisComponentsRepository;
 import gr.atc.modapto.repository.SewSelfAwarenessRealTimeMonitoringResultsRepository;
 import gr.atc.modapto.repository.SewSelfAwarenessMonitoringKpisResultsRepository;
 import gr.atc.modapto.service.interfaces.ISewSelfAwarenessService;
 import gr.atc.modapto.exception.CustomExceptions.*;
+import jakarta.validation.constraints.NotBlank;
+import org.apache.poi.ss.formula.functions.T;
+import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SewSelfAwarenessService implements ISewSelfAwarenessService {
@@ -36,6 +53,8 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
 
     private final ExceptionHandlerService exceptionHandler;
 
+    private final ObjectMapper objectMapper;
+
     private final ModelMapper modelMapper;
 
     public SewSelfAwarenessService(SewSelfAwarenessMonitoringKpisResultsRepository sewSelfAwarenessMonitoringKpisResultsRepository,
@@ -43,13 +62,15 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
                                    SewMonitorKpisComponentsRepository sewMonitorKpisComponentsRepository,
                                    SmartServicesInvocationService smartServicesInvocationService,
                                    ExceptionHandlerService exceptionHandler,
-                                   ModelMapper modelMapper){
+                                   ModelMapper modelMapper,
+                                   ObjectMapper objectMapper){
         this.sewSelfAwarenessMonitoringKpisResultsRepository = sewSelfAwarenessMonitoringKpisResultsRepository;
         this.sewSelfAwarenessRealTimeMonitoringResultsRepository = sewSelfAwarenessRealTimeMonitoringResultsRepository;
         this.sewMonitorKpisComponentsRepository = sewMonitorKpisComponentsRepository;
         this.smartServicesInvocationService = smartServicesInvocationService;
         this.exceptionHandler = exceptionHandler;
         this.modelMapper = modelMapper;
+        this.objectMapper =objectMapper;
     }
 
     /**
@@ -225,6 +246,54 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
         }, "deleteSelfAwarenessComponentListByModuleId");
     }
 
+    @Override
+    public SewFilteringOptionsDto retrieveFilteringOptionsForLocalAnalytics(GlobalRequestDto request) {
+        return exceptionHandler.handleOperation(() -> {
+            List<SewSelfAwarenessMonitoringKpisResultsDto> inputData = sewSelfAwarenessMonitoringKpisResultsRepository.findAll(Pageable.unpaged())
+                    .stream()
+                    .map(output -> modelMapper.map(output, SewSelfAwarenessMonitoringKpisResultsDto.class))
+                    .toList();
+
+            ResponseEntity<DtResponseDto> response = formulateAndImplementSyncSmartServiceRequest(inputData, request.getModuleId(), request.getSmartServiceId());
+
+            logger.debug("Successfully invoked Local-Analytics to provide the filtering options..Processing results..");
+
+            // Use processor for the important response type
+            SewFilteringOptionsDto results = null;
+            if (validateDigitalTwinResponse(response))
+                results = decodeDigitalTwinResponseToDto(SewFilteringOptionsDto.class, response.getBody());
+
+            return results;
+        }, "retrieveFilteringOptionsForLocalAnalytics");
+    }
+
+    @Override
+    public String generateHistogramForComparingModules(GlobalRequestDto<SewLocalAnalyticsInputDto> request) {
+        return exceptionHandler.handleOperation(() -> {
+            List<SewSelfAwarenessMonitoringKpisResultsDto> inputData = sewSelfAwarenessMonitoringKpisResultsRepository.findAll(Pageable.unpaged())
+                    .stream()
+                    .map(output -> modelMapper.map(output, SewSelfAwarenessMonitoringKpisResultsDto.class))
+                    .toList();
+
+            SewLocalAnalyticsInputDto serviceInput = SewLocalAnalyticsInputDto.builder()
+                    .firstParameters(request.getInput().getFirstParameters())
+                    .secondParameters(request.getInput().getSecondParameters())
+                    .histogramData(inputData)
+                    .build();
+
+            ResponseEntity<DtResponseDto> response = formulateAndImplementSyncSmartServiceRequest(serviceInput, request.getModuleId(), request.getSmartServiceId());
+
+            logger.debug("Successfully invoked Local-Analytics to produce the Histogram..Processing results..");
+
+            // Use processor for the important response type
+            String encodedImage = null;
+            if (validateDigitalTwinResponse(response))
+                encodedImage = decodeDigitalTwinResponseToDto(String.class, response.getBody());
+
+            return encodedImage;
+        }, "generateHistogramForComparingModules");
+    }
+
     /**
      * Helper method to set component data for algorithm invocation
      *
@@ -251,4 +320,85 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
             throw new SmartServiceInvocationException("Error setting component data for algorithm invocation");
         }
     }
+
+    /*
+     * Helper method to implement SYNC request to Smart Services via DT
+     */
+    private <T> ResponseEntity<DtResponseDto> formulateAndImplementSyncSmartServiceRequest(T inputData, String moduleId, String smartServiceId) {
+        if (inputData == null)
+           return null;
+
+        // Encode the invocationData to Base64
+        String encodedInput;
+        try {
+            encodedInput = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(inputData).getBytes());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        SmartServiceRequest smartServiceRequest = SmartServiceRequest.builder()
+                .request(encodedInput)
+                .build();
+
+        // Wrap invocation data in DtInputDto
+        DtInputDto<SmartServiceRequest> dtInput = DtInputDto.<SmartServiceRequest>builder()
+                .inputArguments(smartServiceRequest)
+                .build();
+
+        // Invoke smart service using the generic service
+        return smartServicesInvocationService.invokeSmartService(
+                smartServiceId,
+                moduleId,
+                dtInput,
+                ModaptoHeader.SYNC
+        );
+    }
+
+    /*
+     * Helper method to Decode Digital Twin response to specific class
+     */
+    private <T> T decodeDigitalTwinResponseToDto(Class<T> clazz, DtResponseDto response){
+        try {
+            // Convert output arguments to specific Smart Service results DTO
+            SmartServiceResponse serviceResponse = objectMapper.convertValue(
+                    response.getOutputArguments(),
+                    SmartServiceResponse.class
+            );
+
+            // Decode Response from Base64 Encoding to specific DTO
+            byte[] decodedBytes = Base64.getDecoder().decode(serviceResponse.getResponse());
+            T outputDto = objectMapper.readValue(decodedBytes, clazz);
+            return outputDto;
+        } catch (Exception e) {
+            logger.error("Error processing Digital Twin response for Local Analytics - Error: {}", e.getMessage());
+            throw new SmartServiceInvocationException("Failed to process Digital Twin response for Local Analytics: " + e.getMessage());
+        }
+    }
+
+    /*
+     * Helper method to validate whether the DT Response is valid
+     */
+    private boolean validateDigitalTwinResponse(ResponseEntity<DtResponseDto> response){
+        // Validate response
+        if (response == null || response.getBody() == null) {
+            throw new DtmServerErrorException("No response received from DTM service for requested operation");
+        }
+
+        DtResponseDto dtmResponse = response.getBody();
+
+        if (dtmResponse == null) {
+            logger.error("DTM service response body is null for threshold maintenance.");
+            throw new DtmServerErrorException("DTM service returned a null body for requested operation");
+        }
+
+        if (!dtmResponse.isSuccess()) {
+            logger.error("DTM service execution failed for requested operation. Messages: {}",
+                    Optional.ofNullable(dtmResponse.getMessages()).orElse(List.of("No error messages provided")));
+            throw new DtmServerErrorException("DTM service execution failed for threshold maintenance");
+        }
+
+        return true;
+    }
+
+
 }

@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.dto.PaginatedResultsDto;
 import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
+import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
+import gr.atc.modapto.dto.serviceInvocations.SewLocalAnalyticsInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewFilteringOptionsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
 import gr.atc.modapto.service.interfaces.ICrfSelfAwarenessService;
@@ -455,7 +458,7 @@ class SelfAwarenessControllerTests {
             mockMvc.perform(get("/api/eds/self-awareness/pilots/crf/kh-events")
                             .param("page", "0")
                             .param("size", "10")
-                            .param("sortAttribute", "timeWindow")
+                            .param("sortAttribute", "timestamp")
                             .param("isAscending", "false"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
@@ -469,7 +472,7 @@ class SelfAwarenessControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Register KH event : JSON deserialization error")
         void givenValidKhEvent_whenRegisterKitHolderEvent_thenReturnsJsonError() throws Exception {
-            CrfKitHolderEventDto event = createSampleKhEventDto("2");
+            CrfKitHolderEventDto event = new CrfKitHolderEventDto();
 
             doNothing().when(crfSelfAwarenessService).registerKitHolderEvent(any());
 
@@ -508,6 +511,69 @@ class SelfAwarenessControllerTests {
             verify(crfSelfAwarenessService, never()).invokeKhSelfAwareness(any(), any());
             verify(crfSelfAwarenessService, never()).retrievePaginatedKhEventResultsPaginated(any());
             verify(crfSelfAwarenessService, never()).registerKitHolderEvent(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("SEW Local Analytics Tests")
+    class SewLocalAnalyticsTests {
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Retrieve filtering options : Success")
+        void givenValidRequest_whenRetrieveFilteringOptions_thenReturnsOptions() throws Exception {
+            // Given
+            GlobalRequestDto request = GlobalRequestDto.builder()
+                    .moduleId("sew_module_1")
+                    .smartServiceId("service_1")
+                    .build();
+
+            SewFilteringOptionsDto filteringOptions = new SewFilteringOptionsDto();
+            when(sewSelfAwarenessService.retrieveFilteringOptionsForLocalAnalytics(any(GlobalRequestDto.class)))
+                    .thenReturn(filteringOptions);
+
+            // When & Then
+            mockMvc.perform(get("/api/eds/self-awareness/pilots/sew/analytics/filtering-options")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("Filtering options retrieved successfully"));
+
+            verify(sewSelfAwarenessService).retrieveFilteringOptionsForLocalAnalytics(any(GlobalRequestDto.class));
+        }
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("Generate histogram : Success")
+        void givenValidRequest_whenGenerateHistogram_thenReturnsEncodedImage() throws Exception {
+            // Given
+            SewLocalAnalyticsInputDto analyticsInput = SewLocalAnalyticsInputDto.builder()
+                    .firstParameters(new SewFilteringOptionsDto.Options())
+                    .secondParameters(new SewFilteringOptionsDto.Options())
+                    .build();
+
+            GlobalRequestDto<SewLocalAnalyticsInputDto> request = GlobalRequestDto.<SewLocalAnalyticsInputDto>builder()
+                    .moduleId("sew_module_1")
+                    .smartServiceId("service_1")
+                    .input(analyticsInput)
+                    .build();
+
+            String encodedImage = "base64EncodedImageString";
+            when(sewSelfAwarenessService.generateHistogramForComparingModules(any(GlobalRequestDto.class)))
+                    .thenReturn(encodedImage);
+
+            // When & Then
+            mockMvc.perform(post("/api/eds/self-awareness/pilots/sew/analytics/generate-histogram")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request))
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data").value(encodedImage))
+                    .andExpect(jsonPath("$.message").value("Histogram from Local Analytics generated successfully"));
+
+            verify(sewSelfAwarenessService).generateHistogramForComparingModules(any(GlobalRequestDto.class));
         }
     }
 

@@ -1,6 +1,7 @@
 package gr.atc.modapto.service;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.AllArgsConstructor;
 import org.modelmapper.MappingException;
 import org.slf4j.Logger;

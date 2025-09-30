@@ -1,7 +1,10 @@
 package gr.atc.modapto.service.interfaces;
 
+import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
+import gr.atc.modapto.dto.serviceInvocations.SewLocalAnalyticsInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringInputDto;
+import gr.atc.modapto.dto.serviceResults.sew.SewFilteringOptionsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
@@ -31,4 +34,8 @@ public interface ISewSelfAwarenessService {
     SewMonitorKpisComponentsDto retrieveSelfAwarenessComponentListByModuleId(String moduleId);
 
     void deleteSelfAwarenessComponentListByModuleId(String moduleId);
+
+    SewFilteringOptionsDto retrieveFilteringOptionsForLocalAnalytics(GlobalRequestDto request);
+
+    String generateHistogramForComparingModules(GlobalRequestDto<SewLocalAnalyticsInputDto> request);
 }
