@@ -27,19 +27,19 @@ public class SewFilteringOptionsDto {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class Options {
-        @JsonProperty("ligne")
+        @JsonProperty("Ligne")
         @JsonAlias({"Ligne", "ligne"})
         private String ligne;
 
-        @JsonProperty("component")
+        @JsonProperty("Component")
         @JsonAlias({"Component", "component"})
         private String component;
 
-        @JsonProperty("variable")
+        @JsonProperty("Variable")
         @JsonAlias({"Variable", "variable"})
         private String variable;
 
-        @JsonProperty("date")
+        @JsonProperty("Date")
         @JsonAlias({"Date", "date"})
         @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
         @Schema(
