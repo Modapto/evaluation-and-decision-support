@@ -1,0 +1,40 @@
+name: Docker Image CI/CD - EDS Frontend (Cloud)
+
+env:
+  CONTAINER_NAME: eds-frontend
+
+on:
+  registry_package:
+    types: [published, updated]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+     # Only trigger for specific package and tag
+    if: |
+      github.event.registry_package.name == 'eds-front' &&
+      contains(github.event.registry_package.package_version.container_metadata.tag.name, 'latest')
+    steps:      
+      - name: SSH into VM and Deploy new Image with Docker
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST_IP }}
+          username:  ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            # Fail script on first error
+            set -e 
+            # Login to GitHub Container Registry
+            echo "${{ secrets.CI_ORG_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Deploy new Image for Dev Environment
+            cd /root/modapto/system-deployment
+            docker compose pull ${{ env.CONTAINER_NAME }}
+            docker compose up -d --no-deps ${{ env.CONTAINER_NAME }}
+
+            # Remove unused images
+            docker image prune -f
+
+            # Logout
+            docker logout ghcr.io
