@@ -2,19 +2,19 @@ package gr.atc.modapto.kafka;
 
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import gr.atc.modapto.dto.EventDto;
 import gr.atc.modapto.service.WebSocketService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
@@ -40,7 +40,7 @@ public class KafkaMessageHandler {
      * @param event: Event occurred in MODAPTO
      */
     @KafkaListener(topics = "#{'${kafka.topics}'.split(',')}", groupId = "${spring.kafka.consumer.group-id}")
-    public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic, @Header(KafkaHeaders.KEY) String messageKey) {
+    public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,@Header(value = KafkaHeaders.RECEIVED_KEY, required = false) String messageKey) {
         // Validate that same essential variables are present
         log.debug("Event message received on topic: {} with Event Data: {}", topic, event);
         if (event.getPriority() == null || event.getModule() == null || event.getTopic() == null) {
