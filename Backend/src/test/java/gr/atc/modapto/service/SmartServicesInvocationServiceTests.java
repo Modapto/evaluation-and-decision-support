@@ -5,7 +5,6 @@ import gr.atc.modapto.config.properties.KeycloakProperties;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.serviceInvocations.SewThresholdBasedMaintenanceInputDataDto;
 import gr.atc.modapto.enums.ModaptoHeader;
-import gr.atc.modapto.exception.CustomExceptions;
 import gr.atc.modapto.exception.CustomExceptions.SmartServiceInvocationException;
 import gr.atc.modapto.service.interfaces.IModaptoModuleService;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,9 +31,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
-// FIX: Add required import for eq()
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;

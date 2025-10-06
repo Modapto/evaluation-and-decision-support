@@ -1,19 +1,15 @@
 package gr.atc.modapto.util;
 
-import gr.atc.modapto.dto.PaginatedResultsDto;
-import org.apache.poi.ss.formula.functions.T;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Arrays;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-import java.util.Arrays;
+import gr.atc.modapto.dto.PaginatedResultsDto;
 
 public class PaginationUtils {
-
-    private static final Logger logger = LoggerFactory.getLogger(PaginationUtils.class);
 
     private PaginationUtils() {
     }

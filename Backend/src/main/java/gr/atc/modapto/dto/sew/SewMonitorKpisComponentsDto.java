@@ -82,9 +82,9 @@ public class SewMonitorKpisComponentsDto {
         private String name;
 
         @JsonProperty("Low_thre")
-        private Integer lowThreshold;
+        private Double lowThreshold;
 
         @JsonProperty("High_thre")
-        private Integer highThreshold;
+        private Double highThreshold;
     }
 }

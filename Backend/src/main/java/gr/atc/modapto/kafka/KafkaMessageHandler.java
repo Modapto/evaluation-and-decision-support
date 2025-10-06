@@ -3,15 +3,6 @@ package gr.atc.modapto.kafka;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import gr.atc.modapto.dto.BaseEventResultsDto;
-import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
-import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
-import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewGroupingPredictiveMaintenanceOutputDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
-import gr.atc.modapto.enums.WebSocketTopics;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -35,6 +26,8 @@ public class KafkaMessageHandler {
 
     private final WebSocketService webSocketService;
 
+    private static final String MODAPTO_MQTT_TOPIC = "modapto-mqtt-topics";
+
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     public KafkaMessageHandler(WebSocketService webSocketService) {
@@ -47,7 +40,7 @@ public class KafkaMessageHandler {
      * @param event: Event occurred in MODAPTO
      */
     @KafkaListener(topics = "#{'${kafka.topics}'.split(',')}", groupId = "${spring.kafka.consumer.group-id}")
-    public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
+    public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic, @Header(KafkaHeaders.KEY) String messageKey) {
         // Validate that same essential variables are present
         log.debug("Event message received on topic: {} with Event Data: {}", topic, event);
         if (event.getPriority() == null || event.getModule() == null || event.getTopic() == null) {
@@ -55,7 +48,10 @@ public class KafkaMessageHandler {
             return;
         }
 
-        String webSocketTopic;
+        // Check if message is from MQTT
+        if (topic.equalsIgnoreCase(MODAPTO_MQTT_TOPIC))
+            event.setTopic(messageKey);
+
         // If no results are present then consume the message and return
         if(event.getResults().isNull()){
             return;

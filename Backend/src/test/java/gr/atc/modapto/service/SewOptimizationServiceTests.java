@@ -64,10 +64,6 @@ class SewOptimizationServiceTests {
     @BeforeEach
     void setUp() {
         sampleTimestamp = "2025-07-17T10:30:00Z";
-
-        SewOptimizationResults.TimeRange timeRange1 = new SewOptimizationResults.TimeRange("08:00", "10:30");
-        SewOptimizationResults.TimeRange timeRange2 = new SewOptimizationResults.TimeRange("10:30", "12:00");
-
         SewOptimizationResults.MetricsData metrics = new SewOptimizationResults.MetricsData("240");
 
         Map<String, Map<String, String>> seq = new HashMap<>();

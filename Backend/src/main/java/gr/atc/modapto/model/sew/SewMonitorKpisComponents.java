@@ -68,10 +68,10 @@ public class SewMonitorKpisComponents {
         @Field(type = FieldType.Keyword)
         private String name;
 
-        @Field(type = FieldType.Integer)
-        private Integer lowThreshold;
+        @Field(type = FieldType.Double)
+        private Double lowThreshold;
 
-        @Field(type = FieldType.Integer)
-        private Integer highThreshold;
+        @Field(type = FieldType.Double)
+        private Double highThreshold;
     }
 }

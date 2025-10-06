@@ -1,18 +1,13 @@
 package gr.atc.modapto.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
 import gr.atc.modapto.dto.serviceInvocations.SewLocalAnalyticsInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessMonitoringKpisInputDto;
-import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringInputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewFilteringOptionsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
-import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
 import gr.atc.modapto.model.serviceResults.SewSelfAwarenessMonitoringKpisResults;
-import gr.atc.modapto.model.serviceResults.SewSelfAwarenessRealTimeMonitoringResults;
 import gr.atc.modapto.model.sew.SewMonitorKpisComponents;
 import gr.atc.modapto.repository.SewMonitorKpisComponentsRepository;
 import gr.atc.modapto.repository.SewSelfAwarenessMonitoringKpisResultsRepository;
@@ -28,8 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

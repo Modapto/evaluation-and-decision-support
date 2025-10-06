@@ -9,8 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
@@ -43,15 +41,12 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
 
     private final ModelMapper modelMapper;
 
-    private final ObjectMapper objectMapper;
-
-    public SewOptimizationService(SewOptimizationResultsRepository sewOptimizationResultsRepository, ExceptionHandlerService exceptionHandler, ProductionScheduleRepository productionScheduleRepository, ObjectMapper objectMapper, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService) {
+    public SewOptimizationService(SewOptimizationResultsRepository sewOptimizationResultsRepository, ExceptionHandlerService exceptionHandler, ProductionScheduleRepository productionScheduleRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService) {
         this.sewOptimizationResultsRepository = sewOptimizationResultsRepository;
         this.productionScheduleRepository = productionScheduleRepository;
         this.modelMapper = modelMapper;
         this.smartServicesInvocationService = smartServicesInvocationService;
         this.exceptionHandler = exceptionHandler;
-        this.objectMapper = objectMapper;
     }
 
     /**

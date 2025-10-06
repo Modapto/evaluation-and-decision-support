@@ -1,7 +1,21 @@
 package gr.atc.modapto.service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.List;
+import java.util.Optional;
+
+import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.dt.SmartServiceRequest;
@@ -13,30 +27,17 @@ import gr.atc.modapto.dto.serviceInvocations.SewSelfAwarenessRealTimeMonitoringI
 import gr.atc.modapto.dto.serviceResults.sew.SewFilteringOptionsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
-import gr.atc.modapto.dto.serviceResults.sew.SewThresholdBasedPredictiveMaintenanceOutputDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
 import gr.atc.modapto.enums.ModaptoHeader;
+import gr.atc.modapto.exception.CustomExceptions.*;
+import gr.atc.modapto.exception.CustomExceptions.DtmServerErrorException;
+import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
+import gr.atc.modapto.exception.CustomExceptions.SmartServiceInvocationException;
 import gr.atc.modapto.model.sew.SewMonitorKpisComponents;
 import gr.atc.modapto.repository.SewMonitorKpisComponentsRepository;
-import gr.atc.modapto.repository.SewSelfAwarenessRealTimeMonitoringResultsRepository;
 import gr.atc.modapto.repository.SewSelfAwarenessMonitoringKpisResultsRepository;
+import gr.atc.modapto.repository.SewSelfAwarenessRealTimeMonitoringResultsRepository;
 import gr.atc.modapto.service.interfaces.ISewSelfAwarenessService;
-import gr.atc.modapto.exception.CustomExceptions.*;
-import jakarta.validation.constraints.NotBlank;
-import org.apache.poi.ss.formula.functions.T;
-import org.modelmapper.MappingException;
-import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class SewSelfAwarenessService implements ISewSelfAwarenessService {
