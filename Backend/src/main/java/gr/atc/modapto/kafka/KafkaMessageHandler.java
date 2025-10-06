@@ -52,13 +52,14 @@ public class KafkaMessageHandler {
         if (topic.equalsIgnoreCase(MODAPTO_MQTT_TOPIC))
             event.setTopic(messageKey);
 
+        String eventTopic = event.getTopic();
         // If no results are present then consume the message and return
         if(event.getResults().isNull()){
             return;
         }
         try{
             // Route Topic Message to WebSocket message
-            webSocketService.notifyInWebSocketTopic(objectMapper.writeValueAsString(event.getResults()), topic);
+            webSocketService.notifyInWebSocketTopic(objectMapper.writeValueAsString(event.getResults()), eventTopic);
         } catch (JsonProcessingException e) {
             log.error("Unable to parse Event JSON or Results JSON to String Object - Error: {}", e.getMessage());
         }
