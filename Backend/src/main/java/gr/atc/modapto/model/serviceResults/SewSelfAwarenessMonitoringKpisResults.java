@@ -1,5 +1,6 @@
 package gr.atc.modapto.model.serviceResults;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,13 +34,28 @@ public class SewSelfAwarenessMonitoringKpisResults {
     private String moduleId;
 
     @Field(type = FieldType.Keyword)
-    private String ligne;
+    private String stage;
+
+    @Field(type = FieldType.Keyword)
+    private String cell;
+
+    @Field(type = FieldType.Keyword)
+    private String plc;
+
+    @Field(type = FieldType.Keyword)
+    private String module;
+
+    @Field(type = FieldType.Keyword)
+    private String subElement;
 
     @Field(type = FieldType.Keyword)
     private String component;
 
     @Field(type = FieldType.Keyword)
     private String variable;
+
+    @Field(type = FieldType.Keyword)
+    private String variableType;
 
     @Field(type = FieldType.Keyword)
     private String startingDate;

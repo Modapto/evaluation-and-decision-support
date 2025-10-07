@@ -11,7 +11,6 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -27,32 +26,26 @@ public class SewSelfAwarenessRealTimeMonitoringResults {
     private LocalDateTime timestamp;
 
     @Field(type = FieldType.Keyword)
-    private String smartServiceId;
-
-    @Field(type = FieldType.Keyword)
     private String moduleId;
 
     @Field(type = FieldType.Keyword)
-    private String ligne;
+    private String module;
 
     @Field(type = FieldType.Keyword)
     private String component;
 
     @Field(type = FieldType.Keyword)
-    private String variable;
+    private String property;
 
     @Field(type = FieldType.Keyword)
-    private String startingDate;
-
-    @Field(type = FieldType.Keyword)
-    private String endingDate;
-
-    @Field(type = FieldType.Keyword)
-    private String dataSource;
-
-    @Field(type = FieldType.Keyword)
-    private String bucket;
+    private String value;
 
     @Field(type = FieldType.Double)
-    private List<Double> data;
+    private Double lowThreshold;
+
+    @Field(type = FieldType.Double)
+    private Double highThreshold;
+
+    @Field(type = FieldType.Double)
+    private Double deviationPercentage;
 }

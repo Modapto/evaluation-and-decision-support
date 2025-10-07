@@ -40,7 +40,7 @@ public class KafkaMessageHandler {
      * @param event: Event occurred in MODAPTO
      */
     @KafkaListener(topics = "#{'${kafka.topics}'.split(',')}", groupId = "${spring.kafka.consumer.group-id}")
-    public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,@Header(value = KafkaHeaders.RECEIVED_KEY, required = false) String messageKey) {
+    public void consume(EventDto event, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic, @Header(value = KafkaHeaders.RECEIVED_KEY, required = false) String messageKey) {
         // Validate that same essential variables are present
         log.debug("Event message received on topic: {} with Event Data: {}", topic, event);
         if (event.getPriority() == null || event.getModule() == null || event.getTopic() == null) {

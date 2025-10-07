@@ -1,14 +1,19 @@
 package gr.atc.modapto.dto.serviceResults.sew;
 
-import com.fasterxml.jackson.annotation.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -26,10 +31,20 @@ public class SewFilteringOptionsDto {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Options {
-        @JsonProperty("Ligne")
-        @JsonAlias({"Ligne", "ligne"})
-        private String ligne;
+
+        @JsonProperty("Cell")
+        @JsonAlias({"Cell", "cell"})
+        private String cell;
+
+        @JsonProperty("Module")
+        @JsonAlias({"Module", "module"})
+        private String module;
+
+        @JsonProperty("SubElement")
+        @JsonAlias({"SubElement", "subElement"})
+        private String subElement;
 
         @JsonProperty("Component")
         @JsonAlias({"Component", "component"})

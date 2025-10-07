@@ -24,14 +24,29 @@ public class SewSelfAwarenessMonitoringKpisResultsDto extends BaseEventResultsDt
 
     private String moduleId;
 
-    @JsonProperty("Ligne")
-    private String ligne;
+    @JsonProperty("Stage")
+    private String stage;
+
+    @JsonProperty("Cell")
+    private String cell;
+
+    @JsonProperty("PLC")
+    private String plc;
+
+    @JsonProperty("Module")
+    private String module;
+
+    @JsonProperty("SubElement")
+    private String subElement;
 
     @JsonProperty("Component")
     private String component;
 
     @JsonProperty("Variable")
     private String variable;
+
+    @JsonProperty("Variable_Type")
+    private String variableType;
 
     @JsonProperty("Starting_date")
     private String startingDate;

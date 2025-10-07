@@ -1,12 +1,10 @@
 package gr.atc.modapto.dto.serviceResults.sew;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import gr.atc.modapto.dto.BaseEventResultsDto;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -24,27 +22,17 @@ public class SewSelfAwarenessRealTimeMonitoringResultsDto extends BaseEventResul
 
     private String moduleId;
 
-    @JsonProperty("Ligne")
-    private String ligne;
+    private String module;
 
-    @JsonProperty("Component")
     private String component;
 
-    @JsonProperty("Variable")
-    private String variable;
+    private String property;
 
-    @JsonProperty("Starting_date")
-    private String startingDate;
+    private String value;
 
-    @JsonProperty("Ending_date")
-    private String endingDate;
+    private Double lowThreshold;
 
-    @JsonProperty("Data_source")
-    private String dataSource;
+    private Double highThreshold;
 
-    @JsonProperty("Bucket")
-    private String bucket;
-
-    @JsonProperty("Data_list")
-    private List<Double> data;
+    private Double deviationPercentage;
 }
