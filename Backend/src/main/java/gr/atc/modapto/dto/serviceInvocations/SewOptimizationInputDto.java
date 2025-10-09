@@ -33,12 +33,14 @@ public class SewOptimizationInputDto {
 
     @Schema(description = "MODAPTO Module ID", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Module Id cannot be empty")
-    @JsonProperty("moduleId")
+    @JsonProperty("module")
+    @JsonAlias({"moduleId", "module"})
     private String moduleId;
 
     @Schema(description = "Smart Service ID", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "Smart Service Id cannot be empty")
     @JsonProperty("smartService")
+    @JsonAlias({"smartService", "smartServiceId"})
     private String smartServiceId;
 
     @Valid
