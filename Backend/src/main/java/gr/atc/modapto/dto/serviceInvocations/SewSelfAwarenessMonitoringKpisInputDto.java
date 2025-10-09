@@ -1,7 +1,9 @@
 package gr.atc.modapto.dto.serviceInvocations;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
@@ -10,8 +12,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -30,12 +30,12 @@ public class SewSelfAwarenessMonitoringKpisInputDto {
 
     @NotBlank(message = "Start Date cannot be empty")
     @JsonProperty("start_date")
-    @JsonAlias("startDate", "start_date")
+    @JsonAlias({"startDate", "start_date"})
     private String startDate;
 
     @NotBlank(message = "End date cannot be empty")
     @JsonProperty("end_date")
-    @JsonAlias("endDate", "end_date")
+    @JsonAlias({"endDate", "end_date"})
     private String endDate;
 
     @JsonProperty("components")
