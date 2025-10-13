@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.NonNull;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -164,6 +165,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<BaseResponse<String>> handleMultipartException(MultipartException ex) {
         BaseResponse<String> response = BaseResponse.error("Missing input file", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<BaseResponse<String>> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
+        BaseResponse<String> response = BaseResponse.error("Invalid Operation", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.METHOD_NOT_ALLOWED);
     }
 }
  

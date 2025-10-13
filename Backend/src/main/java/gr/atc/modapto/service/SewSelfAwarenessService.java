@@ -2,6 +2,7 @@ package gr.atc.modapto.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -264,8 +265,73 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
             if (validateDigitalTwinResponse(response))
                 results = decodeDigitalTwinResponseToDto(SewFilteringOptionsDto.class, response.getBody());
 
+            // Locate the Distinct values
+            results.setDistinctValues(generateDistinctValuesFromFilteringOptions(results.getFilteringOptions()));
+
             return results;
         }, "retrieveFilteringOptionsForLocalAnalytics");
+    }
+
+    /*
+     * Helper method to locate the distinct values for each category
+     */
+    private SewFilteringOptionsDto.DistinctValues generateDistinctValuesFromFilteringOptions(List<SewFilteringOptionsDto.Options> filteringOptions) {
+
+        // Handle null or empty filtering options
+        if (filteringOptions == null || filteringOptions.isEmpty()) {
+            return new SewFilteringOptionsDto.DistinctValues(
+                    new ArrayList<>(),
+                    new ArrayList<>(),
+                    new ArrayList<>(),
+                    new ArrayList<>(),
+                    new ArrayList<>()
+            );
+        }
+
+        // Extract distinct values for each category using streams
+        List<String> distinctCells = filteringOptions.stream()
+                .map(SewFilteringOptionsDto.Options::getCell)
+                .filter(cell -> cell != null && !cell.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .toList();
+
+        List<String> distinctModules = filteringOptions.stream()
+                .map(SewFilteringOptionsDto.Options::getModule)
+                .filter(module -> module != null && !module.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .toList();
+
+        List<String> distinctSubElements = filteringOptions.stream()
+                .map(SewFilteringOptionsDto.Options::getSubElement)
+                .filter(subElement -> subElement != null && !subElement.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .toList();
+
+        List<String> distinctComponents = filteringOptions.stream()
+                .map(SewFilteringOptionsDto.Options::getComponent)
+                .filter(component -> component != null && !component.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .toList();
+
+        List<String> distinctVariables = filteringOptions.stream()
+                .map(SewFilteringOptionsDto.Options::getVariable)
+                .filter(variable -> variable != null && !variable.trim().isEmpty())
+                .distinct()
+                .sorted()
+                .toList();
+
+        // Construct and return the DistinctValues object
+        return new SewFilteringOptionsDto.DistinctValues(
+                distinctCells,
+                distinctModules,
+                distinctSubElements,
+                distinctComponents,
+                distinctVariables
+        );
     }
 
     @Override

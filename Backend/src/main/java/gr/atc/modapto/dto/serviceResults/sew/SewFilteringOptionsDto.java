@@ -28,6 +28,10 @@ public class SewFilteringOptionsDto {
     @JsonProperty("filtering_options")
     private List<Options> filteringOptions;
 
+    @JsonProperty("distinct_values")
+    @Schema(description = "Includes all distinct values for each category")
+    private DistinctValues distinctValues;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -64,4 +68,22 @@ public class SewFilteringOptionsDto {
         )
         private LocalDateTime date;
     }
-}
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class DistinctValues {
+
+        private List<String> cells;
+
+        private List<String> modules;
+
+        private List<String> subElements;
+
+        private List<String> components;
+
+        private List<String> variables;
+    }
+
+    }

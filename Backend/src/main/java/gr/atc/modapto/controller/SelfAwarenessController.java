@@ -296,7 +296,7 @@ public class SelfAwarenessController {
             @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
-    @GetMapping("/pilots/sew/analytics/filtering-options")
+    @PostMapping("/pilots/sew/analytics/filtering-options")
     public ResponseEntity<BaseResponse<SewFilteringOptionsDto>> generateFilteringOptionsForLocalAnalytics(@RequestBody @Valid GlobalRequestDto request) {
         SewFilteringOptionsDto filteringOptions = sewSelfAwarenessService.retrieveFilteringOptionsForLocalAnalytics(request);
         return new ResponseEntity<>(

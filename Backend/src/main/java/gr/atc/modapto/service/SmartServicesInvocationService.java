@@ -3,6 +3,7 @@ package gr.atc.modapto.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.config.properties.KeycloakProperties;
+import gr.atc.modapto.config.properties.SmartServiceDebugProperties;
 import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import static gr.atc.modapto.exception.CustomExceptions.*;
@@ -25,6 +26,13 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
@@ -35,9 +43,11 @@ public class SmartServicesInvocationService {
     private final Logger logger = LoggerFactory.getLogger(SmartServicesInvocationService.class);
 
     private final RestClient restClient;
-    
+
     private final KeycloakProperties keycloakProperties;
-    
+
+    private final SmartServiceDebugProperties debugProperties;
+
     private final IModaptoModuleService modaptoModuleService;
 
     private final NoOpResponseProcessor noOpResponseProcessor;
@@ -46,13 +56,20 @@ public class SmartServicesInvocationService {
 
     @Value("${dt.management.url}")
     private String dtmUrl;
-    
+
     private static final String TOKEN = "access_token";
     private static final String MODAPTO_HEADER = "X-MODAPTO-Invocation-Id";
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS");
 
-    public SmartServicesInvocationService(RestClient restClient, KeycloakProperties keycloakProperties, IModaptoModuleService modaptoModuleService, NoOpResponseProcessor noOpResponseProcessor, ObjectMapper objectMapper) {
+    public SmartServicesInvocationService(RestClient restClient,
+                                         KeycloakProperties keycloakProperties,
+                                         SmartServiceDebugProperties debugProperties,
+                                         IModaptoModuleService modaptoModuleService,
+                                         NoOpResponseProcessor noOpResponseProcessor,
+                                         ObjectMapper objectMapper) {
         this.restClient = restClient;
         this.keycloakProperties = keycloakProperties;
+        this.debugProperties = debugProperties;
         this.modaptoModuleService = modaptoModuleService;
         this.noOpResponseProcessor = noOpResponseProcessor;
         this.objectMapper = objectMapper;
@@ -135,6 +152,10 @@ public class SmartServicesInvocationService {
         String smartServiceUrl = retrieveSmartServiceUrl(smartServiceId, moduleId);
         StringBuilder uri = new StringBuilder().append(extractUriFromUrl(smartServiceUrl)).append("/invoke/$value");
         logger.debug("URI: {}, Invocation Data: {}", uri, invocationData);
+
+        // Store request body as JSON file for debugging if enabled
+        storeRequestBodyAsJson(invocationData, smartServiceId, moduleId);
+
         try {
             RestClient.ResponseSpec responseSpec = restClient.post()
                     .uri(uri.toString())
@@ -209,6 +230,57 @@ public class SmartServicesInvocationService {
             return uri.startsWith("/") ? uri : "/" + uri;
         }
         throw new SmartServiceInvocationException("Invalid smart service URL: '" + smartServiceUrl +"'. URL must be a combination of DTM URL.");
+    }
+
+    /**
+     * Store the request body as a JSON file for debugging and inspection purposes
+     *
+     * @param requestBody The request body object to serialize and store
+     * @param smartServiceId Identifier for the smart service
+     * @param moduleId Module identifier
+     * @param <T> Type of the request body
+     */
+    private <T> void storeRequestBodyAsJson(T requestBody, String smartServiceId, String moduleId) {
+        if (!debugProperties.storeRequestJson()) {
+            logger.debug("JSON request storage is disabled. Skipping...");
+            return;
+        }
+
+        try {
+            // Create output directory if it doesn't exist
+            Path outputDir = Paths.get(debugProperties.jsonOutputDirectory());
+            if (!Files.exists(outputDir)) {
+                Files.createDirectories(outputDir);
+                logger.info("Created JSON output directory: {}", outputDir.toAbsolutePath());
+            }
+
+            // Generate filename with timestamp, module ID, and smart service ID
+            String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
+            String sanitizedModuleId = moduleId.replaceAll("[^a-zA-Z0-9_-]", "_");
+            String sanitizedServiceId = smartServiceId.replaceAll("[^a-zA-Z0-9_-]", "_");
+            String filename = String.format("%s_%s_%s_request.json", timestamp, sanitizedModuleId, sanitizedServiceId);
+
+            Path filePath = outputDir.resolve(filename);
+
+            // Serialize request body to pretty-printed JSON
+            String jsonContent = objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(requestBody);
+
+            // Write to file
+            Files.writeString(filePath, jsonContent, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+            logger.info("Stored request JSON to file: {}", filePath.toAbsolutePath());
+
+        } catch (JsonProcessingException e) {
+            logger.error("Failed to serialize request body to JSON for service: {} and module: {} - {}",
+                    smartServiceId, moduleId, e.getMessage());
+        } catch (IOException e) {
+            logger.error("Failed to write request JSON file for service: {} and module: {} - {}",
+                    smartServiceId, moduleId, e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error storing request JSON for service: {} and module: {} - {}",
+                    smartServiceId, moduleId, e.getMessage());
+        }
     }
 
 
