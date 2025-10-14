@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import gr.atc.modapto.dto.sew.SewPlantEnvironmentDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -49,11 +50,11 @@ public class SewSimulationInputDto {
 
     @JsonProperty("current_env")
     @JsonAlias({"current_env", "currentEnv"})
-    private Object currentEnv;
+    private SewPlantEnvironmentDto currentEnv;
 
     @JsonProperty("simulated_env")
     @JsonAlias({"simulated_env", "simulatedEnv"})
-    private Object simulatedEnv;
+    private SewPlantEnvironmentDto simulatedEnv;
 
     @Schema(description = "Production Schedules for SEW Case", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Map<String, JsonNode> data;

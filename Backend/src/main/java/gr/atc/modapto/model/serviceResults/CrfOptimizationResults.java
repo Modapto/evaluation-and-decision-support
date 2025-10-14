@@ -19,7 +19,7 @@ public class CrfOptimizationResults {
     @Id
     private String id;
 
-    @Field(name = "timestamp", type = FieldType.Keyword)
+    @Field(name = "@timestamp", type = FieldType.Keyword)
     private String timestamp;
 
     @Field(name = "message", type = FieldType.Text)

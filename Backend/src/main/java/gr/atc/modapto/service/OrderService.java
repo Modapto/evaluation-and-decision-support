@@ -36,7 +36,7 @@ public class OrderService {
 
     private final ElasticsearchOperations elasticSearchOperations;
 
-    private static final String PILOT_CODE = "pilotCode";
+    private static final String PILOT_CODE = "customer";
     private static final String ORDER_OF_EXPECTED_DELIVERY_DATE_STRING = "orderof.expectedDeliveryDate";
 
 

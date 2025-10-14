@@ -6,6 +6,7 @@ import gr.atc.modapto.dto.serviceInvocations.SewSimulationInputDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
+import gr.atc.modapto.dto.sew.SewPlantEnvironmentDto;
 import gr.atc.modapto.service.interfaces.IKitHolderSimulationService;
 import gr.atc.modapto.service.interfaces.IProductionScheduleSimulationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,12 +14,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/eds/simulation")
+@Validated
 @Tag(name = "Simulation Controller", description = "Handles simulation functionalities amongst Pilot Cases")
 public class SimulationController {
 
@@ -65,7 +69,7 @@ public class SimulationController {
     })
     @GetMapping("/pilots/crf/modules/{moduleId}/latest")
     public ResponseEntity<BaseResponse<CrfSimulationResultsDto>> retrieveLatestCrfResultsByProductionModule(@PathVariable String moduleId) {
-        return new ResponseEntity<>(BaseResponse.success(crfSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId),
+        return new ResponseEntity<>(BaseResponse.success(crfSimulationService.retrieveLatestSimulationResultsByModule(moduleId),
                 "Latest CRF Simulation results for Module " + moduleId + " retrieved successfully"), HttpStatus.OK);
     }
 
@@ -129,6 +133,7 @@ public class SimulationController {
     /**
      * Retrieve latest SEW Simulation Results by Production Module
      *
+     * @param moduleId : Module ID
      * @return SewSimulationResultsDto
      */
     @Operation(summary = "Retrieve latest SEW Simulation Results by MODAPTO Module", security = @SecurityRequirement(name = "bearerToken"))
@@ -140,7 +145,7 @@ public class SimulationController {
     })
     @GetMapping("/pilots/sew/modules/{moduleId}/latest")
     public ResponseEntity<BaseResponse<SewSimulationResultsDto>> retrieveLatestSewResultsByProductionModule(@PathVariable String moduleId) {
-        return new ResponseEntity<>(BaseResponse.success(sewSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId),
+        return new ResponseEntity<>(BaseResponse.success(sewSimulationService.retrieveLatestSimulationResultsByModule(moduleId),
                 "Latest SEW Simulation results for Module " + moduleId + " retrieved successfully"), HttpStatus.OK);
     }
 
@@ -158,9 +163,46 @@ public class SimulationController {
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
     @PostMapping("/pilots/sew/schedules/simulate")
-    public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> invokeSimulationOfProductionSchedules(@RequestBody SewSimulationInputDto invocationData) {
+    public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> invokeSimulationOfProductionSchedules(@RequestBody @Valid SewSimulationInputDto invocationData) {
         sewSimulationService.invokeSimulationOfProductionSchedules(invocationData);
         return new ResponseEntity<>(BaseResponse.success(null,
                 "Request for simulation of SEW Production Schedules has been successfully submitted"), HttpStatus.OK);
+    }
+
+    /**
+     * Retrieve latest SEW Environment for Simulation
+     *
+     * @return SewCurrentEnvironmentDto
+     */
+    @Operation(summary = "Retrieve latest SEW Simulation Results by MODAPTO Module", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Latest SEW Plant Environment retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Resource not found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/pilots/sew/environment")
+    public ResponseEntity<BaseResponse<SewPlantEnvironmentDto>> retrieveLatestSewEnvironment() {
+        return new ResponseEntity<>(BaseResponse.success(sewSimulationService.retrieveLatestPlantEnvironment(),
+                "Latest SEW Plant Environment retrieved successfully"), HttpStatus.OK);
+    }
+
+    /**
+     * Upload SEW Current Plant Environment
+     *
+     * @param environment : SEW Current Environment
+     * @return Message of Success or Error
+     */
+    @Operation(summary = " Upload SEW Current Plant Environment", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "SEW Current Environment has been successfully uploaded"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/pilots/sew/environment/upload")
+    public ResponseEntity<BaseResponse<Void>> uploadSewPlantCurrentEnvironment(@RequestBody @Valid SewPlantEnvironmentDto environment) {
+        sewSimulationService.uploadPlantEnvironment(environment);
+        return new ResponseEntity<>(BaseResponse.success(null,
+                "SEW Current Environment has been successfully uploaded"), HttpStatus.CREATED);
     }
 }

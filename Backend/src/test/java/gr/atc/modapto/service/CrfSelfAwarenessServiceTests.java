@@ -136,6 +136,39 @@ class CrfSelfAwarenessServiceTests {
     }
 
     @Nested
+    @DisplayName("Retrieve Paginated KH Event Results By Module")
+    class RetrievePaginatedKhEventResultsByModule {
+
+        @Test
+        @DisplayName("Retrieve paginated KH events by module : Success")
+        void givenValidModuleIdAndPageable_whenRetrievePaginatedKhEventResultsByModule_thenReturnsPagedResults() {
+            //Given
+            String moduleId = "crf_module_1";
+            List<CrfKitHolderEvent> entities = Arrays.asList(
+                    new CrfKitHolderEvent(),
+                    new CrfKitHolderEvent()
+            );
+            Page<CrfKitHolderEvent> entityPage = new PageImpl<>(entities);
+            List<CrfKitHolderEventDto> dtos = Arrays.asList(
+                    new CrfKitHolderEventDto(),
+                    new CrfKitHolderEventDto()
+            );
+            Page<CrfKitHolderEventDto> expectedPage = new PageImpl<>(dtos);
+
+            when(exceptionHandler.handleOperation(any(), eq("retrievePaginatedKhEventResultsByModule")))
+                    .thenReturn(expectedPage);
+
+            //When
+            Page<CrfKitHolderEventDto> result = crfSelfAwarenessService.retrievePaginatedKhEventResultsByModule(moduleId, Pageable.unpaged());
+
+            //Then
+            assertThat(result).isNotNull();
+            assertThat(result.getContent()).hasSize(2);
+            verify(exceptionHandler).handleOperation(any(), eq("retrievePaginatedKhEventResultsByModule"));
+        }
+    }
+
+    @Nested
     @DisplayName("Register Kit Holder Event")
     class RegisterKitHolderEvent {
 

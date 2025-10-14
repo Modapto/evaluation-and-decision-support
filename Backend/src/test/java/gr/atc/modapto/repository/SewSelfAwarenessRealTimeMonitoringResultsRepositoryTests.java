@@ -41,46 +41,40 @@ class SewSelfAwarenessRealTimeMonitoringResultsRepositoryTests extends SetupTest
         testResult = SewSelfAwarenessRealTimeMonitoringResults.builder()
                 .id("TEST_RESULT_1")
                 .timestamp(LocalDateTime.now())
-                .smartServiceId("SERVICE_1")
+                .module("TEST_MODULE")
                 .moduleId("TEST_MODULE")
-                .ligne("LINE_1")
                 .component("COMPONENT_1")
-                .variable("TEMPERATURE")
-                .startingDate("2025-01-01T00:00:00")
-                .endingDate("2025-01-01T23:59:59")
-                .dataSource("SENSOR_1")
-                .bucket("BUCKET_1")
-                .data(List.of(25.5, 26.0, 25.8, 26.2))
+                .highThreshold(20.0)
+                .lowThreshold(3.0)
+                .deviationPercentage(20.2)
+                .value("Test_Temp")
+                .property("TEMPERATURE")
                 .build();
 
         anotherResult = SewSelfAwarenessRealTimeMonitoringResults.builder()
                 .id("TEST_RESULT_2")
                 .timestamp(LocalDateTime.now().plusHours(1))
-                .smartServiceId("SERVICE_2")
+                .module("TEST_MODULE")
                 .moduleId("TEST_MODULE")
-                .ligne("LINE_2")
                 .component("COMPONENT_2")
-                .variable("PRESSURE")
-                .startingDate("2025-01-02T00:00:00")
-                .endingDate("2025-01-02T23:59:59")
-                .dataSource("SENSOR_2")
-                .bucket("BUCKET_2")
-                .data(List.of(10.1, 10.5, 9.8, 10.3))
+                .property("PRESSURE")
+                .value("10.5")
+                .highThreshold(15.0)
+                .lowThreshold(5.0)
+                .deviationPercentage(10.0)
                 .build();
 
         differentModuleResult = SewSelfAwarenessRealTimeMonitoringResults.builder()
                 .id("TEST_RESULT_3")
                 .timestamp(LocalDateTime.now().plusHours(2))
-                .smartServiceId("SERVICE_3")
+                .module("DIFFERENT_MODULE")
                 .moduleId("DIFFERENT_MODULE")
-                .ligne("LINE_3")
                 .component("COMPONENT_3")
-                .variable("VIBRATION")
-                .startingDate("2025-01-03T00:00:00")
-                .endingDate("2025-01-03T23:59:59")
-                .dataSource("SENSOR_3")
-                .bucket("BUCKET_3")
-                .data(List.of(0.1, 0.2, 0.15, 0.18))
+                .property("VIBRATION")
+                .value("0.15")
+                .highThreshold(0.3)
+                .lowThreshold(0.0)
+                .deviationPercentage(5.0)
                 .build();
     }
 
@@ -96,8 +90,7 @@ class SewSelfAwarenessRealTimeMonitoringResultsRepositoryTests extends SetupTest
             assertNotNull(saved);
             assertNotNull(saved.getId());
             assertEquals("TEST_MODULE", saved.getModuleId());
-            assertEquals("TEMPERATURE", saved.getVariable());
-            assertEquals(4, saved.getData().size());
+            assertEquals("TEMPERATURE", saved.getProperty());
         }
 
         @Test
@@ -249,18 +242,19 @@ class SewSelfAwarenessRealTimeMonitoringResultsRepositoryTests extends SetupTest
 
             SewSelfAwarenessRealTimeMonitoringResults resultWithLargeData = SewSelfAwarenessRealTimeMonitoringResults.builder()
                     .moduleId("LARGE_DATA_MODULE")
+                    .module("LARGE_MODULE")
                     .timestamp(LocalDateTime.now())
-                    .smartServiceId("LARGE_SERVICE")
-                    .ligne("LARGE_LINE")
                     .component("LARGE_COMPONENT")
-                    .variable("LARGE_VARIABLE")
-                    .data(largeDataArray)
+                    .property("LARGE_PROPERTY")
+                    .value("LARGE_VALUE")
+                    .highThreshold(100.0)
+                    .lowThreshold(0.0)
+                    .deviationPercentage(15.0)
                     .build();
 
             SewSelfAwarenessRealTimeMonitoringResults saved = realTimeMonitoringResultsRepository.save(resultWithLargeData);
 
             assertNotNull(saved);
-            assertEquals(1000, saved.getData().size());
             assertEquals("LARGE_DATA_MODULE", saved.getModuleId());
         }
 
@@ -269,15 +263,19 @@ class SewSelfAwarenessRealTimeMonitoringResultsRepositoryTests extends SetupTest
         void givenResultWithEmptyDataArray_whenSave_thenSaveSuccessfully() {
             SewSelfAwarenessRealTimeMonitoringResults resultWithEmptyData = SewSelfAwarenessRealTimeMonitoringResults.builder()
                     .moduleId("EMPTY_DATA_MODULE")
+                    .module("EMPTY_MODULE")
                     .timestamp(LocalDateTime.now())
-                    .smartServiceId("EMPTY_SERVICE")
-                    .data(new ArrayList<>())
+                    .component("EMPTY_COMPONENT")
+                    .property("EMPTY_PROPERTY")
+                    .value("0")
+                    .highThreshold(10.0)
+                    .lowThreshold(0.0)
+                    .deviationPercentage(0.0)
                     .build();
 
             SewSelfAwarenessRealTimeMonitoringResults saved = realTimeMonitoringResultsRepository.save(resultWithEmptyData);
 
             assertNotNull(saved);
-            assertTrue(saved.getData().isEmpty());
             assertEquals("EMPTY_DATA_MODULE", saved.getModuleId());
         }
 
@@ -286,15 +284,20 @@ class SewSelfAwarenessRealTimeMonitoringResultsRepositoryTests extends SetupTest
         void givenResultWithNullDataArray_whenSave_thenSaveSuccessfully() {
             SewSelfAwarenessRealTimeMonitoringResults resultWithNullData = SewSelfAwarenessRealTimeMonitoringResults.builder()
                     .moduleId("NULL_DATA_MODULE")
+                    .module("NULL_MODULE")
                     .timestamp(LocalDateTime.now())
-                    .smartServiceId("NULL_SERVICE")
-                    .data(null)
+                    .component("NULL_COMPONENT")
+                    .property("NULL_PROPERTY")
+                    .value(null)
+                    .highThreshold(null)
+                    .lowThreshold(null)
+                    .deviationPercentage(null)
                     .build();
 
             SewSelfAwarenessRealTimeMonitoringResults saved = realTimeMonitoringResultsRepository.save(resultWithNullData);
 
             assertNotNull(saved);
-            assertNull(saved.getData());
+            assertNull(saved.getValue());
             assertEquals("NULL_DATA_MODULE", saved.getModuleId());
         }
 
@@ -303,22 +306,21 @@ class SewSelfAwarenessRealTimeMonitoringResultsRepositoryTests extends SetupTest
         void givenResultWithSpecialCharacters_whenSave_thenPreserveSpecialCharacters() {
             SewSelfAwarenessRealTimeMonitoringResults resultWithSpecialChars = SewSelfAwarenessRealTimeMonitoringResults.builder()
                     .moduleId("MODULE_WITH_SPECIAL_CHARS_@#$%")
+                    .module("MODULE-WITH-DASHES")
                     .timestamp(LocalDateTime.now())
-                    .smartServiceId("SERVICE-WITH-DASHES")
-                    .ligne("LINE/WITH/SLASHES")
                     .component("COMPONENT WITH SPACES")
-                    .variable("VARIABLE_WITH_UNDERSCORES")
-                    .dataSource("SOURCE.WITH.DOTS")
-                    .bucket("BUCKET&WITH&AMPERSANDS")
-                    .data(List.of(1.1, 2.2, 3.3))
+                    .property("PROPERTY_WITH_UNDERSCORES")
+                    .value("1.5")
+                    .highThreshold(5.0)
+                    .lowThreshold(0.5)
+                    .deviationPercentage(10.0)
                     .build();
 
             SewSelfAwarenessRealTimeMonitoringResults saved = realTimeMonitoringResultsRepository.save(resultWithSpecialChars);
 
             assertNotNull(saved);
             assertEquals("MODULE_WITH_SPECIAL_CHARS_@#$%", saved.getModuleId());
-            assertEquals("SERVICE-WITH-DASHES", saved.getSmartServiceId());
-            assertEquals("LINE/WITH/SLASHES", saved.getLigne());
+            assertEquals("MODULE-WITH-DASHES", saved.getModule());
             assertEquals("COMPONENT WITH SPACES", saved.getComponent());
         }
     }
@@ -333,9 +335,14 @@ class SewSelfAwarenessRealTimeMonitoringResultsRepositoryTests extends SetupTest
             SewSelfAwarenessRealTimeMonitoringResults resultWithoutId = SewSelfAwarenessRealTimeMonitoringResults.builder()
                     .id(null)
                     .moduleId("AUTO_ID_MODULE")
+                    .module("AUTO_MODULE")
                     .timestamp(LocalDateTime.now())
-                    .smartServiceId("AUTO_SERVICE")
-                    .data(List.of(1.0, 2.0))
+                    .component("AUTO_COMPONENT")
+                    .property("AUTO_PROPERTY")
+                    .value("1.5")
+                    .highThreshold(5.0)
+                    .lowThreshold(0.0)
+                    .deviationPercentage(5.0)
                     .build();
 
             SewSelfAwarenessRealTimeMonitoringResults saved = realTimeMonitoringResultsRepository.save(resultWithoutId);

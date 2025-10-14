@@ -470,6 +470,47 @@ class SelfAwarenessControllerTests {
 
         @Test
         @WithMockUser(roles = "USER")
+        @DisplayName("Retrieve paginated KH events by module : Success")
+        void givenValidModuleId_whenRetrievePaginatedKhEventsByModule_thenReturnsPagedResults() throws Exception {
+            //Given
+            String moduleId = "crf_module_1";
+            List<CrfKitHolderEventDto> events = Arrays.asList(
+                    createSampleKhEventDto("1"),
+                    createSampleKhEventDto("2")
+            );
+            Page<CrfKitHolderEventDto> page = new PageImpl<>(events);
+
+            when(crfSelfAwarenessService.retrievePaginatedKhEventResultsByModule(eq(moduleId), any(Pageable.class)))
+                    .thenReturn(page);
+
+            //When & Then
+            mockMvc.perform(get("/api/eds/self-awareness/pilots/crf/kh-events/modules/{moduleId}", moduleId)
+                            .param("page", "0")
+                            .param("size", "10"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.results").isArray())
+                    .andExpect(jsonPath("$.data.results").isNotEmpty())
+                    .andExpect(jsonPath("$.message").value("KH Events for module " + moduleId + " retrieved successfully"));
+
+            verify(crfSelfAwarenessService).retrievePaginatedKhEventResultsByModule(eq(moduleId), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("Retrieve KH events by module : Unauthorized")
+        void givenNoAuthentication_whenRetrievePaginatedKhEventsByModule_thenReturnsUnauthorized() throws Exception {
+            //Given
+            String moduleId = "crf_module_1";
+
+            //When & Then
+            mockMvc.perform(get("/api/eds/self-awareness/pilots/crf/kh-events/modules/{moduleId}", moduleId))
+                    .andExpect(status().isUnauthorized());
+
+            verify(crfSelfAwarenessService, never()).retrievePaginatedKhEventResultsByModule(any(), any());
+        }
+
+        @Test
+        @WithMockUser(roles = "USER")
         @DisplayName("Register KH event : JSON deserialization error")
         void givenValidKhEvent_whenRegisterKitHolderEvent_thenReturnsJsonError() throws Exception {
             CrfKitHolderEventDto event = new CrfKitHolderEventDto();
@@ -533,9 +574,10 @@ class SelfAwarenessControllerTests {
                     .thenReturn(filteringOptions);
 
             // When & Then
-            mockMvc.perform(get("/api/eds/self-awareness/pilots/sew/analytics/filtering-options")
+            mockMvc.perform(post("/api/eds/self-awareness/pilots/sew/analytics/filtering-options")
                             .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
+                            .content(objectMapper.writeValueAsString(request))
+                            .with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.message").value("Filtering options retrieved successfully"));
@@ -590,8 +632,8 @@ class SelfAwarenessControllerTests {
                     .property(Collections.singletonList(
                             SewMonitorKpisComponentsDto.PropertyDto.builder()
                                     .name("Temperature")
-                                    .lowThreshold(10)
-                                    .highThreshold(80)
+                                    .lowThreshold(10.0)
+                                    .highThreshold(80.0)
                                     .build()
                     ))
                         .build()))
@@ -613,9 +655,14 @@ class SelfAwarenessControllerTests {
                 .moduleId(moduleId)
                 .smartServiceId("Smart-Service-1")
                 .timestamp(LocalDateTime.now())
-                .ligne("Line1")
+                .stage("Stage_1")
+                .cell("Cell_A")
+                .plc("Plc_1")
+                .module("Module_a")
+                .subElement("SubElement_1")
                 .component("Component1")
                 .variable("Temperature")
+                .variableType("Analog")
                 .startingDate("2025-01-15 00:00:00")
                 .endingDate("2025-01-15 23:59:59")
                 .dataSource("Influx DB")

@@ -20,7 +20,7 @@ public class CrfSimulationResults {
     @Id
     private String id;
 
-    @Field(name = "timestamp", type = FieldType.Keyword)
+    @Field(name = "@timestamp", type = FieldType.Keyword)
     private String timestamp;
 
     @Field(type = FieldType.Text)

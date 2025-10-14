@@ -332,7 +332,7 @@ class SewSelfAwarenessServiceTests {
         void givenValidRequest_whenGenerateHistogram_thenFollowsProcessingFlow() {
             // Given
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-            SewFilteringOptionsDto.Options optionsDto = new SewFilteringOptionsDto.Options("test", "test", "test", LocalDateTime.parse("10-05-2025 20:00:00", formatter));
+            SewFilteringOptionsDto.Options optionsDto = new SewFilteringOptionsDto.Options("Cell1", "Module1", "SubElement1", "Component1", "Variable1", LocalDateTime.parse("10-05-2025 20:00:00", formatter));
             SewLocalAnalyticsInputDto analyticsInput = SewLocalAnalyticsInputDto.builder()
                     .firstParameters(optionsDto)
                     .secondParameters(null)

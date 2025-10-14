@@ -164,7 +164,7 @@ class CrfSimulationServiceTests {
             when(modelMapper.map(sampleEntity, CrfSimulationResultsDto.class))
                     .thenReturn(sampleDto);
 
-            CrfSimulationResultsDto result = crfSimulationResultsService.retrieveLatestSimulationResultsByProductionModule(productionModule);
+            CrfSimulationResultsDto result = crfSimulationResultsService.retrieveLatestSimulationResultsByModule(productionModule);
 
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
@@ -187,7 +187,7 @@ class CrfSimulationServiceTests {
             when(crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByModule(productionModule))
                     .isInstanceOf(CustomExceptions.ResourceNotFoundException.class)
                     .hasMessage("No CRF Simulation Results for Module: " + productionModule + " found");
 
@@ -205,7 +205,7 @@ class CrfSimulationServiceTests {
             when(modelMapper.map(sampleEntity, CrfSimulationResultsDto.class))
                     .thenThrow(new CustomExceptions.ModelMappingException("Unable to parse CRF Simulation Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred"));
 
-            assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByModule(productionModule))
                     .isInstanceOf(CustomExceptions.ModelMappingException.class)
                     .hasMessage("Unable to parse CRF Simulation Results to DTO for Module: " + productionModule + " - Error: Mapping error occurred");
 
@@ -220,7 +220,7 @@ class CrfSimulationServiceTests {
             when(crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule))
                     .thenThrow(new RuntimeException("Database connection error"));
 
-            assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByProductionModule(productionModule))
+            assertThatThrownBy(() -> crfSimulationResultsService.retrieveLatestSimulationResultsByModule(productionModule))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Database connection error");
 

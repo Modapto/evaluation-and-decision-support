@@ -112,7 +112,7 @@ class SimulationControllerTests {
                     .message("Module simulation completed")
                     .simulationRun(true)
                     .build();
-            when(crfSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId)).thenReturn(mockResult);
+            when(crfSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);
 
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
@@ -121,7 +121,7 @@ class SimulationControllerTests {
                     .andExpect(jsonPath("$.message").value("Latest CRF Simulation results for Module " + moduleId + " retrieved successfully"))
                     .andExpect(jsonPath("$.data.id").value("1"));
 
-            verify(crfSimulationService).retrieveLatestSimulationResultsByProductionModule(moduleId);
+            verify(crfSimulationService).retrieveLatestSimulationResultsByModule(moduleId);
         }
 
         @Test
@@ -135,7 +135,7 @@ class SimulationControllerTests {
                     .message("Admin module simulation successful")
                     .simulationRun(true)
                     .build();
-            when(crfSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId)).thenReturn(mockResult);
+            when(crfSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);
 
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
@@ -143,7 +143,7 @@ class SimulationControllerTests {
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.message").value("Latest CRF Simulation results for Module " + moduleId + " retrieved successfully"));
 
-            verify(crfSimulationService).retrieveLatestSimulationResultsByProductionModule(moduleId);
+            verify(crfSimulationService).retrieveLatestSimulationResultsByModule(moduleId);
         }
 
         @Test
@@ -261,7 +261,7 @@ class SimulationControllerTests {
                     .timestamp("2024-01-15T10:30:00.000Z")
                     .simulationData(createSampleSimulationData())
                     .build();
-            when(sewSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId)).thenReturn(mockResult);
+            when(sewSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);
 
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
@@ -270,7 +270,7 @@ class SimulationControllerTests {
                     .andExpect(jsonPath("$.message").value("Latest SEW Simulation results for Module " + moduleId + " retrieved successfully"))
                     .andExpect(jsonPath("$.data.id").value("1"));
 
-            verify(sewSimulationService).retrieveLatestSimulationResultsByProductionModule(moduleId);
+            verify(sewSimulationService).retrieveLatestSimulationResultsByModule(moduleId);
         }
 
         @Test
@@ -283,7 +283,7 @@ class SimulationControllerTests {
                     .timestamp("2024-01-16T12:00:00.000Z")
                     .simulationData(createSampleSimulationData())
                     .build();
-            when(sewSimulationService.retrieveLatestSimulationResultsByProductionModule(moduleId)).thenReturn(mockResult);
+            when(sewSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);
 
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
@@ -291,7 +291,7 @@ class SimulationControllerTests {
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.message").value("Latest SEW Simulation results for Module " + moduleId + " retrieved successfully"));
 
-            verify(sewSimulationService).retrieveLatestSimulationResultsByProductionModule(moduleId);
+            verify(sewSimulationService).retrieveLatestSimulationResultsByModule(moduleId);
         }
 
         @Test

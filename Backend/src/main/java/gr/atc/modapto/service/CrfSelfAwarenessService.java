@@ -79,6 +79,22 @@ public class CrfSelfAwarenessService implements ICrfSelfAwarenessService {
     }
 
     /**
+     * Retrieve paginated kit holder events by module ID
+     *
+     * @param moduleId : Module ID
+     * @param pageable : Pagination attributes
+     * @return Page<CrfKitHolderEventDto>
+     */
+    @Override
+    public Page<CrfKitHolderEventDto> retrievePaginatedKhEventResultsByModule(String moduleId, Pageable pageable) {
+        return exceptionHandler.handleOperation(() -> {
+            Page<CrfKitHolderEvent> events = crfKitHolderEventRepository.findByModuleId(moduleId, pageable);
+
+            return events.map(event -> modelMapper.map(event, CrfKitHolderEventDto.class));
+        }, "retrievePaginatedKhEventResultsByModule");
+    }
+
+    /**
      * Register Kit Holder Event Notification
      * @param event
      */

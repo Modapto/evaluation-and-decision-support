@@ -13,5 +13,7 @@ public interface ICrfSelfAwarenessService {
 
     Page<CrfKitHolderEventDto> retrievePaginatedKhEventResultsPaginated(Pageable pageable);
 
+    Page<CrfKitHolderEventDto> retrievePaginatedKhEventResultsByModule(String moduleId, Pageable pageable);
+
     void registerKitHolderEvent(CrfKitHolderEventDto event);
 }

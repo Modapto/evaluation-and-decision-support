@@ -36,8 +36,8 @@ class SewMonitorKpisComponentsRepositoryTests extends SetupTestContainersEnviron
 
         SewMonitorKpisComponents.Property property = SewMonitorKpisComponents.Property.builder()
                 .name("Temperature")
-                .lowThreshold(10)
-                .highThreshold(90)
+                .lowThreshold(10.0)
+                .highThreshold(90.0)
                 .build();
 
         SewMonitorKpisComponents.SewMonitorKpisComponentData componentData = SewMonitorKpisComponents.SewMonitorKpisComponentData.builder()
@@ -251,14 +251,14 @@ class SewMonitorKpisComponentsRepositoryTests extends SetupTestContainersEnviron
         void givenComponentWithComplexData_whenSave_thenPreserveDataStructure() {
             SewMonitorKpisComponents.Property property1 = SewMonitorKpisComponents.Property.builder()
                     .name("Temperature")
-                    .lowThreshold(0)
-                    .highThreshold(100)
+                    .lowThreshold(0.0)
+                    .highThreshold(100.0)
                     .build();
 
             SewMonitorKpisComponents.Property property2 = SewMonitorKpisComponents.Property.builder()
                     .name("Pressure")
-                    .lowThreshold(10)
-                    .highThreshold(50)
+                    .lowThreshold(10.0)
+                    .highThreshold(50.0)
                     .build();
 
             SewMonitorKpisComponents.SewMonitorKpisComponentData componentData = SewMonitorKpisComponents.SewMonitorKpisComponentData.builder()

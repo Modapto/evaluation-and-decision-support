@@ -56,7 +56,7 @@ class KafkaMessageHandlerTests {
         baseEvent = new EventDto();
         baseEvent.setPriority(MessagePriority.HIGH);
         baseEvent.setModule("ModuleA");
-        baseEvent.setTopic("modapto-mqtt-topics");
+        baseEvent.setTopic("test-topic");
     }
 
     @Nested
@@ -75,9 +75,10 @@ class KafkaMessageHandlerTests {
 
             JsonNode resultNode = objectMapper.valueToTree(simulationResult);
             baseEvent.setResults(resultNode);
+            baseEvent.setTopic("crf-simulation-topic");
             String topic = "crf-simulation-topic";
 
-            kafkaMessageHandler.consume(baseEvent, topic);
+            kafkaMessageHandler.consume(baseEvent, topic, "sampleKey");
 
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
@@ -100,11 +101,12 @@ class KafkaMessageHandlerTests {
 
             JsonNode resultNode = objectMapper.valueToTree(simulationResult);
             baseEvent.setResults(resultNode);
+            baseEvent.setTopic("original-event-topic");
             String mqttTopic = "modapto-mqtt-topics";
 
-            kafkaMessageHandler.consume(baseEvent, mqttTopic);
+            kafkaMessageHandler.consume(baseEvent, mqttTopic, "sampleKey");
 
-            verify(webSocketService, times(1)).notifyInWebSocketTopic(anyString(), eq("modapto-mqtt-topics"));
+            verify(webSocketService, times(1)).notifyInWebSocketTopic(anyString(), eq("sampleKey"));
         }
     }
 
@@ -124,9 +126,10 @@ class KafkaMessageHandlerTests {
 
             JsonNode resultNode = objectMapper.valueToTree(optimizationResult);
             baseEvent.setResults(resultNode);
+            baseEvent.setTopic("crf-optimization-topic");
             String topic = "crf-optimization-topic";
 
-            kafkaMessageHandler.consume(baseEvent, topic);
+            kafkaMessageHandler.consume(baseEvent, topic, "sampleKey");
 
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
@@ -153,9 +156,10 @@ class KafkaMessageHandlerTests {
 
             JsonNode resultNode = objectMapper.valueToTree(simulationResult);
             baseEvent.setResults(resultNode);
+            baseEvent.setTopic("sew-simulation-topic");
             String topic = "sew-simulation-topic";
 
-            kafkaMessageHandler.consume(baseEvent, topic);
+            kafkaMessageHandler.consume(baseEvent, topic, "sampleKey");
 
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
@@ -182,9 +186,10 @@ class KafkaMessageHandlerTests {
 
             JsonNode resultNode = objectMapper.valueToTree(optimizationResult);
             baseEvent.setResults(resultNode);
+            baseEvent.setTopic("sew-optimization-topic");
             String topic = "sew-optimization-topic";
 
-            kafkaMessageHandler.consume(baseEvent, topic);
+            kafkaMessageHandler.consume(baseEvent, topic, "sampleKey");
 
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
@@ -209,7 +214,7 @@ class KafkaMessageHandlerTests {
             // Missing priority
             String topic = "test-kafka-topic";
 
-            kafkaMessageHandler.consume(invalidEvent, topic);
+            kafkaMessageHandler.consume(invalidEvent, topic, "sampleKey");
 
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
         }
@@ -223,7 +228,7 @@ class KafkaMessageHandlerTests {
             // Missing module
             String topic = "test-kafka-topic";
 
-            kafkaMessageHandler.consume(invalidEvent, topic);
+            kafkaMessageHandler.consume(invalidEvent, topic, "sampleKey");
 
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
         }
@@ -237,7 +242,7 @@ class KafkaMessageHandlerTests {
             // Missing topic
             String topic = "test-kafka-topic";
 
-            kafkaMessageHandler.consume(invalidEvent, topic);
+            kafkaMessageHandler.consume(invalidEvent, topic, "sampleKey");
 
             verify(webSocketService, never()).notifyInWebSocketTopic(anyString(), anyString());
         }
@@ -289,9 +294,10 @@ class KafkaMessageHandlerTests {
 
             JsonNode resultNode = objectMapper.valueToTree(maintenanceResult);
             baseEvent.setResults(resultNode);
+            baseEvent.setTopic("sew-grouping-predictive-maintenance-topic");
             String topic = "sew-grouping-predictive-maintenance-topic";
 
-            kafkaMessageHandler.consume(baseEvent, topic);
+            kafkaMessageHandler.consume(baseEvent, topic, "sampleKey");
 
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
@@ -317,7 +323,10 @@ class KafkaMessageHandlerTests {
                     .timestamp(LocalDateTime.now())
                     .smartServiceId("self-awareness-monitoring-kpis")
                     .moduleId("sew-module-1")
-                    .ligne("Production_Line_A")
+                    .stage("Stage_1")
+                    .cell("Cell_A")
+                    .plc("Plc_1")
+                    .module("Module_a")
                     .component("Cutting_Station_01")
                     .variable("Overall_Equipment_Effectiveness")
                     .startingDate("2024-01-15T08:00:00.000Z")
@@ -329,9 +338,10 @@ class KafkaMessageHandlerTests {
 
             JsonNode resultNode = objectMapper.valueToTree(kpisResult);
             baseEvent.setResults(resultNode);
+            baseEvent.setTopic("sew-self-awareness-monitoring-kpis-topic");
             String topic = "sew-self-awareness-monitoring-kpis-topic";
 
-            kafkaMessageHandler.consume(baseEvent, topic);
+            kafkaMessageHandler.consume(baseEvent, topic, "sampleKey");
 
             ArgumentCaptor<String> messageCaptor = ArgumentCaptor.forClass(String.class);
             ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
@@ -367,7 +377,7 @@ class KafkaMessageHandlerTests {
             eventWithModule.setResults(resultNode);
             String topic = "test-topic";
 
-            kafkaMessageHandler.consume(eventWithModule, topic);
+            kafkaMessageHandler.consume(eventWithModule, topic, "sampleKey");
 
             verify(webSocketService, times(1)).notifyInWebSocketTopic(anyString(), anyString());
         }
@@ -394,7 +404,7 @@ class KafkaMessageHandlerTests {
                         .results(resultNode)
                         .build();
                 
-                kafkaMessageHandler.consume(eventWithPriority, "test-topic");
+                kafkaMessageHandler.consume(eventWithPriority, "test-topic", "sampleKey");
             }
 
             verify(webSocketService, times(priorities.length)).notifyInWebSocketTopic(anyString(), anyString());

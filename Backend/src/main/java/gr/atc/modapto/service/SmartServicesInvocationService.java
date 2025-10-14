@@ -303,11 +303,8 @@ public class SmartServicesInvocationService {
             // Route corresponds to AUEB services, thus the format changes
             if (route != null){
                 request = SmartServiceRequest.builder()
-                        .request(null)
+                        .request(encodedInput)
                         .route(route)
-                        .data(SmartServiceRequest.Base64Data.builder()
-                                .base64(encodedInput)
-                                .build())
                         .build();
             } else {
                 request = SmartServiceRequest.builder()

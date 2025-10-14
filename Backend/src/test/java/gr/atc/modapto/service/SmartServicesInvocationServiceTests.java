@@ -53,6 +53,9 @@ class SmartServicesInvocationServiceTests {
     private KeycloakProperties keycloakProperties;
 
     @Mock
+    private gr.atc.modapto.config.properties.SmartServiceDebugProperties debugProperties;
+
+    @Mock
     private IModaptoModuleService modaptoModuleService;
 
     @Mock
@@ -76,6 +79,7 @@ class SmartServicesInvocationServiceTests {
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(smartServicesInvocationService, "dtmUrl", TEST_DTM_URL);
+        lenient().when(debugProperties.storeRequestJson()).thenReturn(false);
 
         sampleInputData = SewThresholdBasedMaintenanceInputDataDto.builder()
                 .moduleId(TEST_MODULE_ID)

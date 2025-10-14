@@ -68,22 +68,22 @@ public class CrfSimulationService implements IKitHolderSimulationService {
     /**
      * Retrieve latest results regarding CRF Simulation Smart Service for a specific MODAPTO module
      *
-     * @param productionModule MODAPTO module
+     * @param module MODAPTO module
      * @throws  ResourceNotFoundException Thrown when the requested resource not found in Elasticsearch
      * @throws  ModelMappingException Thrown when a mismatch exists between DTO and Entity data
      * @return CrfSimulationResultsDto
      */
     @Override
-    public CrfSimulationResultsDto retrieveLatestSimulationResultsByProductionModule(String productionModule) {
+    public CrfSimulationResultsDto retrieveLatestSimulationResultsByModule(String module) {
         try {
-            Optional<CrfSimulationResults> latestResult = crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(productionModule);
+            Optional<CrfSimulationResults> latestResult = crfSimulationResultsRepository.findFirstByModuleIdOrderByTimestampDesc(module);
             if (latestResult.isEmpty())
-                throw new ResourceNotFoundException("No CRF Simulation Results for Module: " + productionModule + " found");
+                throw new ResourceNotFoundException("No CRF Simulation Results for Module: " + module + " found");
 
             return modelMapper.map(latestResult.get(), CrfSimulationResultsDto.class);
         } catch (MappingException e){
-            log.error(MAPPING_ERROR + "for Module {} - {}", productionModule, e.getMessage());
-            throw new ModelMappingException("Unable to parse CRF Simulation Results to DTO for Module: " + productionModule + " - Error: " + e.getMessage());
+            log.error(MAPPING_ERROR + "for Module {} - {}", module, e.getMessage());
+            throw new ModelMappingException("Unable to parse CRF Simulation Results to DTO for Module: " + module + " - Error: " + e.getMessage());
         }
     }
 

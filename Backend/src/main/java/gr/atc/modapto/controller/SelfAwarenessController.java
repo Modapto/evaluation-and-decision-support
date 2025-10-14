@@ -387,6 +387,42 @@ public class SelfAwarenessController {
     }
 
     /**
+     * Retrieve KH Events by Module ID (paginated)
+     *
+     * @param moduleId : Module ID
+     * @param page : Page Size
+     * @param size : Size of elements per page
+     * @param sortAttribute : Sort Attribute
+     * @param isAscending : Order of sorting
+     * @return PaginatedResultsDto<CrfKitHolderEventDto>
+     */
+    @Operation(summary = "Retrieve KH Events by Module ID (paginated)", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "KH Events for module retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination sort attributes"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "Invalid pagination sort attributes")
+    })
+    @GetMapping("/pilots/crf/kh-events/modules/{moduleId}")
+    public ResponseEntity<BaseResponse<PaginatedResultsDto<CrfKitHolderEventDto>>> retrievePaginatedKhEventResultsByModule(
+            @PathVariable @NotBlank(message = "Module ID cannot be empty") String moduleId,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "timestamp") String sortAttribute,
+            @RequestParam(required = false, defaultValue = "false") boolean isAscending) {
+
+        Pageable pageable = PaginationUtils.createPaginationParameters(page, size, sortAttribute, isAscending, CrfKitHolderEventDto.class);
+        if (pageable == null)
+            return new ResponseEntity<>(BaseResponse.error("Invalid pagination sort attributes"), HttpStatus.BAD_REQUEST);
+
+        Page<CrfKitHolderEventDto> output = crfSelfAwarenessService.retrievePaginatedKhEventResultsByModule(moduleId, pageable);
+
+        return new ResponseEntity<>(
+                BaseResponse.success(PaginationUtils.formulatePaginatedResults(output), "KH Events for module " + moduleId + " retrieved successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
      * Registration of Kit Holder event by Workers
      *
      * @param event : Registration event
