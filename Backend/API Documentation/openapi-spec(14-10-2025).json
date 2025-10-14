@@ -1,0 +1,6748 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Evaluation and Decision Support API",
+    "description": "API documentation for EDS service",
+    "version": "v0.7"
+  },
+  "servers": [
+    {
+      "url": "https://services.modapto.atc.gr"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Optimization Controller",
+      "description": "Handles optimization functionalities amongst Pilot Cases"
+    },
+    {
+      "name": "Self Awareness Controller",
+      "description": "API Controller for managing Self-Awareness"
+    },
+    {
+      "name": "Predictive Maintenance Controller",
+      "description": "API Controller for managing Predictive Maintenance"
+    },
+    {
+      "name": "Simulation Controller",
+      "description": "Handles simulation functionalities amongst Pilot Cases"
+    },
+    {
+      "name": "Orders Controller",
+      "description": "API Controller for managing Orders"
+    },
+    {
+      "name": "MODAPTO Modules Controller",
+      "description": "API Controller for managing and monitoring MODAPTO modules"
+    }
+  ],
+  "paths": {
+    "/api/eds/maintenance/process-drifts/{processDriftId}/complete": {
+      "put": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Mark a Process Drift as Completed",
+        "operationId": "completeProcessDrift",
+        "parameters": [
+          {
+            "name": "processDriftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDatetime",
+            "in": "query",
+            "description": "End datetime of the process drift in ISO format (e.g., 2025-08-03T14:30:00)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "example": "2025-08-03T14:30:00"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Process Drift completed successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/sew/schedules/simulate": {
+      "post": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": "Invoke Simulation service for SEW for Production Schedules",
+        "operationId": "invokeSimulationOfProductionSchedules",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SEW Optimization Service Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request for simulation of SEW Production Schedules has been successfully submitted",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unable to invoke designated smart service",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/sew/environment/upload": {
+      "post": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": " Upload SEW Current Plant Environment",
+        "operationId": "uploadSewPlantCurrentEnvironment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SewPlantEnvironmentDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "SEW Current Environment has been successfully uploaded",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseVoid"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/crf/kh-picking-sequence/simulate": {
+      "post": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": "Invoke Simulation service for CRF for KH Picking Sequence",
+        "operationId": "invokeSimulationOfKhPickingSequence",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CRF Optimization Service Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request for simulation of CRF KH Picking Sequence has been successfully submitted",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unable to invoke designated smart service",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/real-time-monitoring/invoke": {
+      "post": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Invoke Self-Awareness Real-Time Monitoring of KPIs algorithm [SEW - SA2]",
+        "operationId": "invokeSelfAwarenessRealTimeMonitoringProcess",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SewSelfAwarenessRealTimeMonitoringInputDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Self-Awareness Real-Time Monitoring algorithm invoked successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/monitor-kpis/invoke": {
+      "post": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Invoke Self-Awareness Monitoring KPIs algorithm [SEW - SA1]",
+        "operationId": "invokeSelfAwarenessMonitoringKpisProcess",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SewSelfAwarenessMonitoringKpisInputDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Self-Awareness Monitoring KPIs algorithm invoked successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/component-list/upload": {
+      "post": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Upload Components List of MODAPTO Module for Self-Awareness Operations",
+        "operationId": "uploadSelfAwarenessComponentList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SewMonitorKpisComponentsDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Self-Awareness component list for module 'moduleId' has been successfully uploaded",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/analytics/generate-histogram": {
+      "post": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Generate Histogram of Comparison of Modules from Local Analytics [SEW]",
+        "operationId": "generateHistogramForComparingModules",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlobalRequestDtoLocal Analytics Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Histogram from Local Analytics generated successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/analytics/filtering-options": {
+      "post": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve filtering options from Local Analytics Service [SEW]",
+        "operationId": "generateFilteringOptionsForLocalAnalytics",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlobalRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Filtering options retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseFilteringOptions"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseFilteringOptions"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseFilteringOptions"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/crf/register-event": {
+      "post": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Registration of Kit Holder event by Workers",
+        "operationId": "registerKitHolderEventByCrfWorkers",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KH Events"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Kit Holder event registered successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/crf/invoke": {
+      "post": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Invoke CRF Self-Awareness operation with Events data",
+        "operationId": "invokeCrfKhSelfAwareness",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "file",
+                  "parameters"
+                ],
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "parameters": {
+                    "$ref": "#/components/schemas/CRF Self-Awareness Parameters"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Self-Awareness algorithm for Kit-Holder has been successfully initialized",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "File handling error",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/orders/createOrders": {
+      "post": {
+        "tags": [
+          "Orders Controller"
+        ],
+        "summary": "Create a batch of Orders",
+        "operationId": "createMultipleOrders",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Orders created successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unable to create new orders in DB",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/orders/createOrder": {
+      "post": {
+        "tags": [
+          "Orders Controller"
+        ],
+        "summary": "Create a new Order",
+        "operationId": "createNewOrder",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Order created successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unable to create new order in DB!",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/sew/schedules/upload": {
+      "post": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Upload JSON Production Schedule for the weekly plan of SEW",
+        "operationId": "uploadSewProductionSchedule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SewProductionScheduleDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "SEW Production Schedule has been successfully uploaded",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/sew/schedules/optimize": {
+      "post": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Upload JSON Production Schedule for the weekly plan of SEW",
+        "operationId": "invokeOptimizationOfProductionSchedules",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SEW Optimization Service Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request for optimization of SEW production schedules has been successfully submitted",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unable to invoke designated smart service",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/crf/kh-picking-sequence/optimize": {
+      "post": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Invoke Optimization service for CRF for KH Picking Sequence",
+        "operationId": "invokeOptimizationOfKhPickingSequence",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CRF Optimization Service Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Request for optimization of CRF KH Picking Sequence has been successfully submitted",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unable to invoke designated smart service",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/modules/{moduleId}/undeclare-work/users/{workerName}": {
+      "post": {
+        "tags": [
+          "MODAPTO Modules Controller"
+        ],
+        "summary": "Undeclare the authenticated worker is working on a specific MODAPTO module",
+        "operationId": "undeclareWorkOnModule",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "description": "Module identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workerName",
+            "in": "path",
+            "description": "Worker Full Name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Worker successfully undeclared on module",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Module not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/modules/declare-work": {
+      "post": {
+        "tags": [
+          "MODAPTO Modules Controller"
+        ],
+        "summary": "Declare that one or multiple workers are working on a specific MODAPTO module",
+        "operationId": "declareWorkOnModule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Work Declaration Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Workers successfully submitted working on MODAPTO Module",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Module not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/uploadCorimFile": {
+      "post": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Upload CORIM file with Maintenance Data",
+        "operationId": "uploadCorimFile",
+        "parameters": [
+          {
+            "name": "file",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Corim file uploaded successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/uploadComponentsList": {
+      "post": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Upload JSON of Components List for SEW",
+        "operationId": "uploadComponentsList",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SewComponentInfo"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Components file uploaded successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/process-drifts/create": {
+      "post": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Declare a Process Drift",
+        "operationId": "declareProcessDrift",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Maintenance Data (CORIM)"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Process Drift has been successfully registered in the System",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/predict/threshold-based-maintenance": {
+      "post": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Invoke Predictive Maintenance Service for Threshold-Based Maintenance",
+        "operationId": "invokeThresholdBasedPredictiveMaintenance",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SEW Threshold-Based Maintenance Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Predictive Maintenance service for Threshold-Based Maintenance completed successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Threshold-Based Predictive Maintenance Result"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Threshold-Based Predictive Maintenance Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Threshold-Based Predictive Maintenance Result"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/predict/grouping-maintenance": {
+      "post": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Invoke Predictive Maintenance Service for Grouping Maintenance",
+        "operationId": "invokeGroupingPredictiveMaintenance",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SEW Grouping Predictive Maintenance Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Predictive Maintenance service for Grouping Maintenance invoked successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error | Throws if file is not proper or data are missing",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/sew/modules/{moduleId}/latest": {
+      "get": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": "Retrieve latest SEW Simulation Results by MODAPTO Module",
+        "operationId": "retrieveLatestSewResultsByProductionModule",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest SEW Simulation results for Module: [moduleId] retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSimulationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSimulationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No SEW Simulation Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSimulationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/sew/latest": {
+      "get": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": "Retrieve latest SEW Simulation Results",
+        "operationId": "retrieveLatestSewResults",
+        "responses": {
+          "200": {
+            "description": "Latest SEW Simulation results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSimulationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSimulationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No SEW Simulation Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSimulationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/sew/environment": {
+      "get": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": "Retrieve latest SEW Simulation Results by MODAPTO Module",
+        "operationId": "retrieveLatestSewEnvironment",
+        "responses": {
+          "200": {
+            "description": "Latest SEW Plant Environment retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewPlantEnvironmentDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewPlantEnvironmentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewPlantEnvironmentDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/crf/modules/{moduleId}/latest": {
+      "get": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": "Retrieve latest CRF Simulation Results by MODAPTO Module",
+        "operationId": "retrieveLatestCrfResultsByProductionModule",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest CRF Simulation results for Module: [moduleId] retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationResults"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationResults"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No CRF Simulation Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationResults"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/crf/latest": {
+      "get": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": "Retrieve latest CRF Simulation Results",
+        "operationId": "retrieveLatestCrfResults",
+        "responses": {
+          "200": {
+            "description": "Latest CRF Simulation results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationResults"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationResults"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No CRF Simulation Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationResults"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/simulation/pilots/crf/kitting-configs": {
+      "get": {
+        "tags": [
+          "Simulation Controller"
+        ],
+        "summary": "Retrieve stored Kitting Config [CRF]",
+        "operationId": "retrieveSimulationKittingConfig",
+        "responses": {
+          "200": {
+            "description": "Kitting Configs retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationKittingConfigDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationKittingConfigDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No CRF Simulation Kitting Config found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfSimulationKittingConfigDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/real-time-monitoring/results": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve all Self-Awareness Real-Time Monitoring Results",
+        "operationId": "retrieveAllSelfAwarenessRealTimeMonitoringResults",
+        "responses": {
+          "200": {
+            "description": "All Self-Awareness Real-Time Monitoring results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessRealTimeMonitoringResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessRealTimeMonitoringResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessRealTimeMonitoringResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/real-time-monitoring/results/{moduleId}": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve all Self-Awareness Real-Time Monitoring Results by Module ID",
+        "operationId": "retrieveAllSelfAwarenessRealTimeMonitoringResultsByModuleId",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All Self-Awareness Real-Time Monitoring results for Module retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessRealTimeMonitoringResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessRealTimeMonitoringResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessRealTimeMonitoringResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/monitor-kpis/results": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve all Self-Awareness Monitoring KPIs Results",
+        "operationId": "retrieveAllSelfAwarenessMonitoringKpisResults",
+        "responses": {
+          "200": {
+            "description": "All Self-Awareness Monitoring KPIs results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/monitor-kpis/results/{moduleId}": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve all Self-Awareness Monitoring KPIs Results by Module ID",
+        "operationId": "retrieveAllSelfAwarenessMonitoringKpisResultsByModuleId",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All Self-Awareness Monitoring KPIs results for Module retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/monitor-kpis/results/{moduleId}/latest": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve latest Self-Awareness Monitoring KPIs Results by Module ID",
+        "operationId": "retrieveLatestSelfAwarenessMonitoringKpisResultsByModuleId",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest Self-Awareness Monitoring KPIs results for Module retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No Self-Awareness Monitoring KPIs results found for the specified module",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/monitor-kpis/results/latest": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve latest Self-Awareness Monitoring KPIs Results",
+        "operationId": "retrieveLatestSelfAwarenessMonitoringKpisResults",
+        "responses": {
+          "200": {
+            "description": "Latest Self-Awareness Monitoring KPIs results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No Self-Awareness Monitoring KPIs results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewSelfAwarenessMonitoringKpisResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/sew/modules/{moduleId}/component-list": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve Self-Awareness component list for a specific MODAPTO Module",
+        "operationId": "retrieveModuleComponentList",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Self-Awareness component list for module retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewMonitorKpisComponentsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewMonitorKpisComponentsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Component list for module not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewMonitorKpisComponentsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Delete Self-Awareness component list for a specific MODAPTO Module",
+        "operationId": "deleteSelfAwarenessComponentListByModuleId",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Self-Awareness component list for module deleted successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Component list for module not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/crf/kh-events": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve all KH Events from Self-Awareness analysis (paginated)",
+        "operationId": "retrievePaginatedKhEventResultsByModuleId",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortAttribute",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "timestamp"
+            }
+          },
+          {
+            "name": "isAscending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "KH Events retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoKH Events"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination sort attributes",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoKH Events"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoKH Events"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid pagination sort attributes",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/self-awareness/pilots/crf/kh-events/modules/{moduleId}": {
+      "get": {
+        "tags": [
+          "Self Awareness Controller"
+        ],
+        "summary": "Retrieve KH Events by Module ID (paginated)",
+        "operationId": "retrievePaginatedKhEventResultsByModule",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortAttribute",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "timestamp"
+            }
+          },
+          {
+            "name": "isAscending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "KH Events for module retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoKH Events"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination sort attributes",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoKH Events"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoKH Events"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid pagination sort attributes",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/orders/{id}/pilot/{pilotCode}": {
+      "get": {
+        "tags": [
+          "Orders Controller"
+        ],
+        "summary": "Retrieve specific order per pilot code",
+        "description": "Valid pilot code must be given",
+        "operationId": "retrieveOrderById",
+        "parameters": [
+          {
+            "name": "pilotCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Pilot Code",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseOrderDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseOrderDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You can only retrieve information within your organization",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseOrderDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/orders/pilot/{pilotCode}": {
+      "get": {
+        "tags": [
+          "Orders Controller"
+        ],
+        "summary": "Retrieve orders per pilot with pagination and optionally filtering by dates",
+        "description": "Valid pagination parameters and pilot code must be given!",
+        "operationId": "retrievePaginatedOrders",
+        "parameters": [
+          {
+            "name": "pilotCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageableElem",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Pageable"
+            }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "No orders found for the given search parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResultsDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unable to parse given dates",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoOrderDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoOrderDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You can only retrieve information within your organization",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoOrderDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unable to retrieve orders from DB!",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoOrderDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/sew/schedules/latest": {
+      "get": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Retrieve latest SEW stored Prod. Schedule",
+        "operationId": "retrieveLatestProductionSchedule",
+        "responses": {
+          "200": {
+            "description": "Latest SEW Production Schedule retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewProductionScheduleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewProductionScheduleDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewProductionScheduleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/sew/modules/{moduleId}/latest": {
+      "get": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Retrieve latest SEW Optimization Results by MODAPTO Module",
+        "operationId": "retrieveLatestSewResultsByProductionModule_1",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest SEW Optimization results for Module: [moduleId] retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No SEW Optimization Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/sew/latest": {
+      "get": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Retrieve latest SEW Optimization Results",
+        "operationId": "retrieveLatestSewResults_1",
+        "responses": {
+          "200": {
+            "description": "Latest SEW Optimization results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No SEW Optimization Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSewOptimizationResultsDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/crf/modules/{moduleId}/latest": {
+      "get": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Retrieve latest CRF Optimization Results by MODAPTO Module",
+        "operationId": "retrieveLatestCrfResultsByProductionModule_1",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest CRF Optimization results for Module: [moduleId] retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationResults"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationResults"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No CRF Optimization Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationResults"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/crf/latest": {
+      "get": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Retrieve latest CRF Optimization Results",
+        "operationId": "retrieveLatestCrfResults_1",
+        "responses": {
+          "200": {
+            "description": "Latest CRF Optimization results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationResults"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationResults"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No CRF Optimization Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationResults"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/optimization/pilots/crf/kitting-configs": {
+      "get": {
+        "tags": [
+          "Optimization Controller"
+        ],
+        "summary": "Retrieve stored Kitting Config [CRF]",
+        "operationId": "retrieveSimulationKittingConfig_1",
+        "responses": {
+          "200": {
+            "description": "Kitting Configs retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationKittingConfigDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationKittingConfigDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No CRF Simulation Kitting Config found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseCrfOptimizationKittingConfigDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/modules": {
+      "get": {
+        "tags": [
+          "MODAPTO Modules Controller"
+        ],
+        "summary": "Retrieve all MODAPTO modules with pagination",
+        "operationId": "retrieveAllModulesPaginated",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Field to sort by",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "timestamp_dt"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Sort direction (asc/desc)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MODAPTO modules retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoModaptoModuleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/modules/{moduleId}": {
+      "get": {
+        "tags": [
+          "MODAPTO Modules Controller"
+        ],
+        "summary": "Retrieve MODAPTO module by MODAPTO Module ID",
+        "operationId": "retrieveModuleById",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "description": "Module identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MODAPTO module retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Module not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseModaptoModuleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/modules/{moduleId}/smart-services": {
+      "get": {
+        "tags": [
+          "MODAPTO Modules Controller"
+        ],
+        "summary": "Retrieve smart services for a MODAPTO module",
+        "operationId": "retrieveSmartServicesByModuleId",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "path",
+            "description": "Module identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Smart services retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSmartServiceDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSmartServiceDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Module not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListSmartServiceDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/modules/working-modules/users/{workerName}": {
+      "get": {
+        "tags": [
+          "MODAPTO Modules Controller"
+        ],
+        "summary": "Retrieve all MODAPTO modules a worker is working on with pagination",
+        "operationId": "retrieveModulesByWorkerPaginated",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Number of items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Field to sort by",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "timestamp_dt"
+            }
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "description": "Sort direction (asc/desc)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "desc"
+            }
+          },
+          {
+            "name": "workerName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MODAPTO modules retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoModaptoModuleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/modules/all": {
+      "get": {
+        "tags": [
+          "MODAPTO Modules Controller"
+        ],
+        "summary": "Retrieve all MODAPTO modules",
+        "operationId": "retrieveAllModules",
+        "responses": {
+          "200": {
+            "description": "MODAPTO modules retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListModaptoModuleDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseListModaptoModuleDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/process-drifts": {
+      "get": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Retrieve all uncompleted process drifts (paginated)",
+        "operationId": "retrievePaginatedUncompletedProcessDrifts",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortAttribute",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "tsInterventionStarted"
+            }
+          },
+          {
+            "name": "isAscending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Uncompleted paginated process drifts retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination sort attributes",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invalid pagination sort attributes",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/process-drifts/{processDriftId}": {
+      "get": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Retrieve a Process Drift by its ID",
+        "operationId": "retrieveProcessDriftById",
+        "parameters": [
+          {
+            "name": "processDriftId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Process Drift retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks": {
+      "get": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Retrieve paginated all scheduled tasks registered for Threshold-Based Predictive Maintenance [PdM2]",
+        "operationId": "retrieveThresholdBasedMaintenanceScheduledTasks",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortAttribute",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "createdAt"
+            }
+          },
+          {
+            "name": "isAscending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Threshold-Based Scheduled Tasks retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoScheduledTaskDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination sort attributes",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoScheduledTaskDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoScheduledTaskDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoScheduledTaskDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/predict/threshold-based-maintenance/results": {
+      "get": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Retrieve the latest threshold-based  predictive maintenance results for a specific Module [PdM2]",
+        "operationId": "retrieveThresholdBasedMaintenanceLatestResults",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Threshold-Based Predictive Maintenance latest results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Threshold-Based Predictive Maintenance Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Threshold-Based Predictive Maintenance Result"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No SEW Threshold-based Predictive Maintenance Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Threshold-Based Predictive Maintenance Result"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/predict/grouping-maintenance/results": {
+      "get": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Retrieve the latest grouping predictive maintenance results for a specific Module [PdM1]",
+        "operationId": "retrieveGroupingMaintenanceLatestResults",
+        "parameters": [
+          {
+            "name": "moduleId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Grouping Predictive Maintenance latest results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Grouping Predictive Maintenance Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Grouping Predictive Maintenance Result"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No SEW Grouping Predictive Maintenance Results found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseSEW Grouping Predictive Maintenance Result"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/data": {
+      "get": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Retrieve paginated maintenance data that are not process drifts",
+        "operationId": "retrieveMaintenanceDataPaginated",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "sortAttribute",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "tsInterventionFinished"
+            }
+          },
+          {
+            "name": "isAscending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Maintenance data retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination sort attributes",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoMaintenance Data (CORIM)"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponsePaginatedResultsDtoMaintenance Data (CORIM)"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    },
+    "/api/eds/maintenance/predict/threshold-based-maintenance/scheduled-tasks/{taskId}": {
+      "delete": {
+        "tags": [
+          "Predictive Maintenance Controller"
+        ],
+        "summary": "Delete a Threshold-Based Scheduled Task by taskId [PdM2]",
+        "operationId": "deleteThresholdBasedScheduledTask",
+        "parameters": [
+          {
+            "name": "taskId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Threshold-Based Predictive Maintenance latest results retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized request. Check token and try again.",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal mapping exception",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponseString"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerToken": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BaseResponseString": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "Response data"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaseResponseMaintenance Data (CORIM)": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Maintenance Data (CORIM)"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "Maintenance Data (CORIM)": {
+        "required": [
+          "Cell",
+          "Component",
+          "Component ID",
+          "Module ID",
+          "Module description",
+          "Stage"
+        ],
+        "type": "object",
+        "properties": {
+          "dataId": {
+            "type": "string"
+          },
+          "modaptoModule": {
+            "type": "string"
+          },
+          "Stage": {
+            "type": "string"
+          },
+          "Cell": {
+            "type": "string"
+          },
+          "ID": {
+            "type": "string"
+          },
+          "Module description": {
+            "type": "string"
+          },
+          "Module ID": {
+            "type": "string"
+          },
+          "Component": {
+            "type": "string"
+          },
+          "Component ID": {
+            "type": "string"
+          },
+          "Failure Type (electrical/mechanical)": {
+            "type": "string"
+          },
+          "Failure description": {
+            "type": "string"
+          },
+          "Maintenance Action performed": {
+            "type": "string"
+          },
+          "Component replacement (yes/no)": {
+            "type": "string"
+          },
+          "Name": {
+            "type": "string"
+          },
+          "TS request creation": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "TS Intervention started": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "TS intervention finished": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "CORIM File Structure"
+      },
+      "Config": {
+        "required": [
+          "KPIs",
+          "Trials",
+          "max_var",
+          "min_var"
+        ],
+        "type": "object",
+        "properties": {
+          "Trials": {
+            "type": "integer",
+            "description": "Trials of simulation",
+            "format": "int32"
+          },
+          "min_var": {
+            "type": "number",
+            "format": "double"
+          },
+          "max_var": {
+            "type": "number",
+            "format": "double"
+          },
+          "KPIs": {
+            "uniqueItems": true,
+            "type": "array",
+            "description": "Available KPIs for optimization",
+            "items": {
+              "type": "string",
+              "description": "Available KPIs for optimization"
+            }
+          }
+        },
+        "description": "Input Configuration for Optimization Invocation"
+      },
+      "JsonNode": {
+        "type": "object",
+        "description": "Production Schedules for SEW Case"
+      },
+      "SEW Optimization Service Input": {
+        "required": [
+          "config",
+          "module",
+          "smartService"
+        ],
+        "type": "object",
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/Config"
+          },
+          "orders": {
+            "type": "object"
+          },
+          "processTimes": {
+            "type": "object"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonNode"
+            },
+            "description": "Production Schedules for SEW Case"
+          },
+          "module": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartService": {
+            "type": "string",
+            "description": "Smart Service ID"
+          },
+          "current_env": {
+            "$ref": "#/components/schemas/SewPlantEnvironmentDto"
+          },
+          "simulated_env": {
+            "$ref": "#/components/schemas/SewPlantEnvironmentDto"
+          }
+        },
+        "description": "Input data for optimization service for Production Schedule optimization"
+      },
+      "SewPlantEnvironmentDto": {
+        "type": "object",
+        "properties": {
+          "stages": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StageDto"
+            }
+          },
+          "transTimes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        }
+      },
+      "StageDto": {
+        "type": "object",
+        "properties": {
+          "modules": {
+            "type": "string"
+          },
+          "WIP_in": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "WIP_out": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Cells": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "BaseResponseSewOptimizationResultsDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SewOptimizationResultsDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "KpiData": {
+        "type": "object",
+        "properties": {
+          "makespan": {
+            "type": "string"
+          },
+          "machine_utilization": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "OrderData": {
+        "type": "object",
+        "properties": {
+          "OrderID": {
+            "type": "string"
+          },
+          "machines": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TimeRange"
+            }
+          }
+        }
+      },
+      "SewOptimizationResultsDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "moduleId": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SolutionData"
+            }
+          }
+        },
+        "description": "Response data"
+      },
+      "SolutionData": {
+        "type": "object",
+        "properties": {
+          "KPIs": {
+            "$ref": "#/components/schemas/KpiData"
+          },
+          "schedule": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/components/schemas/OrderData"
+              }
+            }
+          }
+        }
+      },
+      "TimeRange": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string"
+          },
+          "end": {
+            "type": "string"
+          }
+        }
+      },
+      "BaseResponseVoid": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Response data"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "CRF Optimization Service Input": {
+        "required": [
+          "data",
+          "moduleId",
+          "smartServiceId"
+        ],
+        "type": "object",
+        "properties": {
+          "moduleId": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartServiceId": {
+            "type": "string",
+            "description": "Smart Service ID"
+          },
+          "data": {
+            "$ref": "#/components/schemas/JsonNode"
+          }
+        },
+        "description": "Input data for optimization service for KH Picking Sequence Optimization"
+      },
+      "PropertyDto": {
+        "type": "object",
+        "properties": {
+          "Name": {
+            "type": "string"
+          },
+          "Low_thre": {
+            "type": "number",
+            "format": "double"
+          },
+          "High_thre": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "SewMonitorKpisComponentsDataDto": {
+        "required": [
+          "Cell",
+          "Component",
+          "Module",
+          "Plc",
+          "Property",
+          "Stage",
+          "subElement"
+        ],
+        "type": "object",
+        "properties": {
+          "Stage": {
+            "type": "string"
+          },
+          "Cell": {
+            "type": "string"
+          },
+          "Plc": {
+            "type": "string"
+          },
+          "Module": {
+            "type": "string"
+          },
+          "subElement": {
+            "type": "string"
+          },
+          "Component": {
+            "type": "string"
+          },
+          "Property": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PropertyDto"
+            }
+          }
+        }
+      },
+      "SewSelfAwarenessRealTimeMonitoringInputDto": {
+        "required": [
+          "moduleId",
+          "smartServiceId"
+        ],
+        "type": "object",
+        "properties": {
+          "smartServiceId": {
+            "type": "string"
+          },
+          "moduleId": {
+            "type": "string"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SewMonitorKpisComponentsDataDto"
+            }
+          }
+        }
+      },
+      "SewSelfAwarenessMonitoringKpisInputDto": {
+        "required": [
+          "end_date",
+          "moduleId",
+          "smartServiceId",
+          "start_date"
+        ],
+        "type": "object",
+        "properties": {
+          "smartServiceId": {
+            "type": "string"
+          },
+          "moduleId": {
+            "type": "string"
+          },
+          "start_date": {
+            "type": "string"
+          },
+          "end_date": {
+            "type": "string"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SewMonitorKpisComponentsDataDto"
+            }
+          }
+        }
+      },
+      "SewMonitorKpisComponentsDto": {
+        "required": [
+          "components",
+          "moduleId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "moduleId": {
+            "type": "string"
+          },
+          "timestampCreated": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SewMonitorKpisComponentsDataDto"
+            }
+          }
+        }
+      },
+      "GlobalRequestDtoLocal Analytics Input": {
+        "required": [
+          "moduleId",
+          "smartServiceId"
+        ],
+        "type": "object",
+        "properties": {
+          "input": {
+            "$ref": "#/components/schemas/Local Analytics Input"
+          },
+          "moduleId": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartServiceId": {
+            "type": "string",
+            "description": "Smart Service ID"
+          }
+        }
+      },
+      "Local Analytics Input": {
+        "required": [
+          "params1"
+        ],
+        "type": "object",
+        "properties": {
+          "histogram_data": {
+            "type": "array",
+            "description": "Stored Histogram Data - Not required",
+            "items": {
+              "$ref": "#/components/schemas/SewSelfAwarenessMonitoringKpisResultsDto"
+            }
+          },
+          "params1": {
+            "$ref": "#/components/schemas/Options"
+          },
+          "params2": {
+            "$ref": "#/components/schemas/Options"
+          }
+        },
+        "description": "SEW Local Analytics formulated Input to generate Histograms"
+      },
+      "Options": {
+        "type": "object",
+        "properties": {
+          "Cell": {
+            "type": "string"
+          },
+          "Module": {
+            "type": "string"
+          },
+          "SubElement": {
+            "type": "string"
+          },
+          "Component": {
+            "type": "string"
+          },
+          "Variable": {
+            "type": "string"
+          },
+          "Date": {
+            "type": "string",
+            "description": "The date in format dd-MM-yyyy HH:mm:ss",
+            "example": "30-09-2025 14:35:00"
+          }
+        },
+        "description": "Optional Parameters of the second module to compare"
+      },
+      "SewSelfAwarenessMonitoringKpisResultsDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "smartServiceId": {
+            "type": "string"
+          },
+          "moduleId": {
+            "type": "string"
+          },
+          "Stage": {
+            "type": "string"
+          },
+          "Cell": {
+            "type": "string"
+          },
+          "PLC": {
+            "type": "string"
+          },
+          "Module": {
+            "type": "string"
+          },
+          "SubElement": {
+            "type": "string"
+          },
+          "Component": {
+            "type": "string"
+          },
+          "Variable": {
+            "type": "string"
+          },
+          "Variable_Type": {
+            "type": "string"
+          },
+          "Starting_date": {
+            "type": "string"
+          },
+          "Ending_date": {
+            "type": "string"
+          },
+          "Data_source": {
+            "type": "string"
+          },
+          "Bucket": {
+            "type": "string"
+          },
+          "Data_list": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        },
+        "description": "Stored Histogram Data - Not required"
+      },
+      "GlobalRequestDto": {
+        "required": [
+          "moduleId",
+          "smartServiceId"
+        ],
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object",
+            "description": "Optional configuration input"
+          },
+          "moduleId": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartServiceId": {
+            "type": "string",
+            "description": "Smart Service ID"
+          }
+        }
+      },
+      "BaseResponseFilteringOptions": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/FilteringOptions"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "DistinctValues": {
+        "type": "object",
+        "properties": {
+          "cells": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "subElements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Includes all distinct values for each category"
+      },
+      "FilteringOptions": {
+        "type": "object",
+        "properties": {
+          "filtering_options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Options"
+            }
+          },
+          "distinct_values": {
+            "$ref": "#/components/schemas/DistinctValues"
+          }
+        },
+        "description": "SEW Filtering Options for Local Analytics Process"
+      },
+      "KH Events": {
+        "required": [
+          "moduleId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID of Kit Holder event in PKB (Automatically generated)"
+          },
+          "moduleId": {
+            "type": "string",
+            "description": "Module ID"
+          },
+          "eventType": {
+            "maximum": 2,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "rfidStation": {
+            "maximum": 9,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "khType": {
+            "maximum": 3,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "khId": {
+            "maximum": 999999,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "CRF KH Events associated with the Events CSV"
+      },
+      "CRF Self-Awareness Parameters": {
+        "required": [
+          "intervalMinutes",
+          "modelPath",
+          "moduleId",
+          "smartServiceId"
+        ],
+        "type": "object",
+        "properties": {
+          "threshold": {
+            "type": "number",
+            "description": "Threshold value - Default: 16.0",
+            "format": "double"
+          },
+          "intervalMinutes": {
+            "type": "integer",
+            "description": "Interval time in Minutes",
+            "format": "int32"
+          },
+          "modelPath": {
+            "type": "string",
+            "description": "Utilized model - Default: quadratic_model.json"
+          },
+          "moduleId": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartServiceId": {
+            "type": "string",
+            "description": "Smart Service ID"
+          }
+        },
+        "description": "CRF Self-Awareness Parameters"
+      },
+      "AssemblyDto": {
+        "required": [
+          "expectedDeliveryDate",
+          "pn",
+          "quantity",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pn": {
+            "type": "string"
+          },
+          "expectedDeliveryDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ComponentDto": {
+        "required": [
+          "expectedDeliveryDate",
+          "pn",
+          "quantity",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pn": {
+            "type": "string"
+          },
+          "expectedDeliveryDate": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "OrderDto": {
+        "required": [
+          "composedby",
+          "customer",
+          "documentNumber",
+          "orderof"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customer": {
+            "type": "string"
+          },
+          "documentNumber": {
+            "type": "string"
+          },
+          "orderof": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssemblyDto"
+            }
+          },
+          "composedby": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponentDto"
+            }
+          },
+          "comments": {
+            "type": "string"
+          }
+        }
+      },
+      "DailyDataDto": {
+        "type": "object",
+        "properties": {
+          "workers": {
+            "$ref": "#/components/schemas/WorkersDto"
+          },
+          "general": {
+            "$ref": "#/components/schemas/GeneralDto"
+          },
+          "orders": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/WorkingOrderDto"
+            }
+          },
+          "processTimes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          },
+          "givenOrder": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "newlayout": {
+            "$ref": "#/components/schemas/NewLayoutDto"
+          }
+        }
+      },
+      "GeneralDto": {
+        "type": "object",
+        "properties": {
+          "numOrders": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numJobs": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numStages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "JobConnectDto": {
+        "type": "object",
+        "properties": {
+          "jobConnect": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "NewLayoutDto": {
+        "type": "object",
+        "properties": {
+          "stages": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StageDto"
+            }
+          },
+          "transTimes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        }
+      },
+      "SewProductionScheduleDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/DailyDataDto"
+            }
+          }
+        }
+      },
+      "WorkersDto": {
+        "type": "object",
+        "properties": {
+          "productivity": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        }
+      },
+      "WorkingOrderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "jobs": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JobConnectDto"
+            }
+          }
+        }
+      },
+      "BaseResponseModaptoModuleDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ModaptoModuleDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "ModaptoModuleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "moduleId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "timestampDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timestampElastic": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "smartServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SmartServiceDto"
+            }
+          },
+          "workers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Response data"
+      },
+      "SmartServiceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "catalogueId": {
+            "type": "string"
+          },
+          "serviceId": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          }
+        }
+      },
+      "Work Declaration Data": {
+        "required": [
+          "moduleId",
+          "workers"
+        ],
+        "type": "object",
+        "properties": {
+          "moduleId": {
+            "type": "string"
+          },
+          "workers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Data for declaring work on a MODAPTO Module"
+      },
+      "SewComponentInfo": {
+        "required": [
+          "Alpha",
+          "Average maintenance duration",
+          "Beta",
+          "Cell",
+          "MTBF",
+          "Module",
+          "Module ID",
+          "Stage"
+        ],
+        "type": "object",
+        "properties": {
+          "Stage": {
+            "type": "string"
+          },
+          "Cell": {
+            "type": "string"
+          },
+          "Module": {
+            "type": "string"
+          },
+          "Module ID": {
+            "type": "string"
+          },
+          "Alpha": {
+            "type": "number",
+            "format": "double"
+          },
+          "Beta": {
+            "type": "number",
+            "format": "double"
+          },
+          "Average maintenance duration": {
+            "type": "number",
+            "format": "double"
+          },
+          "MTBF": {
+            "type": "number",
+            "format": "double"
+          },
+          "Last Maintenance Action Time": {
+            "type": "string"
+          }
+        },
+        "description": "SEW Component Information List"
+      },
+      "FrequencyType": {
+        "type": "string",
+        "description": "Frequency type for the schedules request - Valid: 'MINUTES/HOURS'/'DAYS'",
+        "enum": [
+          "MINUTES",
+          "HOURS",
+          "DAYS"
+        ]
+      },
+      "SEW Predictive Maintenance Parameters": {
+        "required": [
+          "components_ID",
+          "inspection_threshold",
+          "module_ID",
+          "replacement_threshold",
+          "window_size"
+        ],
+        "type": "object",
+        "properties": {
+          "module_ID": {
+            "type": "string",
+            "description": "Module identifier for the maintenance analysis"
+          },
+          "components_ID": {
+            "type": "array",
+            "description": "List of component identifiers to analyze",
+            "items": {
+              "type": "string",
+              "description": "List of component identifiers to analyze"
+            }
+          },
+          "window_size": {
+            "type": "integer",
+            "description": "Size of the analysis window in time units",
+            "format": "int32",
+            "example": 30
+          },
+          "inspection_threshold": {
+            "type": "integer",
+            "description": "Threshold value for inspection recommendations",
+            "format": "int32",
+            "example": 5
+          },
+          "replacement_threshold": {
+            "type": "integer",
+            "description": "Threshold value for replacement recommendations",
+            "format": "int32",
+            "example": 10
+          }
+        },
+        "description": "Algorithm parameters for SEW predictive maintenance analysis"
+      },
+      "SEW Threshold-Based Maintenance Input": {
+        "required": [
+          "frequencyType",
+          "frequencyValue",
+          "moduleId",
+          "parameters",
+          "smartServiceId"
+        ],
+        "type": "object",
+        "properties": {
+          "frequencyValue": {
+            "type": "integer",
+            "description": "Frequency value for the scheduled request",
+            "format": "int32"
+          },
+          "frequencyType": {
+            "$ref": "#/components/schemas/FrequencyType"
+          },
+          "moduleId": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartServiceId": {
+            "type": "string",
+            "description": "Smart service ID"
+          },
+          "events": {
+            "type": "array",
+            "description": "List of maintenance event data for analysis",
+            "items": {
+              "$ref": "#/components/schemas/Maintenance Data (CORIM)"
+            }
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/SEW Predictive Maintenance Parameters"
+          }
+        },
+        "description": "Input data for threshold-based predictive maintenance analysis"
+      },
+      "BaseResponseSEW Threshold-Based Predictive Maintenance Result": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SEW Threshold-Based Predictive Maintenance Result"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "SEW Threshold-Based Predictive Maintenance Result": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this maintenance result"
+          },
+          "moduleId": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartServiceId": {
+            "type": "string",
+            "description": "Smart service ID"
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Maintenance recommendation based on threshold analysis",
+            "example": "Replace bearing in motor unit within 72 hours"
+          },
+          "details": {
+            "type": "string",
+            "description": "Detailed analysis and supporting information",
+            "example": "Vibration levels exceeded threshold of 2.5mm/s RMS. Temperature trending upward."
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp when this result was generated",
+            "format": "date-time"
+          }
+        },
+        "description": "Results from threshold-based predictive maintenance analysis for SEW plant"
+      },
+      "SEW Grouping Predictive Maintenance Input": {
+        "required": [
+          "downtimeCostRate",
+          "moduleId",
+          "noRepairmen",
+          "setupCost",
+          "smartServiceId",
+          "timeWindowEnd",
+          "timeWindowStart"
+        ],
+        "type": "object",
+        "properties": {
+          "moduleId": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartServiceId": {
+            "type": "string",
+            "description": "Smart Service ID"
+          },
+          "setupCost": {
+            "type": "number",
+            "description": "Setup cost for maintenance activities",
+            "format": "double",
+            "example": 500
+          },
+          "downtimeCostRate": {
+            "type": "number",
+            "description": "Cost rate per hour of downtime",
+            "format": "double",
+            "example": 150
+          },
+          "noRepairmen": {
+            "type": "integer",
+            "description": "Number of available repair technicians",
+            "format": "int32",
+            "example": 3
+          },
+          "components": {
+            "type": "array",
+            "description": "List of components to be analyzed for maintenance grouping",
+            "items": {
+              "$ref": "#/components/schemas/SewComponentInfo"
+            }
+          },
+          "timeWindowStart": {
+            "type": "string",
+            "description": "Start of the time window for analysis in ISO 8601 format",
+            "format": "date-time"
+          },
+          "timeWindowEnd": {
+            "type": "string",
+            "description": "End of the time window for analysis in ISO 8601 format",
+            "format": "date-time"
+          }
+        },
+        "description": "Input data for grouping-based predictive maintenance optimization"
+      },
+      "BaseResponseSewSimulationResultsDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SewSimulationResultsDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "KpiMetric": {
+        "type": "object",
+        "properties": {
+          "Current": {
+            "type": "number",
+            "format": "double"
+          },
+          "Simulated": {
+            "type": "number",
+            "format": "double"
+          },
+          "Difference": {
+            "type": "number",
+            "format": "double"
+          },
+          "Difference_percent": {
+            "type": "number",
+            "format": "double"
+          }
+        }
+      },
+      "SewSimulationResultsDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "module": {
+            "type": "string"
+          },
+          "simulationData": {
+            "$ref": "#/components/schemas/SimulationData"
+          }
+        },
+        "description": "Response data"
+      },
+      "SimulationData": {
+        "type": "object",
+        "properties": {
+          "makespan": {
+            "$ref": "#/components/schemas/KpiMetric"
+          },
+          "machine_utilization": {
+            "$ref": "#/components/schemas/KpiMetric"
+          },
+          "throughput_stdev": {
+            "$ref": "#/components/schemas/KpiMetric"
+          }
+        }
+      },
+      "BaseResponseSewPlantEnvironmentDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SewPlantEnvironmentDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaseResponseCrfSimulationResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CrfSimulationResults"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "Baseline": {
+        "type": "object",
+        "properties": {
+          "exact": {
+            "$ref": "#/components/schemas/Exact"
+          },
+          "linear": {
+            "$ref": "#/components/schemas/Linear"
+          },
+          "gr_sequence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "BestPhase": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "exact_cost": {
+            "type": "string"
+          },
+          "gr_sequence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "improvement_exact": {
+            "type": "number",
+            "format": "float"
+          },
+          "improvement_linear": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "CrfSimulationResults": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "baseline": {
+            "$ref": "#/components/schemas/Baseline"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "productionModule": {
+            "type": "string"
+          },
+          "simulation_run": {
+            "type": "boolean"
+          },
+          "solutionTime": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalTime": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "best_phase": {
+            "$ref": "#/components/schemas/BestPhase"
+          }
+        },
+        "description": "Simulation Results for CRF Pilot Case"
+      },
+      "Exact": {
+        "type": "object",
+        "properties": {
+          "cost": {
+            "type": "string"
+          }
+        }
+      },
+      "Linear": {
+        "type": "object",
+        "properties": {
+          "cost": {
+            "type": "string"
+          }
+        }
+      },
+      "BaseResponseCrfSimulationKittingConfigDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CrfSimulationKittingConfigDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "CrfSimulationKittingConfigDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "config": {
+            "type": "object"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rawText": {
+            "type": "string"
+          },
+          "etag": {
+            "type": "string"
+          },
+          "case": {
+            "type": "string"
+          }
+        },
+        "description": "Response data"
+      },
+      "BaseResponseListSewSelfAwarenessRealTimeMonitoringResultsDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Response data",
+            "items": {
+              "$ref": "#/components/schemas/SewSelfAwarenessRealTimeMonitoringResultsDto"
+            }
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "SewSelfAwarenessRealTimeMonitoringResultsDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "smartServiceId": {
+            "type": "string"
+          },
+          "moduleId": {
+            "type": "string"
+          },
+          "module": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "property": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "lowThreshold": {
+            "type": "number",
+            "format": "double"
+          },
+          "highThreshold": {
+            "type": "number",
+            "format": "double"
+          },
+          "deviationPercentage": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "description": "Response data"
+      },
+      "BaseResponseListSewSelfAwarenessMonitoringKpisResultsDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Response data",
+            "items": {
+              "$ref": "#/components/schemas/SewSelfAwarenessMonitoringKpisResultsDto"
+            }
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaseResponseSewSelfAwarenessMonitoringKpisResultsDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SewSelfAwarenessMonitoringKpisResultsDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaseResponseSewMonitorKpisComponentsDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SewMonitorKpisComponentsDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaseResponsePaginatedResultsDtoKH Events": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PaginatedResultsDtoKH Events"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaginatedResultsDtoKH Events": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KH Events"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastPage": {
+            "type": "boolean"
+          }
+        },
+        "description": "Response data"
+      },
+      "BaseResponseOrderDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/OrderDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "Pageable": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "PaginatedResultsDto": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastPage": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BaseResponsePaginatedResultsDtoOrderDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PaginatedResultsDtoOrderDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaginatedResultsDtoOrderDto": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderDto"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastPage": {
+            "type": "boolean"
+          }
+        },
+        "description": "Response data"
+      },
+      "BaseResponseSewProductionScheduleDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SewProductionScheduleDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaseResponseCrfOptimizationResults": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CrfOptimizationResults"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "CrfOptimizationResults": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "module": {
+            "type": "string"
+          },
+          "optimization_results": {
+            "$ref": "#/components/schemas/OptimizationResults"
+          },
+          "optimization_run": {
+            "type": "boolean"
+          },
+          "solutionTime": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalTime": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "description": "Optimization Results for CRF Pilot Case"
+      },
+      "OptimizationResults": {
+        "type": "object",
+        "properties": {
+          "exact": {
+            "$ref": "#/components/schemas/Exact"
+          },
+          "improvement_percentage": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "BaseResponseCrfOptimizationKittingConfigDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CrfOptimizationKittingConfigDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "CrfOptimizationKittingConfigDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "config": {
+            "type": "object"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "rawText": {
+            "type": "string"
+          },
+          "etag": {
+            "type": "string"
+          },
+          "case": {
+            "type": "string"
+          }
+        },
+        "description": "Response data"
+      },
+      "BaseResponsePaginatedResultsDtoModaptoModuleDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PaginatedResultsDtoModaptoModuleDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaginatedResultsDtoModaptoModuleDto": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModaptoModuleDto"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastPage": {
+            "type": "boolean"
+          }
+        },
+        "description": "Response data"
+      },
+      "BaseResponseListSmartServiceDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Response data",
+            "items": {
+              "$ref": "#/components/schemas/SmartServiceDto"
+            }
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaseResponseListModaptoModuleDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "description": "Response data",
+            "items": {
+              "$ref": "#/components/schemas/ModaptoModuleDto"
+            }
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "BaseResponsePaginatedResultsDtoMaintenance Data (CORIM)": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PaginatedResultsDtoMaintenance Data (CORIM)"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaginatedResultsDtoMaintenance Data (CORIM)": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Maintenance Data (CORIM)"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastPage": {
+            "type": "boolean"
+          }
+        },
+        "description": "Response data"
+      },
+      "BaseResponsePaginatedResultsDtoScheduledTaskDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/PaginatedResultsDtoScheduledTaskDto"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaginatedResultsDtoScheduledTaskDto": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScheduledTaskDto"
+            }
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastPage": {
+            "type": "boolean"
+          }
+        },
+        "description": "Response data"
+      },
+      "ScheduledTaskDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "smartServiceType": {
+            "type": "string"
+          },
+          "frequencyType": {
+            "type": "string",
+            "enum": [
+              "MINUTES",
+              "HOURS",
+              "DAYS"
+            ]
+          },
+          "frequencyValue": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "moduleId": {
+            "type": "string"
+          },
+          "smartServiceId": {
+            "type": "string"
+          },
+          "nextExecutionTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestBody": {
+            "type": "object"
+          }
+        }
+      },
+      "BaseResponseSEW Grouping Predictive Maintenance Result": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/SEW Grouping Predictive Maintenance Result"
+          },
+          "errors": {
+            "type": "object",
+            "description": "Error details"
+          },
+          "message": {
+            "type": "string",
+            "description": "Response message"
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Success/Failure Flag"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp",
+            "format": "date-time"
+          }
+        }
+      },
+      "Maintenance Component": {
+        "type": "object",
+        "properties": {
+          "Module ID": {
+            "type": "string",
+            "description": "Unique identifier for the module",
+            "example": "12345"
+          },
+          "Module": {
+            "type": "string",
+            "description": "Name of the module requiring maintenance",
+            "example": "Motor Bearing Unit A1"
+          },
+          "Replacement time": {
+            "type": "number",
+            "description": "Optimal replacement time (hours from now)",
+            "format": "double",
+            "example": 48.5
+          },
+          "Duration": {
+            "type": "number",
+            "description": "Estimated maintenance duration in hours",
+            "format": "double",
+            "example": 2.5
+          }
+        },
+        "description": "Individual maintenance component details"
+      },
+      "Maintenance Time Window": {
+        "type": "object",
+        "properties": {
+          "Begin": {
+            "type": "string",
+            "description": "Start of the time window for analysis in ISO 8601 format",
+            "format": "date-time"
+          },
+          "End": {
+            "type": "string",
+            "description": "End of the time window for analysis in ISO 8601 format",
+            "format": "date-time"
+          }
+        },
+        "description": "Time window for maintenance activities"
+      },
+      "SEW Grouping Predictive Maintenance Result": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this maintenance result"
+          },
+          "moduleId": {
+            "type": "string",
+            "description": "MODAPTO Module ID"
+          },
+          "smartServiceId": {
+            "type": "string",
+            "description": "Smart service ID"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Timestamp when this result was generated",
+            "format": "date-time"
+          },
+          "Cost savings": {
+            "type": "number",
+            "description": "Cost savings achieved through grouping maintenance activities",
+            "format": "double"
+          },
+          "Time window": {
+            "$ref": "#/components/schemas/Maintenance Time Window"
+          },
+          "Grouping maintenance": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "description": "Grouped maintenance activities organized by category",
+              "items": {
+                "$ref": "#/components/schemas/Maintenance Component"
+              }
+            },
+            "description": "Grouped maintenance activities organized by category"
+          },
+          "Individual maintenance": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "description": "Individual maintenance activities organized by category",
+              "items": {
+                "$ref": "#/components/schemas/Maintenance Component"
+              }
+            },
+            "description": "Individual maintenance activities organized by category"
+          }
+        },
+        "description": "Results from grouping-based predictive maintenance optimization for SEW plant"
+      }
+    },
+    "securitySchemes": {
+      "bearerToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
