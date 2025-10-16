@@ -19,5 +19,7 @@ services:
             - API_USERNAME=example
             - API_PASSWORD=example
             - AUTH_HOST=https://services.modapto.atc.gr 
+            - DTM_HOST=https://dt-management.modapto.atc.gr
+            - PY_HOST=http://localhost:5055
         volumes:
             - ./nginx/eds/nginx.conf:/etc/nginx/conf.d/default.conf #nginx config for eds running at /eds subfolder + refresh page settings
