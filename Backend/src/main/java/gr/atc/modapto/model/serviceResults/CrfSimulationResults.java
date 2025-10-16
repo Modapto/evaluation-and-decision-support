@@ -1,15 +1,16 @@
 package gr.atc.modapto.model.serviceResults;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.util.List;
-import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
@@ -38,10 +39,10 @@ public class CrfSimulationResults {
     @Field(type = FieldType.Long)
     private Long totalTime;
 
-    @Field(type = FieldType.Object)
+    @Field(type = FieldType.Flattened)
     private Baseline baseline;
 
-    @Field(name = "best_phase", type = FieldType.Object)
+    @Field(name = "best_phase", type = FieldType.Flattened)
     private BestPhase bestPhase;
 
     @Data
@@ -49,13 +50,13 @@ public class CrfSimulationResults {
     @NoArgsConstructor
     public static class Baseline {
 
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Exact exact;
 
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Linear linear;
 
-        @Field(name = "gr_sequence", type = FieldType.Object)
+        @Field(name = "gr_sequence", type = FieldType.Flattened)
         private List<Map<String, String>> grSequence;
 
         @Data
@@ -83,7 +84,7 @@ public class CrfSimulationResults {
         @Field(name = "exact_cost", type = FieldType.Text)
         private String exactCost;
 
-        @Field(name = "gr_sequence", type = FieldType.Object)
+        @Field(name = "gr_sequence", type = FieldType.Object, enabled = false)
         private List<Map<String, String>> grSequence;
 
         @Field(name = "improvement_exact", type = FieldType.Float)

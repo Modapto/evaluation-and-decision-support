@@ -27,7 +27,7 @@ public class SewOptimizationResults {
     @Field(name = "moduleId", type = FieldType.Keyword)
     private String moduleId;
 
-    @Field(name = "data", type = FieldType.Object, enabled = false)
+    @Field(name = "data", type = FieldType.Flattened)
     private Map<String, SolutionData> data;
 
     @Data
@@ -35,16 +35,16 @@ public class SewOptimizationResults {
     @AllArgsConstructor
     public static class SolutionData {
 
-        @Field(type = FieldType.Object, enabled = false)
+        @Field(type = FieldType.Flattened)
         private MetricsData metrics;
 
-        @Field(type = FieldType.Object, enabled = false)
+        @Field(type = FieldType.Flattened)
         private Map<String, Map<String, String>> seq;
 
-        @Field(type = FieldType.Object, enabled = false)
+        @Field(type = FieldType.Flattened)
         private Map<String, Map<String, Map<String, Map<String, TimeRange>>>> orders;
 
-        @Field(name = "init_order", type = FieldType.Object, enabled = false)
+        @Field(name = "init_order", type = FieldType.Flattened)
         private List<String> initOrder;
     }
 

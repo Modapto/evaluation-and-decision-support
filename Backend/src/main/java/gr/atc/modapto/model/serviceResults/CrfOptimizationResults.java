@@ -1,14 +1,15 @@
 package gr.atc.modapto.model.serviceResults;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import java.util.List;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
@@ -28,7 +29,7 @@ public class CrfOptimizationResults {
     @Field(name = "moduleId", type = FieldType.Keyword)
     private String moduleId;
 
-    @Field(name = "optimization_results", type = FieldType.Object)
+    @Field(name = "optimization_results", type = FieldType.Flattened)
     private OptimizationResults optimizationResults;
 
     @Field(name = "optimization_run", type = FieldType.Boolean)
@@ -45,7 +46,7 @@ public class CrfOptimizationResults {
     @NoArgsConstructor
     public static class OptimizationResults {
 
-        @Field(type = FieldType.Object)
+        @Field(type = FieldType.Flattened)
         private Exact exact;
 
         @Field(name = "improvement_percentage", type = FieldType.Float)
@@ -59,7 +60,7 @@ public class CrfOptimizationResults {
             @Field(type = FieldType.Long)
             private Long cost;
 
-            @Field(name = "time_details", type = FieldType.Object)
+            @Field(name = "time_details", type = FieldType.Flattened)
             private List<TimeDetail> timeDetails;
 
             @Data
