@@ -60,20 +60,7 @@ class CrfOptimizationServiceTests {
     void setUp() {
         sampleTimestamp = "2025-07-17T10:30:00Z";
 
-        List<CrfOptimizationResults.OptimizationResults.Exact.TimeDetail> timeDetails = Arrays.asList(
-                new CrfOptimizationResults.OptimizationResults.Exact.TimeDetail(
-                        "component_A", "component_B", 150L, "position_1", "position_2"
-                ),
-                new CrfOptimizationResults.OptimizationResults.Exact.TimeDetail(
-                        "component_C", "component_D", 200L, "position_3", "position_4"
-                )
-        );
-
-        CrfOptimizationResults.OptimizationResults.Exact exact =
-                new CrfOptimizationResults.OptimizationResults.Exact(2500L, timeDetails);
-
-        CrfOptimizationResults.OptimizationResults optimizationResults =
-                new CrfOptimizationResults.OptimizationResults(exact, 15.5f);
+        Object optimizationResults = new Object();
 
         sampleEntity = new CrfOptimizationResults(
                 "1", sampleTimestamp, "Optimization completed successfully", "test_module",
@@ -336,26 +323,13 @@ class CrfOptimizationServiceTests {
      * Helper Methods
      */
     private CrfOptimizationResultsDto createSampleDto() {
-        List<CrfOptimizationResultsDto.OptimizationResults.Exact.TimeDetail> timeDetailsDto = Arrays.asList(
-                new CrfOptimizationResultsDto.OptimizationResults.Exact.TimeDetail(
-                        "component_A", "component_B", 150L, "position_1", "position_2"
-                ),
-                new CrfOptimizationResultsDto.OptimizationResults.Exact.TimeDetail(
-                        "component_C", "component_D", 200L, "position_3", "position_4"
-                )
-        );
-
-        CrfOptimizationResultsDto.OptimizationResults.Exact exactDto =
-                new CrfOptimizationResultsDto.OptimizationResults.Exact(2500L, timeDetailsDto);
-
-        CrfOptimizationResultsDto.OptimizationResults optimizationResultsDto =
-                new CrfOptimizationResultsDto.OptimizationResults(exactDto, 15.5f);
+        Object optimizationResults = new Object();
 
         return CrfOptimizationResultsDto.builder()
                 .id("1")
                 .timestamp(sampleTimestamp)
                 .message("Optimization completed successfully")
-                .optimizationResults(optimizationResultsDto)
+                .optimizationResults(optimizationResults)
                 .optimizationRun(true)
                 .solutionTime(3000L)
                 .totalTime(5000L)

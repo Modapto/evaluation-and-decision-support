@@ -7,9 +7,6 @@ import gr.atc.modapto.dto.BaseEventResultsDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
-import java.util.List;
-import java.util.Map;
-
 @EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
@@ -39,55 +36,8 @@ public class CrfSimulationResultsDto extends BaseEventResultsDto {
     @JsonProperty("totalTime")
     private Long totalTime;
 
-    private Baseline baseline;
+    private Object baseline;
 
     @JsonProperty("best_phase")
-    private BestPhase bestPhase;
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class Baseline {
-
-        private Exact exact;
-
-        private Linear linear;
-
-        @JsonProperty("gr_sequence")
-        private List<Map<String, String>> grSequence;
-
-        @Data
-        @AllArgsConstructor
-        @NoArgsConstructor
-        public static class Exact {
-            private String cost;
-        }
-
-        @Data
-        @AllArgsConstructor
-        @NoArgsConstructor
-        public static class Linear {
-            private String cost;
-        }
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class BestPhase {
-
-        @JsonProperty("exact_cost")
-        private String exactCost;
-
-        @JsonProperty("gr_sequence")
-        private List<Map<String, String>> grSequence;
-
-        @JsonProperty("improvement_exact")
-        private Float improvementExact;
-
-        @JsonProperty("improvement_linear")
-        private Float improvementLinear;
-
-        private Long phase;
-    }
+    private Object bestPhase;
 }

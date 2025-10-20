@@ -17,6 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -305,17 +307,10 @@ class SimulationControllerTests {
     /*
      * Helper Methods
      */
-    private SewSimulationResultsDto.SimulationData createSampleSimulationData() {
-        SewSimulationResultsDto.KpiMetric makespan = new SewSimulationResultsDto.KpiMetric(
-                240.0, 220.0, -20.0, -8.33
-        );
-        SewSimulationResultsDto.KpiMetric machineUtilization = new SewSimulationResultsDto.KpiMetric(
-                85.5, 92.3, 6.8, 7.95
-        );
-        SewSimulationResultsDto.KpiMetric throughputStdev = new SewSimulationResultsDto.KpiMetric(
-                12.5, 8.7, -3.8, -30.4
-        );
-
-        return new SewSimulationResultsDto.SimulationData(makespan, machineUtilization, throughputStdev);
+    private Object createSampleSimulationData() {
+        Map<String, Object> simulationData = new HashMap<>();
+        simulationData.put("kpi", "performance_data");
+        simulationData.put("metrics", 95.5);
+        return simulationData;
     }
 }

@@ -43,6 +43,9 @@ public class ModaptoModule {
     @Field(type = FieldType.Keyword)
     private List<String> workers; // user IDs
 
+    @Field(type = FieldType.Object)
+    private Object metadata;
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

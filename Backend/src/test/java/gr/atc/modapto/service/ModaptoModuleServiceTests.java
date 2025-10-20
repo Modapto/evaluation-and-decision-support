@@ -85,7 +85,8 @@ class ModaptoModuleServiceTests {
                 Arrays.asList(testSmartService, otherService),
                 LocalDateTime.now(),
                 Instant.now(),
-                new ArrayList<>()
+                new ArrayList<>(),
+                null
         );
 
         testModuleDto = ModaptoModuleDto.builder()

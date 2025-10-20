@@ -50,11 +50,11 @@ public class SewSimulationInputDto {
 
     @JsonProperty("current_env")
     @JsonAlias({"current_env", "currentEnv"})
-    private SewPlantEnvironmentDto currentEnv;
+    private SewPlantEnvironmentDto.PlantData currentEnv;
 
     @JsonProperty("simulated_env")
     @JsonAlias({"simulated_env", "simulatedEnv"})
-    private SewPlantEnvironmentDto simulatedEnv;
+    private SewPlantEnvironmentDto.PlantData simulatedEnv;
 
     @Schema(description = "Production Schedules for SEW Case", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Map<String, JsonNode> data;

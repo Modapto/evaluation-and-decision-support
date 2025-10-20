@@ -450,29 +450,13 @@ class OptimizationControllerTests {
     /*
      * Helper methods
      */
-    private Map<String, SewOptimizationResultsDto.SolutionData> createSampleData() {
-        Map<String, SewOptimizationResultsDto.SolutionData> data = new HashMap<>();
+    private Map<String, Object> createSampleData() {
+        Map<String, Object> solution = new HashMap<>();
+        solution.put("schedule", "optimized_schedule_data");
+        solution.put("cost", 1000.0);
 
-        SewOptimizationResultsDto.KpiData kpiData = new SewOptimizationResultsDto.KpiData();
-        kpiData.setMakespan("240");
-        kpiData.setMachineUtilization(0.85);
-
-        Map<String, Map<String, SewOptimizationResultsDto.OrderData>> scheduleData = new HashMap<>();
-        Map<String, SewOptimizationResultsDto.OrderData> daySchedule = new HashMap<>();
-
-        SewOptimizationResultsDto.OrderData orderData = new SewOptimizationResultsDto.OrderData();
-        orderData.setOrderId("order_1");
-
-        orderData.setMachines(new HashMap<>());
-
-        daySchedule.put("order_1", orderData);
-        scheduleData.put("day_1", daySchedule);
-
-        SewOptimizationResultsDto.SolutionData solutionData = new SewOptimizationResultsDto.SolutionData();
-        solutionData.setKpis(kpiData);
-        solutionData.setSchedule(scheduleData);
-
-        data.put("solution_1", solutionData);
+        Map<String, Object> data = new HashMap<>();
+        data.put("solution_1", solution);
         return data;
     }
 }

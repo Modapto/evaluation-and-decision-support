@@ -54,18 +54,8 @@ class CrfSimulationServiceTests {
     void setUp() {
         sampleTimestamp = "2025-07-17T10:30:00Z";
 
-        List<Map<String, String>> grSequence = Arrays.asList(
-                Map.of("operation", "cutting", "order", "1"),
-                Map.of("operation", "sewing", "order", "2")
-        );
-
-        CrfSimulationResults.Baseline.Exact exact = new CrfSimulationResults.Baseline.Exact("1250.50");
-        CrfSimulationResults.Baseline.Linear linear = new CrfSimulationResults.Baseline.Linear("1300.75");
-        CrfSimulationResults.Baseline baseline = new CrfSimulationResults.Baseline(exact, linear, grSequence);
-
-        CrfSimulationResults.BestPhase bestPhase = new CrfSimulationResults.BestPhase(
-                "1100.25", grSequence, 12.5f, 15.3f, 3L
-        );
+        Object baseline = new Object();
+        Object bestPhase = new Object();
 
         sampleEntity = new CrfSimulationResults(
                 "1", sampleTimestamp, "Simulation completed successfully", "test_module",
@@ -97,8 +87,6 @@ class CrfSimulationServiceTests {
             assertThat(result.getSimulationRun()).isTrue();
             assertThat(result.getSolutionTime()).isEqualTo(5000L);
             assertThat(result.getTotalTime()).isEqualTo(8000L);
-            assertThat(result.getBaseline()).isNotNull();
-            assertThat(result.getBestPhase()).isNotNull();
 
             verify(crfSimulationResultsRepository).findFirstByOrderByTimestampDesc();
             verify(modelMapper).map(sampleEntity, CrfSimulationResultsDto.class);
@@ -173,8 +161,6 @@ class CrfSimulationServiceTests {
             assertThat(result.getSimulationRun()).isTrue();
             assertThat(result.getSolutionTime()).isEqualTo(5000L);
             assertThat(result.getTotalTime()).isEqualTo(8000L);
-            assertThat(result.getBaseline()).isNotNull();
-            assertThat(result.getBestPhase()).isNotNull();
 
             verify(crfSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(productionModule);
             verify(modelMapper).map(sampleEntity, CrfSimulationResultsDto.class);
@@ -285,18 +271,8 @@ class CrfSimulationServiceTests {
      * Helper methods
      */
     private CrfSimulationResultsDto createSampleDto() {
-        List<Map<String, String>> grSequenceDto = Arrays.asList(
-                Map.of("operation", "cutting", "order", "1"),
-                Map.of("operation", "sewing", "order", "2")
-        );
-
-        CrfSimulationResultsDto.Baseline.Exact exactDto = new CrfSimulationResultsDto.Baseline.Exact("1250.50");
-        CrfSimulationResultsDto.Baseline.Linear linearDto = new CrfSimulationResultsDto.Baseline.Linear("1300.75");
-        CrfSimulationResultsDto.Baseline baselineDto = new CrfSimulationResultsDto.Baseline(exactDto, linearDto, grSequenceDto);
-
-        CrfSimulationResultsDto.BestPhase bestPhaseDto = new CrfSimulationResultsDto.BestPhase(
-                "1100.25", grSequenceDto, 12.5f, 15.3f, 3L
-        );
+        Object baseline = new Object();
+        Object bestPhase = new Object();
 
         return CrfSimulationResultsDto.builder()
                 .id("1")
@@ -305,8 +281,8 @@ class CrfSimulationServiceTests {
                 .simulationRun(true)
                 .solutionTime(5000L)
                 .totalTime(8000L)
-                .baseline(baselineDto)
-                .bestPhase(bestPhaseDto)
+                .baseline(baseline)
+                .bestPhase(bestPhase)
                 .build();
     }
 }

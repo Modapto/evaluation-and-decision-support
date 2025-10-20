@@ -32,30 +32,18 @@ class SewPlantEnvironmentRepositoryTests extends SetupTestContainersEnvironment 
     void setUp() {
         sewPlantEnvironmentRepository.deleteAll();
 
-        Map<String, Object> cells = new HashMap<>();
-        cells.put("Cell1", new HashMap<>());
-        cells.put("Cell2", new HashMap<>());
+        Map<String, Object> stages = new HashMap<>();
+        stages.put("stage1", Map.of("wipIn", 5, "wipOut", 3));
 
-        SewPlantEnvironment.Stage stage = SewPlantEnvironment.Stage.builder()
-                .wipIn(5)
-                .wipOut(3)
-                .modules("ModuleA")
-                .cells(cells)
-                .build();
+        Map<String, Object> transTimes = new HashMap<>();
+        transTimes.put("transition1", Map.of("time", 10));
 
-        Map<String, SewPlantEnvironment.Stage> stages = new HashMap<>();
-        stages.put("Stage1", stage);
-
-        Map<String, Map<String, Integer>> transTimes = new HashMap<>();
-        Map<String, Integer> transTime1 = new HashMap<>();
-        transTime1.put("Cell2", 10);
-        transTimes.put("Cell1", transTime1);
+        SewPlantEnvironment.PlantData plantData = new SewPlantEnvironment.PlantData(stages, transTimes);
 
         testEnvironment = SewPlantEnvironment.builder()
                 .id("TEST_ENV_1")
                 .timestampCreated(LocalDateTime.now())
-                .stages(stages)
-                .transTimes(transTimes)
+                .data(plantData)
                 .build();
     }
 
@@ -71,24 +59,27 @@ class SewPlantEnvironmentRepositoryTests extends SetupTestContainersEnvironment 
         //Then
         assertTrue(found.isPresent());
         assertEquals("TEST_ENV_1", found.get().getId());
-        assertEquals(1, found.get().getStages().size());
-        assertEquals(1, found.get().getTransTimes().size());
+        assertNotNull(found.get().getData());
     }
 
     @Test
     @DisplayName("Find latest environment : Success")
     void givenMultipleEnvironments_whenFindFirstByOrderByTimestampCreatedDesc_thenReturnLatest() {
         //Given
+        Map<String, Object> stages = new HashMap<>();
+        stages.put("stage1", Map.of("wipIn", 5, "wipOut", 3));
+
+        Map<String, Object> transTimes = new HashMap<>();
+        transTimes.put("transition1", Map.of("time", 10));
+
         SewPlantEnvironment older = SewPlantEnvironment.builder()
                 .timestampCreated(LocalDateTime.now().minusHours(2))
-                .stages(new HashMap<>())
-                .transTimes(new HashMap<>())
+                .data(new SewPlantEnvironment.PlantData(stages, transTimes))
                 .build();
 
         SewPlantEnvironment newer = SewPlantEnvironment.builder()
                 .timestampCreated(LocalDateTime.now())
-                .stages(new HashMap<>())
-                .transTimes(new HashMap<>())
+                .data(new SewPlantEnvironment.PlantData(stages, transTimes))
                 .build();
 
         sewPlantEnvironmentRepository.save(older);

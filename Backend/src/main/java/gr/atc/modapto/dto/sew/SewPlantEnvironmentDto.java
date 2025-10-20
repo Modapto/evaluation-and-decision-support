@@ -16,26 +16,16 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SewPlantEnvironmentDto {
 
-    private Map<String, StageDto> stages;
-
-    private Map<String, Map<String, Integer>> transTimes;
+    private PlantData data;
 
     @Data
-    @NoArgsConstructor
     @AllArgsConstructor
-    @Builder
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class StageDto {
+    @NoArgsConstructor
+    public static class PlantData {
 
-        @JsonProperty("WIP_in")
-        private Integer wipIn;
+        private Object stages;
 
-        @JsonProperty("WIP_out")
-        private Integer wipOut;
+        private Object transTimes;
 
-        private String modules;
-
-        @JsonProperty("Cells")
-        private Map<String, Object> cells;
     }
 }

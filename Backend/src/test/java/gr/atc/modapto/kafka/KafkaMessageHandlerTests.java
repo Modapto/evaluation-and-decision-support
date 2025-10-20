@@ -414,40 +414,20 @@ class KafkaMessageHandlerTests {
     /*
      * Helper Methods
      */
-    private SewSimulationResultsDto.SimulationData createSampleSimulationData() {
-        SewSimulationResultsDto.KpiMetric makespan = new SewSimulationResultsDto.KpiMetric(
-                240.0, 220.0, -20.0, -8.33
-        );
-        SewSimulationResultsDto.KpiMetric machineUtilization = new SewSimulationResultsDto.KpiMetric(
-                85.5, 92.3, 6.8, 7.95
-        );
-        SewSimulationResultsDto.KpiMetric throughputStdev = new SewSimulationResultsDto.KpiMetric(
-                12.5, 8.7, -3.8, -30.4
-        );
-
-        return new SewSimulationResultsDto.SimulationData(makespan, machineUtilization, throughputStdev);
+    private Object createSampleSimulationData() {
+        Map<String, Object> simulationData = new HashMap<>();
+        simulationData.put("kpi", "performance_data");
+        simulationData.put("metrics", 95.5);
+        return simulationData;
     }
 
-    private Map<String, SewOptimizationResultsDto.SolutionData> createSampleOptimizationData() {
-        Map<String, SewOptimizationResultsDto.SolutionData> data = new HashMap<>();
+    private Map<String, Object> createSampleOptimizationData() {
+        Map<String, Object> solution = new HashMap<>();
+        solution.put("schedule", "optimized_schedule_data");
+        solution.put("cost", 1000.0);
 
-        SewOptimizationResultsDto.KpiData kpiData = new SewOptimizationResultsDto.KpiData("240", 85.5);
-
-        Map<String, Map<String, SewOptimizationResultsDto.OrderData>> scheduleDto = new HashMap<>();
-        Map<String, SewOptimizationResultsDto.OrderData> daySchedule = new HashMap<>();
-
-        SewOptimizationResultsDto.OrderData orderData = new SewOptimizationResultsDto.OrderData();
-        orderData.setOrderId("order_1");
-        orderData.setMachines(new HashMap<>());
-
-        daySchedule.put("order_1", orderData);
-        scheduleDto.put("day_1", daySchedule);
-
-        SewOptimizationResultsDto.SolutionData solutionDataDto = new SewOptimizationResultsDto.SolutionData(
-                kpiData, scheduleDto
-        );
-
-        data.put("solution_1", solutionDataDto);
+        Map<String, Object> data = new HashMap<>();
+        data.put("solution_1", solution);
         return data;
     }
 }

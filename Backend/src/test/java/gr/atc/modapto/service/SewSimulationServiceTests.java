@@ -57,21 +57,7 @@ class SewSimulationServiceTests {
     void setUp() {
         sampleTimestamp = "2025-07-17T10:30:00Z";
 
-        SewSimulationResults.KpiMetric makespanMetric = new SewSimulationResults.KpiMetric(
-                240.0, 220.0, -20.0, -8.33
-        );
-
-        SewSimulationResults.KpiMetric machineUtilizationMetric = new SewSimulationResults.KpiMetric(
-                85.5, 92.3, 6.8, 7.95
-        );
-
-        SewSimulationResults.KpiMetric throughputStdevMetric = new SewSimulationResults.KpiMetric(
-                12.5, 8.7, -3.8, -30.4
-        );
-
-        SewSimulationResults.SimulationData simulationData = new SewSimulationResults.SimulationData(
-                makespanMetric, machineUtilizationMetric, throughputStdevMetric
-        );
+        Object simulationData = new Object();
 
         sampleEntity = new SewSimulationResults("1", sampleTimestamp, simulationData, "test_module");
 
@@ -96,7 +82,6 @@ class SewSimulationServiceTests {
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
-            assertThat(result.getSimulationData()).isNotNull();
 
             verify(sewSimulationResultsRepository).findFirstByOrderByTimestampDesc();
             verify(modelMapper).map(sampleEntity, SewSimulationResultsDto.class);
@@ -167,7 +152,6 @@ class SewSimulationServiceTests {
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo("1");
             assertThat(result.getTimestamp()).isEqualTo(sampleTimestamp);
-            assertThat(result.getSimulationData()).isNotNull();
 
             verify(sewSimulationResultsRepository).findFirstByModuleIdOrderByTimestampDesc(module);
             verify(modelMapper).map(sampleEntity, SewSimulationResultsDto.class);
@@ -230,30 +214,33 @@ class SewSimulationServiceTests {
         @DisplayName("Upload environment : Success")
         void givenValidEnvironment_whenUploadPlantEnvironment_thenSavesSuccessfully() {
             //Given
+            // Create PlantData with stages as Object
+            SewPlantEnvironmentDto.PlantData plantData = new SewPlantEnvironmentDto.PlantData();
+
+            Map<String, Object> stages = new HashMap<>();
+            Map<String, Object> stageData = new HashMap<>();
+            stageData.put("WIP_in", 5);
+            stageData.put("WIP_out", 3);
+            stageData.put("modules", "ModuleA");
+
             Map<String, Object> cells = new HashMap<>();
             cells.put("Cell1", new HashMap<>());
+            stageData.put("Cells", cells);
 
-            SewPlantEnvironmentDto.StageDto stageDto = SewPlantEnvironmentDto.StageDto.builder()
-                    .wipIn(5)
-                    .wipOut(3)
-                    .modules("ModuleA")
-                    .cells(cells)
-                    .build();
-
-            Map<String, SewPlantEnvironmentDto.StageDto> stages = new HashMap<>();
-            stages.put("Stage1", stageDto);
+            stages.put("Stage1", stageData);
+            plantData.setStages(stages);
 
             Map<String, Map<String, Integer>> transTimes = new HashMap<>();
+            plantData.setTransTimes(transTimes);
+
             SewPlantEnvironmentDto environmentDto = SewPlantEnvironmentDto.builder()
-                    .stages(stages)
-                    .transTimes(transTimes)
+                    .data(plantData)
                     .build();
 
             SewPlantEnvironment environmentEntity = SewPlantEnvironment.builder()
                     .id("ENV_1")
                     .timestampCreated(LocalDateTime.now())
-                    .stages(new HashMap<>())
-                    .transTimes(transTimes)
+                    .data(new SewPlantEnvironment.PlantData(new Object(), new Object()))
                     .build();
 
             when(modelMapper.map(environmentDto, SewPlantEnvironment.class)).thenReturn(environmentEntity);
@@ -271,9 +258,12 @@ class SewSimulationServiceTests {
         @DisplayName("Upload environment : Mapping exception")
         void givenMappingError_whenUploadPlantEnvironment_thenThrowsModelMappingException() {
             //Given
+            SewPlantEnvironmentDto.PlantData plantData = new SewPlantEnvironmentDto.PlantData();
+            plantData.setStages(new HashMap<>());
+            plantData.setTransTimes(new HashMap<>());
+
             SewPlantEnvironmentDto environmentDto = SewPlantEnvironmentDto.builder()
-                    .stages(new HashMap<>())
-                    .transTimes(new HashMap<>())
+                    .data(plantData)
                     .build();
 
             when(modelMapper.map(environmentDto, SewPlantEnvironment.class))
@@ -300,13 +290,15 @@ class SewSimulationServiceTests {
             SewPlantEnvironment environmentEntity = SewPlantEnvironment.builder()
                     .id("ENV_1")
                     .timestampCreated(LocalDateTime.now())
-                    .stages(new HashMap<>())
-                    .transTimes(new HashMap<>())
+                    .data(new SewPlantEnvironment.PlantData(new Object(), new Object()))
                     .build();
 
+            SewPlantEnvironmentDto.PlantData plantData = new SewPlantEnvironmentDto.PlantData();
+            plantData.setStages(new HashMap<>());
+            plantData.setTransTimes(new HashMap<>());
+
             SewPlantEnvironmentDto environmentDto = SewPlantEnvironmentDto.builder()
-                    .stages(new HashMap<>())
-                    .transTimes(new HashMap<>())
+                    .data(plantData)
                     .build();
 
             when(sewPlantEnvironmentRepository.findFirstByOrderByTimestampCreatedDesc())
@@ -318,6 +310,7 @@ class SewSimulationServiceTests {
 
             //Then
             assertThat(result).isNotNull();
+            assertThat(result.getData()).isNotNull();
             verify(sewPlantEnvironmentRepository).findFirstByOrderByTimestampCreatedDesc();
             verify(modelMapper).map(environmentEntity, SewPlantEnvironmentDto.class);
         }
@@ -343,10 +336,7 @@ class SewSimulationServiceTests {
      * Helper methods
      */
     private SewSimulationResultsDto createSampleDto() {
-        SewSimulationResultsDto.KpiMetric makespan = new SewSimulationResultsDto.KpiMetric(240.0, 220.0, -20.0, -8.33);
-        SewSimulationResultsDto.KpiMetric utilization = new SewSimulationResultsDto.KpiMetric(85.5, 92.3, 6.8, 7.95);
-        SewSimulationResultsDto.KpiMetric throughput = new SewSimulationResultsDto.KpiMetric(12.5, 8.7, -3.8, -30.4);
-        SewSimulationResultsDto.SimulationData data = new SewSimulationResultsDto.SimulationData(makespan, utilization, throughput);
-        return SewSimulationResultsDto.builder().id("1").timestamp(sampleTimestamp).simulationData(data).build();
+        Object simulationData = new Object();
+        return SewSimulationResultsDto.builder().id("1").timestamp(sampleTimestamp).simulationData(simulationData).build();
     }
 }

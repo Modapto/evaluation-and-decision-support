@@ -33,6 +33,8 @@ public class ModaptoModuleDto {
 
     private List<String> workers;
 
+    private Object metadata;
+
     @Data
     @Builder
     @AllArgsConstructor

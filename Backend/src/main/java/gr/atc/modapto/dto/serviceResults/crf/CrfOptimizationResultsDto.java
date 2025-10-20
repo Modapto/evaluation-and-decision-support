@@ -7,8 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-import java.util.List;
-
 @EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
@@ -31,7 +29,7 @@ public class CrfOptimizationResultsDto extends BaseEventResultsDto {
     private String module;
 
     @JsonProperty("optimization_results")
-    private OptimizationResults optimizationResults;
+    private Object optimizationResults;
 
     @JsonProperty("optimization_run")
     private Boolean optimizationRun;
@@ -41,44 +39,4 @@ public class CrfOptimizationResultsDto extends BaseEventResultsDto {
 
     @JsonProperty("totalTime")
     private Long totalTime;
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class OptimizationResults {
-
-        private Exact exact;
-
-        @JsonProperty("improvement_percentage")
-        private Float improvementPercentage;
-
-        @Data
-        @AllArgsConstructor
-        @NoArgsConstructor
-        public static class Exact {
-
-            private Long cost;
-
-            @JsonProperty("time_details")
-            private List<TimeDetail> timeDetails;
-
-            @Data
-            @AllArgsConstructor
-            @NoArgsConstructor
-            public static class TimeDetail {
-
-                @JsonProperty("component_picked")
-                private String componentPicked;
-
-                @JsonProperty("component_placed")
-                private String componentPlaced;
-
-                private Long distance;
-
-                private String from;
-
-                private String to;
-            }
-        }
-    }
 }

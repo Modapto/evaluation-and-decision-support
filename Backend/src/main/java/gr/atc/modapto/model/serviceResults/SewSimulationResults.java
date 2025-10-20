@@ -20,41 +20,9 @@ public class SewSimulationResults {
     @Field(name = "timestamp", type = FieldType.Keyword)
     private String timestamp;
 
-    @Field(name = "simulationData", type = FieldType.Object)
-    private SimulationData simulationData;
+    @Field(name = "simulationData", type = FieldType.Flattened)
+    private Object simulationData;
 
     @Field(name = "moduleId", type = FieldType.Keyword)
     private String moduleId;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SimulationData {
-        @Field(name = "makespan", type = FieldType.Object)
-        private KpiMetric makespan;
-
-        @Field(name = "machineUtilization", type = FieldType.Object)
-        private KpiMetric machineUtilization;
-
-        @Field(name = "throughputStdev", type = FieldType.Object)
-        private KpiMetric throughputStdev;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class KpiMetric {
-
-        @Field(name = "current", type = FieldType.Double)
-        private Double current;
-
-        @Field(name = "simulated", type = FieldType.Double)
-        private Double simulated;
-
-        @Field(name = "difference", type = FieldType.Double)
-        private Double difference;
-
-        @Field(name = "differencePercent", type = FieldType.Double)
-        private Double differencePercent;
-    }
 }

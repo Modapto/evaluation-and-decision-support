@@ -28,53 +28,5 @@ public class SewOptimizationResultsDto extends BaseEventResultsDto {
     private String moduleId;
 
     @JsonProperty("data")
-    private Map<String, SolutionData> data;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SolutionData {
-
-        @JsonProperty("KPIs")
-        private KpiData kpis;
-
-        @JsonProperty("schedule")
-        private Map<String, Map<String, OrderData>> schedule;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class KpiData {
-
-        @JsonProperty("makespan")
-        private String makespan;
-
-        @JsonProperty("machine_utilization")
-        private Double machineUtilization;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class OrderData {
-        @JsonProperty("OrderID")
-        private String orderId;
-
-        @JsonProperty("machines")
-        private Map<String, TimeRange> machines;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    class TimeRange {
-
-        @JsonProperty("start")
-        private String start;
-
-        @JsonProperty("end")
-        private String end;
-    }
+    private Map<String, Object> data;
 }

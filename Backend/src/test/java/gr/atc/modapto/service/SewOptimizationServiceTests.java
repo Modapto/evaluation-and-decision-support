@@ -64,23 +64,9 @@ class SewOptimizationServiceTests {
     @BeforeEach
     void setUp() {
         sampleTimestamp = "2025-07-17T10:30:00Z";
-        SewOptimizationResults.MetricsData metrics = new SewOptimizationResults.MetricsData("240");
 
-        Map<String, Map<String, String>> seq = new HashMap<>();
-        Map<String, String> seqItem = new HashMap<>();
-        seqItem.put("operation", "sewing");
-        seq.put("seq_1", seqItem);
-
-        Map<String, Map<String, Map<String, Map<String, SewOptimizationResults.TimeRange>>>> orders = new HashMap<>();
-
-        List<String> initOrder = Arrays.asList("order_1", "order_2");
-
-        SewOptimizationResults.SolutionData solutionData = new SewOptimizationResults.SolutionData(
-                metrics, seq, orders, initOrder
-        );
-
-        Map<String, SewOptimizationResults.SolutionData> data = new HashMap<>();
-        data.put("solution_1", solutionData);
+        Map<String, Object> data = new HashMap<>();
+        data.put("solution_1", new Object());
 
         sampleEntity = new SewOptimizationResults("1", sampleTimestamp, "test_module", data);
 
@@ -222,7 +208,7 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve latest results : Multiple solutions in data")
         void givenMultipleSolutionsInData_whenRetrieveLatestOptimizationResults_thenReturnsAllSolutions() {
-            Map<String, SewOptimizationResults.SolutionData> multipleData = new HashMap<>();
+            Map<String, Object> multipleData = new HashMap<>();
             multipleData.put("solution_1", createSampleSolutionData("180"));
             multipleData.put("solution_2", createSampleSolutionData("220"));
 
@@ -356,75 +342,26 @@ class SewOptimizationServiceTests {
     /*
      * Helper methods
      */
-    private SewOptimizationResults.SolutionData createSampleSolutionData(String makespan) {
-        SewOptimizationResults.MetricsData metrics = new SewOptimizationResults.MetricsData(makespan);
-
-        Map<String, Map<String, String>> seq = new HashMap<>();
-        Map<String, String> seqItem = new HashMap<>();
-        seqItem.put("operation", "sewing");
-        seqItem.put("duration", "45");
-        seq.put("seq_1", seqItem);
-
-        Map<String, Map<String, Map<String, Map<String, SewOptimizationResults.TimeRange>>>> orders = new HashMap<>();
-
-        List<String> initOrder = Arrays.asList("order_1", "order_2");
-
-        return new SewOptimizationResults.SolutionData(metrics, seq, orders, initOrder);
+    private Object createSampleSolutionData(String makespan) {
+        return new Object();
     }
 
-    private Map<String, SewOptimizationResults.SolutionData> createSampleDataMap() {
-        Map<String, SewOptimizationResults.SolutionData> data = new HashMap<>();
+    private Map<String, Object> createSampleDataMap() {
+        Map<String, Object> data = new HashMap<>();
         data.put("solution_1", createSampleSolutionData("200"));
         return data;
     }
 
-    private Map<String, SewOptimizationResultsDto.SolutionData> createSampleDtoData() {
-        Map<String, SewOptimizationResultsDto.SolutionData> data = new HashMap<>();
-
-        SewOptimizationResultsDto.KpiData kpiData = new SewOptimizationResultsDto.KpiData();
-        kpiData.setMakespan("240");
-        kpiData.setMachineUtilization(0.85);
-
-        Map<String, Map<String, SewOptimizationResultsDto.OrderData>> scheduleData = new HashMap<>();
-        Map<String, SewOptimizationResultsDto.OrderData> daySchedule = new HashMap<>();
-
-        SewOptimizationResultsDto.OrderData orderData = new SewOptimizationResultsDto.OrderData();
-        orderData.setOrderId("order_1");
-
-        orderData.setMachines(new HashMap<>());
-
-        daySchedule.put("order_1", orderData);
-        scheduleData.put("day_1", daySchedule);
-
-        SewOptimizationResultsDto.SolutionData solutionData = new SewOptimizationResultsDto.SolutionData();
-        solutionData.setKpis(kpiData);
-        solutionData.setSchedule(scheduleData);
-
-        data.put("solution_1", solutionData);
+    private Map<String, Object> createSampleDtoData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("solution_1", new Object());
         return data;
     }
 
-    private Map<String, SewOptimizationResultsDto.SolutionData> createMultipleSolutionDtoData() {
-        Map<String, SewOptimizationResultsDto.SolutionData> data = new HashMap<>();
-
-        // Solution 1
-        SewOptimizationResultsDto.KpiData kpi1 = new SewOptimizationResultsDto.KpiData();
-        kpi1.setMakespan("180");
-        kpi1.setMachineUtilization(0.80);
-        SewOptimizationResultsDto.SolutionData solution1 = new SewOptimizationResultsDto.SolutionData();
-        solution1.setKpis(kpi1);
-        solution1.setSchedule(new HashMap<>());
-
-        // Solution 2
-        SewOptimizationResultsDto.KpiData kpi2 = new SewOptimizationResultsDto.KpiData();
-        kpi2.setMakespan("220");
-        kpi2.setMachineUtilization(0.75);
-        SewOptimizationResultsDto.SolutionData solution2 = new SewOptimizationResultsDto.SolutionData();
-        solution2.setKpis(kpi2);
-        solution2.setSchedule(new HashMap<>());
-
-        data.put("solution_1", solution1);
-        data.put("solution_2", solution2);
+    private Map<String, Object> createMultipleSolutionDtoData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("solution_1", new Object());
+        data.put("solution_2", new Object());
         return data;
     }
 

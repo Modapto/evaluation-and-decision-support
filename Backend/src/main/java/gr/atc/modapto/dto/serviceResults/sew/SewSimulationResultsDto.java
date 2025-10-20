@@ -26,38 +26,5 @@ public class SewSimulationResultsDto extends BaseEventResultsDto {
     private String productionModule;
 
     @JsonProperty("simulationData")
-    private SimulationData simulationData;
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class SimulationData {
-        @JsonProperty("makespan")
-        private KpiMetric makespan;
-
-        @JsonProperty("machine_utilization")
-        private KpiMetric machineUtilization;
-
-        @JsonProperty("throughput_stdev")
-        private KpiMetric throughputStdev;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class KpiMetric {
-
-        @JsonProperty("Current")
-        private Double current;
-
-        @JsonProperty("Simulated")
-        private Double simulated;
-
-        @JsonProperty("Difference")
-        private Double difference;
-
-        @JsonProperty("Difference_percent")
-        private Double differencePercent;
-    }
-
+    private Object simulationData;
 }

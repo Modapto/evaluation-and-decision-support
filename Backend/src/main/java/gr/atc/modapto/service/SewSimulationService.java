@@ -1,5 +1,6 @@
 package gr.atc.modapto.service;
 
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import gr.atc.modapto.dto.serviceInvocations.SewSimulationInputDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.dto.sew.SewPlantEnvironmentDto;
@@ -12,6 +13,7 @@ import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.elasticsearch.UncategorizedElasticsearchException;
 import org.springframework.stereotype.Service;
 import gr.atc.modapto.exception.CustomExceptions.*;
 
@@ -60,6 +62,9 @@ public class SewSimulationService implements IProductionScheduleSimulationServic
         } catch (MappingException e){
             log.error(MAPPING_ERROR + "{}", e.getMessage());
             throw new ModelMappingException("Unable to parse SEW Simulation Results to DTO - Error: " + e.getMessage());
+        } catch (UncategorizedElasticsearchException e) {
+            log.error("ElasticSearch Exception" + "{}", e.getMessage());
+            throw new DatabaseException("An ELK error occurred or no data found for the requested resource");
         }
     }
 
