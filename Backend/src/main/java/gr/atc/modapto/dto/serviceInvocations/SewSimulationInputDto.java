@@ -56,9 +56,6 @@ public class SewSimulationInputDto {
     @JsonAlias({"simulated_env", "simulatedEnv"})
     private SewPlantEnvironmentDto.PlantData simulatedEnv;
 
-    @Schema(description = "Production Schedules for SEW Case", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private Map<String, JsonNode> data;
-
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
