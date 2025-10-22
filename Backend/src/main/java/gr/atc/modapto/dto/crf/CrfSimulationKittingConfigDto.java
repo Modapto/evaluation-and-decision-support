@@ -18,7 +18,7 @@ public class CrfSimulationKittingConfigDto {
 
     private Object config;
 
-    private LocalDateTime uploadedAt;
+    private String uploadedAt;
 
     private String rawText;
 

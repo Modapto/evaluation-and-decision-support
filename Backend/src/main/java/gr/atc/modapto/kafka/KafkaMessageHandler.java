@@ -1,8 +1,5 @@
 package gr.atc.modapto.kafka;
 
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
@@ -19,10 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class KafkaMessageHandler {
-
-    @Value("${kafka.topics}")
-    @SuppressWarnings("unused")
-    private List<String> kafkaTopics;
 
     private final WebSocketService webSocketService;
 

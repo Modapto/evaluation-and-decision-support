@@ -26,8 +26,8 @@ public class CrfOptimizationKittingConfig {
     @Field(type = FieldType.Object)
     private Object config;
 
-    @Field(type = FieldType.Date, format = DateFormat.date_time, pattern = "uuuu-MM-dd'T'HH:mm:ss'Z'")
-    private LocalDateTime uploadedAt;
+    @Field(type = FieldType.Keyword)
+    private String uploadedAt;
 
     @Field(type = FieldType.Keyword)
     private String rawText;

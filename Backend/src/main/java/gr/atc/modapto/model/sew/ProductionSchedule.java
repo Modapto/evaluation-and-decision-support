@@ -98,7 +98,6 @@ public class ProductionSchedule {
 
         @Field(type = FieldType.Integer)
         private int numJobs;
-
         @Field(type = FieldType.Integer)
         private int numStages;
     }

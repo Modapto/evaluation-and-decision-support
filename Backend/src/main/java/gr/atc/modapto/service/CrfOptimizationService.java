@@ -105,10 +105,8 @@ public class CrfOptimizationService implements IKhPickingSequenceOptimizationSer
      */
     @Override
     public CrfOptimizationKittingConfigDto retrieveOptimizationKittingConfig() {
-        return exceptionHandlerService.handleOperation(() -> {
-           return crfOptimizationKittingConfigRepository.findById(OPT_CONFIG_ID)
-                   .map(config -> modelMapper.map(config, CrfOptimizationKittingConfigDto.class))
-                   .get();
-        }, "retrieveOptimizationKittingConfig");
+        return exceptionHandlerService.handleOperation(() -> crfOptimizationKittingConfigRepository.findById(OPT_CONFIG_ID)
+                .map(config -> modelMapper.map(config, CrfOptimizationKittingConfigDto.class))
+                .get(), "retrieveOptimizationKittingConfig");
     }
 }

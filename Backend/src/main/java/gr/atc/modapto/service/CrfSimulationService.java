@@ -102,12 +102,10 @@ public class CrfSimulationService implements IKitHolderSimulationService {
      *
      * @return CrfSimulationKittingConfigDto
      */
-    @Override
+     @Override
     public CrfSimulationKittingConfigDto retrieveSimulationKittingConfig() {
-        return exceptionHandlerService.handleOperation(() -> {
-            return crfSimulationKittingConfigRepository.findById(SIM_CONFIG_ID)
-                    .map(config -> modelMapper.map(config, CrfSimulationKittingConfigDto.class))
-                    .get();
-        }, "retrieveSimulationKittingConfig");
+        return exceptionHandlerService.handleOperation(() -> crfSimulationKittingConfigRepository.findById(SIM_CONFIG_ID)
+                .map(config -> modelMapper.map(config, CrfSimulationKittingConfigDto.class))
+                .get(), "retrieveSimulationKittingConfig");
     }
 }
