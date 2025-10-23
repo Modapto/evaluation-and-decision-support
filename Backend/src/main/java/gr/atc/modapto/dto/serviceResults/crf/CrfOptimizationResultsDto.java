@@ -1,11 +1,18 @@
 package gr.atc.modapto.dto.serviceResults.crf;
 
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import gr.atc.modapto.dto.BaseEventResultsDto;
 import io.swagger.v3.oas.annotations.media.Schema;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -20,7 +27,7 @@ public class CrfOptimizationResultsDto extends BaseEventResultsDto {
     private String id;
 
     @JsonProperty("timestamp")
-    private String timestamp;
+    private LocalDateTime timestamp;
 
     @JsonProperty("message")
     private String message;
