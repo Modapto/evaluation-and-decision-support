@@ -351,10 +351,10 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
 
             logger.debug("Successfully invoked Local-Analytics to produce the Histogram..Processing results..");
 
-            // Use processor for the important response type
+            // Extract the Base64 image string directly from response
             String encodedImage = null;
             if (validateDigitalTwinResponse(response))
-                encodedImage = decodeDigitalTwinResponseToDto(String.class, response.getBody());
+                encodedImage = extractBase64ImageFromResponse(response.getBody());
 
             return encodedImage;
         }, "generateHistogramForComparingModules");
@@ -439,6 +439,26 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
         } catch (Exception e) {
             logger.error("Error processing Digital Twin response for Local Analytics - Error: {}", e.getMessage());
             throw new SmartServiceInvocationException("Failed to process Digital Twin response for Local Analytics: " + e.getMessage());
+        }
+    }
+
+    /*
+     * Helper method to extract Base64 image string directly from Digital Twin response for Histogram Generation
+     */
+    private String extractBase64ImageFromResponse(DtResponseDto response){
+        try {
+            logger.debug("Digital Twin response: {}", response);
+            // Convert output arguments to specific Smart Service results DTO
+            SmartServiceResponse serviceResponse = objectMapper.convertValue(
+                    response.getOutputArguments(),
+                    SmartServiceResponse.class
+            );
+
+            // Return the Base64 image string directly without decoding/parsing
+            return serviceResponse.getResponse();
+        } catch (Exception e) {
+            logger.error("Error extracting Base64 image from Digital Twin response - Error: {}", e.getMessage());
+            throw new SmartServiceInvocationException("Failed to extract Base64 image from Digital Twin response: " + e.getMessage());
         }
     }
 
