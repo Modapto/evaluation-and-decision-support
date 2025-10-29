@@ -30,7 +30,6 @@ import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResul
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
 import gr.atc.modapto.enums.ModaptoHeader;
-import gr.atc.modapto.exception.CustomExceptions.*;
 import gr.atc.modapto.exception.CustomExceptions.DtmServerErrorException;
 import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
 import gr.atc.modapto.exception.CustomExceptions.SmartServiceInvocationException;
@@ -426,6 +425,7 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
      */
     private <T> T decodeDigitalTwinResponseToDto(Class<T> clazz, DtResponseDto response){
         try {
+            logger.debug("Digital Twin response: {}", response);
             // Convert output arguments to specific Smart Service results DTO
             SmartServiceResponse serviceResponse = objectMapper.convertValue(
                     response.getOutputArguments(),
@@ -454,14 +454,14 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
         DtResponseDto dtmResponse = response.getBody();
 
         if (dtmResponse == null) {
-            logger.error("DTM service response body is null for threshold maintenance.");
+            logger.error("DTM service response body is null for Local Analytics");
             throw new DtmServerErrorException("DTM service returned a null body for requested operation");
         }
 
         if (!dtmResponse.isSuccess()) {
             logger.error("DTM service execution failed for requested operation. Messages: {}",
                     Optional.ofNullable(dtmResponse.getMessages()).orElse(List.of("No error messages provided")));
-            throw new DtmServerErrorException("DTM service execution failed for threshold maintenance");
+            throw new DtmServerErrorException("DTM service execution failed for local analytics operation");
         }
 
         return true;
