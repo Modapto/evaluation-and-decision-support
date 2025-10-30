@@ -1,5 +1,25 @@
 package gr.atc.modapto.service;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
+
 import gr.atc.modapto.dto.crf.CrfSimulationKittingConfigDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
@@ -7,25 +27,6 @@ import gr.atc.modapto.model.crf.CrfSimulationKittingConfig;
 import gr.atc.modapto.model.serviceResults.CrfSimulationResults;
 import gr.atc.modapto.repository.CrfSimulationKittingConfigRepository;
 import gr.atc.modapto.repository.CrfSimulationResultsRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.modelmapper.ModelMapper;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CrfSimulationService Unit Tests")
@@ -48,11 +49,11 @@ class CrfSimulationServiceTests {
 
     private CrfSimulationResults sampleEntity;
     private CrfSimulationResultsDto sampleDto;
-    private String sampleTimestamp;
+    private LocalDateTime sampleTimestamp;
 
     @BeforeEach
     void setUp() {
-        sampleTimestamp = "2025-07-17T10:30:00Z";
+        sampleTimestamp = LocalDateTime.parse("2024-01-15T10:30:00");
 
         Object baseline = new Object();
         Object bestPhase = new Object();
@@ -223,18 +224,16 @@ class CrfSimulationServiceTests {
         @DisplayName("Retrieve simulation kitting config : Success")
         void givenExistingConfig_whenRetrieveSimulationKittingConfig_thenReturnsConfig() {
             // Given
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-
             CrfSimulationKittingConfig configEntity = new CrfSimulationKittingConfig();
             configEntity.setId("sim-current");
             configEntity.setFilename("simulation-config.json");
-            configEntity.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            configEntity.setUploadedAt("2025-01-30T14:30:00Z");
             configEntity.setConfigCase("testing");
 
             CrfSimulationKittingConfigDto configDto = new CrfSimulationKittingConfigDto();
             configDto.setId("sim-current");
             configDto.setFilename("simulation-config.json");
-            configDto.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            configDto.setUploadedAt("2025-01-30T14:30:00Z");
             configDto.setConfigCase("testing");
 
             when(exceptionHandlerService.handleOperation(any(), eq("retrieveSimulationKittingConfig")))

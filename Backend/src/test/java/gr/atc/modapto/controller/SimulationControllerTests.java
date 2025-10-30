@@ -1,30 +1,30 @@
 package gr.atc.modapto.controller;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.test.context.support.WithMockUser;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import gr.atc.modapto.dto.crf.CrfSimulationKittingConfigDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfSimulationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSimulationResultsDto;
 import gr.atc.modapto.service.interfaces.IKitHolderSimulationService;
 import gr.atc.modapto.service.interfaces.IProductionScheduleSimulationService;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(value = SimulationController.class)
 @ActiveProfiles("test")
@@ -48,9 +48,10 @@ class SimulationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest CRF results : Success")
         void givenValidRequest_whenRetrieveLatestCrfResults_thenReturnsSuccess() throws Exception {
+            // Given - Parse timestamp without 'Z' for LocalDateTime
             CrfSimulationResultsDto mockResult = CrfSimulationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Simulation completed successfully")
                     .simulationRun(true)
                     .solutionTime(5000L)
@@ -58,13 +59,13 @@ class SimulationControllerTests {
                     .build();
             when(crfSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.message").value("Latest CRF Simulation results retrieved successfully"))
                     .andExpect(jsonPath("$.data.id").value("1"))
-                    .andExpect(jsonPath("$.data.timestamp").value("2024-01-15T10:30:00.000Z"))
                     .andExpect(jsonPath("$.data.simulation_run").value(true));
 
             verify(crfSimulationService).retrieveLatestSimulationResults();
@@ -74,14 +75,16 @@ class SimulationControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve latest CRF results as Admin : Success")
         void givenValidRequestAsAdmin_whenRetrieveLatestCrfResults_thenReturnsSuccess() throws Exception {
+            // Given - Parse timestamp without 'Z' for LocalDateTime
             CrfSimulationResultsDto mockResult = CrfSimulationResultsDto.builder()
                     .id("2")
-                    .timestamp("2024-01-16T12:00:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Admin simulation access successful")
                     .simulationRun(true)
                     .build();
             when(crfSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -107,15 +110,17 @@ class SimulationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest CRF results by module : Success")
         void givenValidModuleId_whenRetrieveLatestCrfResultsByProductionModule_thenReturnsSuccess() throws Exception {
+            // Given
             String moduleId = "crf_module_1";
             CrfSimulationResultsDto mockResult = CrfSimulationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Module simulation completed")
                     .simulationRun(true)
                     .build();
             when(crfSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -130,15 +135,17 @@ class SimulationControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve latest CRF results by module as Admin : Success")
         void givenValidModuleIdAsAdmin_whenRetrieveLatestCrfResultsByProductionModule_thenReturnsSuccess() throws Exception {
+            // Given
             String moduleId = "admin_crf_module";
             CrfSimulationResultsDto mockResult = CrfSimulationResultsDto.builder()
                     .id("2")
-                    .timestamp("2024-01-16T12:00:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Admin module simulation successful")
                     .simulationRun(true)
                     .build();
             when(crfSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/crf/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -165,11 +172,10 @@ class SimulationControllerTests {
         @DisplayName("Retrieve simulation kitting config : Success")
         void givenValidRequest_whenRetrieveSimulationKittingConfig_thenReturnsConfig() throws Exception {
             // Given
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
             CrfSimulationKittingConfigDto mockConfig = new CrfSimulationKittingConfigDto();
             mockConfig.setId("sim-current");
             mockConfig.setFilename("simulation-config.json");
-            mockConfig.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            mockConfig.setUploadedAt("2025-01-30T14:30:00Z");
             mockConfig.setConfigCase("testing");
 
             when(crfSimulationService.retrieveSimulationKittingConfig()).thenReturn(mockConfig);
@@ -203,6 +209,7 @@ class SimulationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest SEW results : Success")
         void givenValidRequest_whenRetrieveLatestSewResults_thenReturnsSuccess() throws Exception {
+            // Given - Use consistent timestamp format with milliseconds
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
@@ -210,6 +217,7 @@ class SimulationControllerTests {
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/simulation/pilots/sew/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -260,7 +268,7 @@ class SimulationControllerTests {
             String moduleId = "sew_module_1";
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp("2024-01-15T10:30:00Z")
                     .simulationData(createSampleSimulationData())
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);

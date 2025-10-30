@@ -68,7 +68,7 @@ class KafkaMessageHandlerTests {
         void givenValidCrfSimulationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Simulation completed")
                     .simulationRun(true)
                     .build();
@@ -94,7 +94,7 @@ class KafkaMessageHandlerTests {
         void givenValidCrfSimulationEventFromMqtt_whenConsume_thenUsesEventTopicInsteadOfMqtt(){
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("2")
-                    .timestamp("2024-01-16T12:00:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("MQTT simulation completed")
                     .simulationRun(true)
                     .build();
@@ -119,7 +119,7 @@ class KafkaMessageHandlerTests {
         void givenValidCrfOptimizationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
             CrfOptimizationResultsDto optimizationResult = CrfOptimizationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Optimization completed")
                     .optimizationRun(true)
                     .build();
@@ -368,7 +368,7 @@ class KafkaMessageHandlerTests {
             
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Test simulation")
                     .simulationRun(true)
                     .build();
@@ -389,7 +389,7 @@ class KafkaMessageHandlerTests {
             
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("priority-test")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Priority test")
                     .simulationRun(true)
                     .build();

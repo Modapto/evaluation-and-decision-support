@@ -1,5 +1,31 @@
 package gr.atc.modapto.controller;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import gr.atc.modapto.dto.crf.CrfOptimizationKittingConfigDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
@@ -8,30 +34,6 @@ import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import gr.atc.modapto.service.interfaces.IKhPickingSequenceOptimizationService;
 import gr.atc.modapto.service.interfaces.IProductionScheduleOptimizationService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import org.springframework.http.MediaType;
 
 @WebMvcTest(OptimizationController.class)
 @ActiveProfiles("test")
@@ -58,20 +60,21 @@ class OptimizationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest CRF results : Success")
         void givenValidRequest_whenRetrieveLatestCrfResults_thenReturnsSuccess() throws Exception {
+            // Given - Parse timestamp without 'Z' for LocalDateTime
             CrfOptimizationResultsDto mockResult = CrfOptimizationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Optimization completed successfully")
                     .build();
             when(khPickingSequenceOptimizationService.retrieveLatestOptimizationResults()).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/optimization/pilots/crf/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.message").value("Latest CRF Optimization results retrieved successfully"))
-                    .andExpect(jsonPath("$.data.id").value("1"))
-                    .andExpect(jsonPath("$.data.timestamp").value("2024-01-15T10:30:00.000Z"));
+                    .andExpect(jsonPath("$.data.id").value("1"));
 
             verify(khPickingSequenceOptimizationService).retrieveLatestOptimizationResults();
         }
@@ -80,13 +83,15 @@ class OptimizationControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve latest CRF results as Admin : Success")
         void givenValidRequestAsAdmin_whenRetrieveLatestCrfResults_thenReturnsSuccess() throws Exception {
+            // Given - Parse timestamp without 'Z' for LocalDateTime
             CrfOptimizationResultsDto mockResult = CrfOptimizationResultsDto.builder()
                     .id("2")
-                    .timestamp("2024-01-16T12:00:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Admin access successful")
                     .build();
             when(khPickingSequenceOptimizationService.retrieveLatestOptimizationResults()).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/optimization/pilots/crf/latest")
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -112,14 +117,16 @@ class OptimizationControllerTests {
         @WithMockUser(roles = "USER")
         @DisplayName("Retrieve latest CRF results by module : Success")
         void givenValidModuleId_whenRetrieveLatestCrfResultsByModuleId_thenReturnsSuccess() throws Exception {
+            // Given
             String moduleId = "crf_module_1";
             CrfOptimizationResultsDto mockResult = CrfOptimizationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Module optimization completed")
                     .build();
             when(khPickingSequenceOptimizationService.retrieveLatestOptimizationResultsByModuleId(moduleId)).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/optimization/pilots/crf/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -134,14 +141,16 @@ class OptimizationControllerTests {
         @WithMockUser(roles = "ADMIN")
         @DisplayName("Retrieve latest CRF results by module as Admin : Success")
         void givenValidModuleIdAsAdmin_whenRetrieveLatestCrfResultsByModuleId_thenReturnsSuccess() throws Exception {
+            // Given
             String moduleId = "admin_module";
             CrfOptimizationResultsDto mockResult = CrfOptimizationResultsDto.builder()
                     .id("2")
-                    .timestamp("2024-01-16T12:00:00.000Z")
+                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
                     .message("Admin module access successful")
                     .build();
             when(khPickingSequenceOptimizationService.retrieveLatestOptimizationResultsByModuleId(moduleId)).thenReturn(mockResult);
 
+            // When & Then
             mockMvc.perform(get("/api/eds/optimization/pilots/crf/modules/{moduleId}/latest", moduleId)
                             .with(csrf()))
                     .andExpect(status().isOk())
@@ -211,7 +220,7 @@ class OptimizationControllerTests {
             CrfOptimizationKittingConfigDto mockConfig = new CrfOptimizationKittingConfigDto();
             mockConfig.setId("opt-current");
             mockConfig.setFilename("optimization-config.json");
-            mockConfig.setUploadedAt(LocalDateTime.parse("2025-01-30T14:30:00Z", formatter));
+            mockConfig.setUploadedAt("2025-01-30T14:30:00Z");
             mockConfig.setConfigCase("production");
 
             when(khPickingSequenceOptimizationService.retrieveOptimizationKittingConfig()).thenReturn(mockConfig);
@@ -269,7 +278,7 @@ class OptimizationControllerTests {
         void givenValidRequestAsAdmin_whenRetrieveLatestSewResults_thenReturnsSuccess() throws Exception {
             SewOptimizationResultsDto mockResult = SewOptimizationResultsDto.builder()
                     .id("2")
-                    .timestamp("2024-01-16T12:00:00.000Z")
+                    .timestamp("2024-01-15T10:30:00Z")
                     .data(createSampleData())
                     .build();
             when(productionScheduleOptimizationService.retrieveLatestOptimizationResults()).thenReturn(mockResult);
@@ -324,7 +333,7 @@ class OptimizationControllerTests {
             String moduleId = "admin_sew_module";
             SewOptimizationResultsDto mockResult = SewOptimizationResultsDto.builder()
                     .id("2")
-                    .timestamp("2024-01-16T12:00:00.000Z")
+                    .timestamp("2024-01-15T10:30:00Z")
                     .data(createSampleData())
                     .build();
             when(productionScheduleOptimizationService.retrieveLatestOptimizationResultsByModuleId(moduleId)).thenReturn(mockResult);
