@@ -4,18 +4,17 @@ env:
   CONTAINER_NAME: eds-frontend
 
 on:
-  registry_package:
-    types: [published, updated]
+  schedule:
+    - cron: '0 7 * * *'   # Every day at 07:00 UTC
+    - cron: '0 9 * * *'   # Every day at 09:00 UTC
+    - cron: '0 11 * * *'  # Every day at 11:00 UTC
+    - cron: '0 13 * * *'  # Every day at 13:00 UTC
+    - cron: '0 15 * * *'  # Every day at 15:00 UTC
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-     # Only trigger for specific package and tag
-    if: |
-      github.event.registry_package.name == 'eds-front' &&
-      (contains(github.event.registry_package.package_version.container_metadata.tag.name, 'latest') ||
-      contains(github.event.registry_package.package_version.container_metadata.tag.name, 'LATEST'))
     steps:      
       - name: SSH into VM and Deploy new Image with Docker
         uses: appleboy/ssh-action@v1.2.0
