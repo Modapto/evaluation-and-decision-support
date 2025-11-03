@@ -25,6 +25,7 @@ public class SewProductionScheduleDto {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class DailyDataDto {
 
         @JsonProperty("newlayout")
