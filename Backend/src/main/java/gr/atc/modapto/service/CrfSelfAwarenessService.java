@@ -1,17 +1,6 @@
 package gr.atc.modapto.service;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.List;
-
-import org.modelmapper.ModelMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import gr.atc.modapto.dto.EventDto;
 import gr.atc.modapto.dto.crf.CrfKitHolderEventDto;
 import gr.atc.modapto.dto.crf.CrfSelfAwarenessParametersDto;
@@ -23,6 +12,15 @@ import gr.atc.modapto.model.serviceResults.CrfKitHolderEvent;
 import gr.atc.modapto.repository.CrfKitHolderEventRepository;
 import gr.atc.modapto.service.interfaces.ICrfSelfAwarenessService;
 import gr.atc.modapto.util.CsvFileUtils;
+import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class CrfSelfAwarenessService implements ICrfSelfAwarenessService {
@@ -53,7 +51,6 @@ public class CrfSelfAwarenessService implements ICrfSelfAwarenessService {
 
         // Extract data from CSV into Dto
         List<CrfKitHolderEventDto> eventData = CsvFileUtils.extractKhEventsDataFromCSV(eventsFile);
-        parameters.setModelPath("quadratic_model.json");
 
         // Formulate the service input and invoke the service
         CrfSelfAwarenessInputDto invocationData = CrfSelfAwarenessInputDto.builder()

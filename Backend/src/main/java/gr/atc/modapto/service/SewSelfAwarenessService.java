@@ -3,9 +3,7 @@ package gr.atc.modapto.service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -14,12 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
-import gr.atc.modapto.dto.dt.SmartServiceRequest;
 import gr.atc.modapto.dto.dt.SmartServiceResponse;
 import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
 import gr.atc.modapto.dto.serviceInvocations.SewLocalAnalyticsInputDto;
@@ -29,8 +24,6 @@ import gr.atc.modapto.dto.serviceResults.sew.SewFilteringOptionsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessMonitoringKpisResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewSelfAwarenessRealTimeMonitoringResultsDto;
 import gr.atc.modapto.dto.sew.SewMonitorKpisComponentsDto;
-import gr.atc.modapto.enums.ModaptoHeader;
-import gr.atc.modapto.exception.CustomExceptions.DtmServerErrorException;
 import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
 import gr.atc.modapto.exception.CustomExceptions.SmartServiceInvocationException;
 import gr.atc.modapto.model.sew.SewMonitorKpisComponents;
@@ -207,7 +200,7 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
             // Save the new components list
             sewMonitorKpisComponentsRepository.save(entity);
             logger.debug("Successfully uploaded component list for module: {}", componentsData.getModuleId());
-            
+
             return null;
         }, "uploadModuleComponentsList");
     }
@@ -255,14 +248,14 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
                     .map(output -> modelMapper.map(output, SewSelfAwarenessMonitoringKpisResultsDto.class))
                     .toList();
 
-            ResponseEntity<DtResponseDto> response = formulateAndImplementSyncSmartServiceRequest(inputData, request.getModuleId(), request.getSmartServiceId());
+            ResponseEntity<DtResponseDto> response = smartServicesInvocationService.formulateAndImplementSyncSmartServiceRequest(inputData, request.getModuleId(), request.getSmartServiceId());
 
             logger.debug("Successfully invoked Local-Analytics to provide the filtering options..Processing results..");
 
             // Use processor for the important response type
             SewFilteringOptionsDto results = null;
-            if (validateDigitalTwinResponse(response))
-                results = decodeDigitalTwinResponseToDto(SewFilteringOptionsDto.class, response.getBody());
+            if (smartServicesInvocationService.validateDigitalTwinResponse(response, "Local Analytics"))
+                results = smartServicesInvocationService.decodeDigitalTwinResponseToDto(SewFilteringOptionsDto.class, response.getBody(), "Local Analytics");
 
             // Locate the Distinct values
             results.setDistinctValues(generateDistinctValuesFromFilteringOptions(results.getFilteringOptions()));
@@ -347,13 +340,13 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
                     .histogramData(inputData)
                     .build();
 
-            ResponseEntity<DtResponseDto> response = formulateAndImplementSyncSmartServiceRequest(serviceInput, request.getModuleId(), request.getSmartServiceId());
+            ResponseEntity<DtResponseDto> response = smartServicesInvocationService.formulateAndImplementSyncSmartServiceRequest(serviceInput, request.getModuleId(), request.getSmartServiceId());
 
             logger.debug("Successfully invoked Local-Analytics to produce the Histogram..Processing results..");
 
             // Extract the Base64 image string directly from response
             String encodedImage = null;
-            if (validateDigitalTwinResponse(response))
+            if (smartServicesInvocationService.validateDigitalTwinResponse(response, "Local Analytics"))
                 encodedImage = extractBase64ImageFromResponse(response.getBody());
 
             return encodedImage;
@@ -388,61 +381,6 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
     }
 
     /*
-     * Helper method to implement SYNC request to Smart Services via DT
-     */
-    private <T> ResponseEntity<DtResponseDto> formulateAndImplementSyncSmartServiceRequest(T inputData, String moduleId, String smartServiceId) {
-        if (inputData == null)
-           return null;
-
-        // Encode the invocationData to Base64
-        String encodedInput;
-        try {
-            encodedInput = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(inputData).getBytes());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-        SmartServiceRequest smartServiceRequest = SmartServiceRequest.builder()
-                .request(encodedInput)
-                .build();
-
-        // Wrap invocation data in DtInputDto
-        DtInputDto<SmartServiceRequest> dtInput = DtInputDto.<SmartServiceRequest>builder()
-                .inputArguments(smartServiceRequest)
-                .build();
-
-        // Invoke smart service using the generic service
-        return smartServicesInvocationService.invokeSmartService(
-                smartServiceId,
-                moduleId,
-                dtInput,
-                ModaptoHeader.SYNC
-        );
-    }
-
-    /*
-     * Helper method to Decode Digital Twin response to specific class
-     */
-    private <T> T decodeDigitalTwinResponseToDto(Class<T> clazz, DtResponseDto response){
-        try {
-            logger.debug("Digital Twin response: {}", response);
-            // Convert output arguments to specific Smart Service results DTO
-            SmartServiceResponse serviceResponse = objectMapper.convertValue(
-                    response.getOutputArguments(),
-                    SmartServiceResponse.class
-            );
-
-            // Decode Response from Base64 Encoding to specific DTO
-            byte[] decodedBytes = Base64.getDecoder().decode(serviceResponse.getResponse());
-            T outputDto = objectMapper.readValue(decodedBytes, clazz);
-            return outputDto;
-        } catch (Exception e) {
-            logger.error("Error processing Digital Twin response for Local Analytics - Error: {}", e.getMessage());
-            throw new SmartServiceInvocationException("Failed to process Digital Twin response for Local Analytics: " + e.getMessage());
-        }
-    }
-
-    /*
      * Helper method to extract Base64 image string directly from Digital Twin response for Histogram Generation
      */
     private String extractBase64ImageFromResponse(DtResponseDto response){
@@ -461,31 +399,4 @@ public class SewSelfAwarenessService implements ISewSelfAwarenessService {
             throw new SmartServiceInvocationException("Failed to extract Base64 image from Digital Twin response: " + e.getMessage());
         }
     }
-
-    /*
-     * Helper method to validate whether the DT Response is valid
-     */
-    private boolean validateDigitalTwinResponse(ResponseEntity<DtResponseDto> response){
-        // Validate response
-        if (response == null || response.getBody() == null) {
-            throw new DtmServerErrorException("No response received from DTM service for requested operation");
-        }
-
-        DtResponseDto dtmResponse = response.getBody();
-
-        if (dtmResponse == null) {
-            logger.error("DTM service response body is null for Local Analytics");
-            throw new DtmServerErrorException("DTM service returned a null body for requested operation");
-        }
-
-        if (!dtmResponse.isSuccess()) {
-            logger.error("DTM service execution failed for requested operation. Messages: {}",
-                    Optional.ofNullable(dtmResponse.getMessages()).orElse(List.of("No error messages provided")));
-            throw new DtmServerErrorException("DTM service execution failed for local analytics operation");
-        }
-
-        return true;
-    }
-
-
 }

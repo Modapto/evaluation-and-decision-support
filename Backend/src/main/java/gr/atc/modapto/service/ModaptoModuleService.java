@@ -1,9 +1,11 @@
 package gr.atc.modapto.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
+import static gr.atc.modapto.exception.CustomExceptions.*;
+import gr.atc.modapto.dto.ModaptoModuleDto;
+import gr.atc.modapto.dto.sew.DeclarationOfWorkDto;
+import gr.atc.modapto.model.ModaptoModule;
+import gr.atc.modapto.repository.ModaptoModuleRepository;
+import gr.atc.modapto.service.interfaces.IModaptoModuleService;
 import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -12,13 +14,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import gr.atc.modapto.dto.ModaptoModuleDto;
-import gr.atc.modapto.dto.sew.DeclarationOfWorkDto;
-import gr.atc.modapto.exception.CustomExceptions.ModelMappingException;
-import gr.atc.modapto.exception.CustomExceptions.ResourceNotFoundException;
-import gr.atc.modapto.model.ModaptoModule;
-import gr.atc.modapto.repository.ModaptoModuleRepository;
-import gr.atc.modapto.service.interfaces.IModaptoModuleService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ModaptoModuleService implements IModaptoModuleService {
@@ -140,7 +138,11 @@ public class ModaptoModuleService implements IModaptoModuleService {
         try {
             List<ModaptoModule> modules = modaptoModuleRepository.findAll(Pageable.unpaged()).getContent();
             return modules.stream()
-                    .map(module -> modelMapper.map(module, ModaptoModuleDto.class))
+                    .map(module -> {
+                        ModaptoModuleDto dto = modelMapper.map(module, ModaptoModuleDto.class);
+                        dto.setMetadata(null);
+                        return dto;
+                    })
                     .toList();
         } catch (MappingException e) {
             logger.error(MAPPING_ERROR + "{}", e.getMessage());

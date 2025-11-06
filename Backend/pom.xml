@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>gr.atc</groupId>
 	<artifactId>modapto-evaluation-and-decision-support</artifactId>
-	<version>v0.7</version>
+	<version>v0.7-SNAPSHOT</version>
 	<name>modapto_evaluation_and_decision_support</name>
 	<description>Evaluation and Decision Support Component - Backend System</description>
 	<inceptionYear>2024</inceptionYear>
@@ -30,12 +30,9 @@
     	<maven.compiler.target>21</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<sonar.projectKey>Modapto_evaluation-and-decision-support</sonar.projectKey>
-		<sonar.projectName>Evaluation and Decision Support</sonar.projectName>
 		<sonar.projectVersion>1.0.0</sonar.projectVersion>
 		<sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
-		<sonar.organization>modapto</sonar.organization>
-		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.organization>modapto</sonar.organization>
 		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>

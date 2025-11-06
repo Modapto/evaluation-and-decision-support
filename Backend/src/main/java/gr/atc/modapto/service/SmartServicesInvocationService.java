@@ -9,6 +9,7 @@ import gr.atc.modapto.dto.dt.DtResponseDto;
 import static gr.atc.modapto.exception.CustomExceptions.*;
 
 import gr.atc.modapto.dto.dt.SmartServiceRequest;
+import gr.atc.modapto.dto.dt.SmartServiceResponse;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
 import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.service.interfaces.IModaptoModuleService;
@@ -34,6 +35,7 @@ import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -344,5 +346,85 @@ public class SmartServicesInvocationService {
             logger.error("Error invoking {} algorithm: {}", algorithmType, e.getMessage());
             throw new SmartServiceInvocationException("Error invoking " + algorithmType + " algorithm");
         }
+    }
+
+    /*
+     * Helper method to Decode Digital Twin response to specific class
+     */
+    public <T> T decodeDigitalTwinResponseToDto(Class<T> clazz, DtResponseDto response, String smartService){
+        try {
+            logger.debug("Digital Twin response: {}", response);
+            // Convert output arguments to specific Smart Service results DTO
+            SmartServiceResponse serviceResponse = objectMapper.convertValue(
+                    response.getOutputArguments(),
+                    SmartServiceResponse.class
+            );
+
+            // Decode Response from Base64 Encoding to specific DTO
+            byte[] decodedBytes = Base64.getDecoder().decode(serviceResponse.getResponse());
+            T outputDto = objectMapper.readValue(decodedBytes, clazz);
+            return outputDto;
+        } catch (Exception e) {
+            logger.error("Error processing Digital Twin response for {} - Error: {}", smartService, e.getMessage());
+            throw new SmartServiceInvocationException("Failed to process Digital Twin response for " + smartService + ": " + e.getMessage());
+        }
+    }
+
+    /*
+     * Helper method to validate whether the DT Response is valid
+     */
+    public boolean validateDigitalTwinResponse(ResponseEntity<DtResponseDto> response, String smartService){
+        // Validate response
+        if (response == null || response.getBody() == null) {
+            throw new DtmServerErrorException("No response received from DTM service for requested operation");
+        }
+
+        DtResponseDto dtmResponse = response.getBody();
+
+        if (dtmResponse == null) {
+            logger.error("DTM service response body is null for {}", smartService);
+            throw new DtmServerErrorException("DTM service returned a null body for requested operation");
+        }
+
+        if (!dtmResponse.isSuccess()) {
+            logger.error("DTM service execution failed for requested operation. Messages: {}",
+                    Optional.ofNullable(dtmResponse.getMessages()).orElse(List.of("No error messages provided")));
+            throw new DtmServerErrorException("DTM service execution failed for "+ smartService +" operation");
+        }
+
+        return true;
+    }
+
+    /*
+     * Helper method to implement SYNC request to Smart Services via DT
+     */
+    public <T> ResponseEntity<DtResponseDto> formulateAndImplementSyncSmartServiceRequest(T inputData, String moduleId, String smartServiceId) {
+        if (inputData == null)
+            return null;
+
+        // Encode the invocationData to Base64
+        String encodedInput;
+        try {
+            encodedInput = Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(inputData).getBytes());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        SmartServiceRequest smartServiceRequest = SmartServiceRequest.builder()
+                .request(encodedInput)
+                .build();
+
+        // Wrap invocation data in DtInputDto
+        DtInputDto<SmartServiceRequest> dtInput = DtInputDto.<SmartServiceRequest>builder()
+                .inputArguments(smartServiceRequest)
+                .build();
+
+        // Invoke smart service using the generic service
+        return invokeSmartService(
+                smartServiceId,
+                moduleId,
+                dtInput,
+                ModaptoHeader.SYNC
+        );
     }
 }

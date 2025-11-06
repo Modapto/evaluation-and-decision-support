@@ -86,4 +86,4 @@ public class SewFilteringOptionsDto {
         private List<String> variables;
     }
 
-    }
+}

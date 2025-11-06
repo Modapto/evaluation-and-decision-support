@@ -1,14 +1,16 @@
 package gr.atc.modapto.controller;
 
 import gr.atc.modapto.dto.crf.CrfOptimizationKittingConfigDto;
-import gr.atc.modapto.dto.crf.CrfSimulationKittingConfigDto;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
+import gr.atc.modapto.dto.serviceInvocations.FftOptimizationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
 import gr.atc.modapto.dto.serviceResults.crf.CrfOptimizationResultsDto;
+import gr.atc.modapto.dto.serviceResults.fft.FftOptimizationResultsDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import gr.atc.modapto.service.interfaces.IKhPickingSequenceOptimizationService;
 import gr.atc.modapto.service.interfaces.IProductionScheduleOptimizationService;
+import gr.atc.modapto.service.interfaces.IRobotConfigurationOptimizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,11 +29,70 @@ public class OptimizationController {
 
     private final IProductionScheduleOptimizationService productionScheduleOptimizationService;
 
-    public OptimizationController(IKhPickingSequenceOptimizationService khPickingSequenceOptimizationService, IProductionScheduleOptimizationService productionScheduleOptimizationService) {
+    private final IRobotConfigurationOptimizationService robotConfigurationOptimizationService;
+
+    public OptimizationController(IRobotConfigurationOptimizationService robotConfigurationOptimizationService, IKhPickingSequenceOptimizationService khPickingSequenceOptimizationService, IProductionScheduleOptimizationService productionScheduleOptimizationService) {
         this.khPickingSequenceOptimizationService = khPickingSequenceOptimizationService;
         this.productionScheduleOptimizationService = productionScheduleOptimizationService;
+        this.robotConfigurationOptimizationService = robotConfigurationOptimizationService;
     }
 
+    //--------------------------------------------- FFT -----------------------------------------------------------
+    /**
+     * Retrieve latest FFT Optimization Results
+     *
+     * @return FftOptimizationResultsDto
+     */
+    @Operation(summary = "Retrieve latest CRF Optimization Results", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Latest FFT Optimization results retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "No CRF Optimization Results found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/pilots/fft/latest")
+    public ResponseEntity<BaseResponse<FftOptimizationResultsDto>> retrieveLatestFftResults() {
+        return new ResponseEntity<>(BaseResponse.success(robotConfigurationOptimizationService.retrieveLatestOptimizationResults(),
+                "Latest FFT Optimization results retrieved successfully"), HttpStatus.OK);
+    }
+
+    /**
+     * Retrieve latest FFT Optimization Results by Production Module
+     *
+     * @return FftOptimizationResultsDto
+     */
+    @Operation(summary = "Retrieve latest CRF Optimization Results by MODAPTO Module", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Latest FFT Optimization results for Module: [moduleId] retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "404", description = "No CRF Optimization Results found"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @GetMapping("/pilots/fft/modules/{moduleId}/latest")
+    public ResponseEntity<BaseResponse<FftOptimizationResultsDto>> retrieveLatestFftResultsByProductionModule(@PathVariable String moduleId) {
+        return new ResponseEntity<>(BaseResponse.success(robotConfigurationOptimizationService.retrieveLatestOptimizationResultsByModuleId(moduleId),
+                "Latest FFT Optimization results for Module " + moduleId + " retrieved successfully"), HttpStatus.OK);
+    }
+
+    /**
+     * Invoke Optimization algorithm to optimize Robot Configuration
+     *
+     * @param invocationData : FFT Invocation Data
+     * @return Message of Success or Error
+     */
+    @Operation(summary = "Invoke Optimization service for FFT for Robot Configuration", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Request for optimization of FFT Robot Configuration has been successfully submitted"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again."),
+            @ApiResponse(responseCode = "500", description = "Unable to invoke designated smart service"),
+            @ApiResponse(responseCode = "500", description = "Internal mapping exception")
+    })
+    @PostMapping("/pilots/fft/robot-configuration/optimize")
+    public ResponseEntity<BaseResponse<Void>> invokeOptimizationOfRobotConfiguration(@RequestBody FftOptimizationInputDto invocationData) {
+        robotConfigurationOptimizationService.invokeOptimizationOfRobotConfiguration(invocationData);
+        return new ResponseEntity<>(BaseResponse.success(null,
+                "Request for optimization of FFT Robot Configuration has been successfully submitted"), HttpStatus.OK);
+    }
     //--------------------------------------------- CRF -----------------------------------------------------------
 
     /**
@@ -84,7 +145,7 @@ public class OptimizationController {
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
     @PostMapping("/pilots/crf/kh-picking-sequence/optimize")
-    public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> invokeOptimizationOfKhPickingSequence(@RequestBody CrfInvocationInputDto invocationData) {
+    public ResponseEntity<BaseResponse<Void>> invokeOptimizationOfKhPickingSequence(@RequestBody CrfInvocationInputDto invocationData) {
         khPickingSequenceOptimizationService.invokeOptimizationOfKhPickingSequence(invocationData);
         return new ResponseEntity<>(BaseResponse.success(null,
                 "Request for optimization of CRF KH Picking Sequence has been successfully submitted"), HttpStatus.OK);
@@ -158,7 +219,7 @@ public class OptimizationController {
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
     @PostMapping("/pilots/sew/schedules/upload")
-    public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> uploadSewProductionSchedule(@RequestBody SewProductionScheduleDto scheduleDto) {
+    public ResponseEntity<BaseResponse<Void>> uploadSewProductionSchedule(@RequestBody SewProductionScheduleDto scheduleDto) {
         productionScheduleOptimizationService.uploadProductionSchedule(scheduleDto);
         return new ResponseEntity<>(BaseResponse.success(null,
                 "SEW Production Schedule has been successfully uploaded"), HttpStatus.OK);
@@ -197,7 +258,7 @@ public class OptimizationController {
             @ApiResponse(responseCode = "500", description = "Internal mapping exception")
     })
     @PostMapping("/pilots/sew/schedules/optimize")
-    public ResponseEntity<BaseResponse<SewOptimizationResultsDto>> invokeOptimizationOfProductionSchedules(@RequestBody SewOptimizationInputDto invocationData) {
+    public ResponseEntity<BaseResponse<Void>> invokeOptimizationOfProductionSchedules(@RequestBody SewOptimizationInputDto invocationData) {
         productionScheduleOptimizationService.invokeOptimizationOfProductionSchedules(invocationData);
         return new ResponseEntity<>(BaseResponse.success(null,
                 "Request for optimization of SEW production schedules has been successfully submitted"), HttpStatus.OK);

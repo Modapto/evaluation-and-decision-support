@@ -77,6 +77,9 @@ class ModaptoEvaluationAndDecisionSupportApplicationTests {
     @MockitoBean
     private SewPlantEnvironmentRepository sewPlantEnvironmentRepository;
 
+    @MockitoBean
+    private FftOptimizationResultsRepository fftOptimizationResultsRepository;
+
 	@Test
 	void contextLoads() {
 		Assertions.assertNotNull(ApplicationContext.class);

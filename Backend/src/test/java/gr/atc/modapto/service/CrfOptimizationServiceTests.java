@@ -19,9 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,14 +55,13 @@ class CrfOptimizationServiceTests {
 
     @BeforeEach
     void setUp() {
-        // Parse timestamp to LocalDateTime (remove 'Z' for LocalDateTime)
-        sampleTimestamp = LocalDateTime.parse("2025-07-17T10:30:00");
+        sampleTimestamp = LocalDateTime.of(2025, 7, 17, 10, 30, 0);
 
         Object optimizationResults = new Object();
 
         sampleEntity = new CrfOptimizationResults(
                 "1", sampleTimestamp, "Optimization completed successfully", "test_module",
-                optimizationResults, Boolean.TRUE, 3000L, 5000L
+                optimizationResults, true, 3000L, 5000L
         );
 
         sampleDto = createSampleDto();
@@ -275,19 +271,17 @@ class CrfOptimizationServiceTests {
         @Test
         @DisplayName("Retrieve kitting config : Success")
         void givenExistingConfig_whenRetrieveOptimizationKittingConfig_thenReturnsConfig() {
-            // Given - setUploadedAt expects String, not LocalDateTime
-            String uploadedAtTimestamp = "2025-01-30T14:30:00Z";
-
+            // Given
             CrfOptimizationKittingConfig configEntity = new CrfOptimizationKittingConfig();
             configEntity.setId("opt-current");
             configEntity.setFilename("kitting-config.json");
-            configEntity.setUploadedAt(uploadedAtTimestamp);
+            configEntity.setUploadedAt("2025-01-30T14:30:00Z");
             configEntity.setConfigCase("production");
 
             CrfOptimizationKittingConfigDto configDto = new CrfOptimizationKittingConfigDto();
             configDto.setId("opt-current");
             configDto.setFilename("kitting-config.json");
-            configDto.setUploadedAt(uploadedAtTimestamp);
+            configDto.setUploadedAt("2025-01-30T14:30:00Z");
             configDto.setConfigCase("production");
 
             when(exceptionHandlerService.handleOperation(any(), eq("retrieveOptimizationKittingConfig")))

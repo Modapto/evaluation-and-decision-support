@@ -1,10 +1,7 @@
 package gr.atc.modapto.kafka;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,9 +63,11 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume CRF simulation event : Success")
         void givenValidCrfSimulationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
+            // Given
+            LocalDateTime testTimestamp = LocalDateTime.of(2024, 1, 15, 10, 30, 0);
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("1")
-                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
+                    .timestamp(testTimestamp)
                     .message("Simulation completed")
                     .simulationRun(true)
                     .build();
@@ -92,9 +91,11 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume CRF simulation event from MQTT : Success")
         void givenValidCrfSimulationEventFromMqtt_whenConsume_thenUsesEventTopicInsteadOfMqtt(){
+            // Given
+            LocalDateTime testTimestamp = LocalDateTime.of(2024, 1, 16, 12, 0, 0);
             CrfSimulationResultsDto simulationResult = CrfSimulationResultsDto.builder()
                     .id("2")
-                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
+                    .timestamp(testTimestamp)
                     .message("MQTT simulation completed")
                     .simulationRun(true)
                     .build();
@@ -117,9 +118,11 @@ class KafkaMessageHandlerTests {
         @Test
         @DisplayName("Consume CRF optimization event : Success")
         void givenValidCrfOptimizationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
+            // Given
+            LocalDateTime testTimestamp = LocalDateTime.of(2024, 1, 15, 10, 30, 0);
             CrfOptimizationResultsDto optimizationResult = CrfOptimizationResultsDto.builder()
                     .id("1")
-                    .timestamp(LocalDateTime.parse("2024-01-15T10:30:00"))
+                    .timestamp(testTimestamp)
                     .message("Optimization completed")
                     .optimizationRun(true)
                     .build();
@@ -150,7 +153,7 @@ class KafkaMessageHandlerTests {
         void givenValidSewSimulationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
             SewSimulationResultsDto simulationResult = SewSimulationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp("2024-01-15T10:30:00")
                     .simulationData(createSampleSimulationData())
                     .build();
 
@@ -180,7 +183,7 @@ class KafkaMessageHandlerTests {
         void givenValidSewOptimizationEvent_whenConsume_thenNotifyWebSocketWithCorrectTopic() throws JsonProcessingException {
             SewOptimizationResultsDto optimizationResult = SewOptimizationResultsDto.builder()
                     .id("1")
-                    .timestamp("2024-01-15T10:30:00.000Z")
+                    .timestamp("2024-01-15T10:30:00")
                     .data(createSampleOptimizationData())
                     .build();
 
@@ -270,11 +273,11 @@ class KafkaMessageHandlerTests {
                     .build();
                     
             Map<String, List<SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent>> groupingMaintenanceData = new HashMap<>();
-            groupingMaintenanceData.put("Stage1", Arrays.asList(component1));
-            groupingMaintenanceData.put("Stage2", Arrays.asList(component2));
+            groupingMaintenanceData.put("Stage1", Collections.singletonList(component1));
+            groupingMaintenanceData.put("Stage2", Collections.singletonList(component2));
             
             Map<String, List<SewGroupingPredictiveMaintenanceOutputDto.MaintenanceComponent>> individualMaintenanceData = new HashMap<>();
-            individualMaintenanceData.put("Individual_Stage1", Arrays.asList(component1));
+            individualMaintenanceData.put("Individual_Stage1", Collections.singletonList(component1));
             
             SewGroupingPredictiveMaintenanceOutputDto.TimeWindow timeWindow = SewGroupingPredictiveMaintenanceOutputDto.TimeWindow.builder()
                     .begin(LocalDateTime.parse("2024-01-15T08:00:00"))
@@ -329,7 +332,7 @@ class KafkaMessageHandlerTests {
                     .module("Module_a")
                     .component("Cutting_Station_01")
                     .variable("Overall_Equipment_Effectiveness")
-                    .startingDate("2024-01-15T08:00:00.000Z")
+                    .startingDate("2024-01-15T08:00:00")
                     .endingDate("2024-01-15T16:00:00.000Z")
                     .dataSource("PLC_Sensors")
                     .bucket("hourly_aggregation")
