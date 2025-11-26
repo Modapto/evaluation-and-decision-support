@@ -1,5 +1,6 @@
 package gr.atc.modapto.service;
 
+import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.serviceInvocations.FftSustainabilityAnalyticsInputDto;
 import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
@@ -34,10 +35,14 @@ public class FftSustainabilityAnalyticsService implements ISustainabilityAnalyti
     @Override
     public FftSustainabilityAnalyticsResultsDto extractFftSustainabilityAnalytics(GlobalRequestDto<FftSustainabilityAnalyticsInputDto> request) {
         return exceptionHandler.handleOperation(() -> {
+            DtInputDto<FftSustainabilityAnalyticsInputDto> dtInput = DtInputDto.<FftSustainabilityAnalyticsInputDto>builder()
+                    .inputArguments(request.getInput())
+                    .build();
+
             ResponseEntity<DtResponseDto> response = smartServicesInvocationService.invokeSmartService(
                     request.getSmartServiceId(),
                     request.getModuleId(),
-                    request.getInput(),
+                    dtInput,
                     ModaptoHeader.SYNC);
 
             log.debug("Successfully invoked FFT Sustainability Analytics to produce the Histogram..Processing results..");
