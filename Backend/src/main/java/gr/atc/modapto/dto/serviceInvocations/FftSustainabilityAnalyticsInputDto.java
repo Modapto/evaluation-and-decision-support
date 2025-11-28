@@ -19,11 +19,11 @@ import java.util.List;
 @Builder
 public class FftSustainabilityAnalyticsInputDto {
 
-    private Double currentTime;
+    private String currentTime;
 
     private Double timeStep;
 
-    private Double stepCount;
+    private Integer stepCount;
 
     private List<Object> argumentsPerStep;
 }
