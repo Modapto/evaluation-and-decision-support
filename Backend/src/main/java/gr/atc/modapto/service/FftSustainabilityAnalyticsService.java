@@ -1,5 +1,12 @@
 package gr.atc.modapto.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.serviceInvocations.FftSustainabilityAnalyticsInputDto;
@@ -7,10 +14,6 @@ import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
 import gr.atc.modapto.dto.serviceResults.fft.FftSustainabilityAnalyticsResultsDto;
 import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.service.interfaces.ISustainabilityAnalyticsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 
 @Service
 public class FftSustainabilityAnalyticsService implements ISustainabilityAnalyticsService {
@@ -21,9 +24,12 @@ public class FftSustainabilityAnalyticsService implements ISustainabilityAnalyti
 
     private final ExceptionHandlerService exceptionHandler;
 
-    public FftSustainabilityAnalyticsService(ExceptionHandlerService exceptionHandler, SmartServicesInvocationService smartServicesInvocationService){
+    private final ObjectMapper objectMapper;
+
+    public FftSustainabilityAnalyticsService(ExceptionHandlerService exceptionHandler, SmartServicesInvocationService smartServicesInvocationService, ObjectMapper objectMapper){
         this.smartServicesInvocationService = smartServicesInvocationService;
         this.exceptionHandler = exceptionHandler;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -47,9 +53,16 @@ public class FftSustainabilityAnalyticsService implements ISustainabilityAnalyti
 
             log.debug("Successfully invoked FFT Sustainability Analytics to produce the Histogram..Processing results..");
 
-            FftSustainabilityAnalyticsResultsDto output = null;;
-            if (smartServicesInvocationService.validateDigitalTwinResponse(response, "FFT Sustainability Analytics"))
-                output = smartServicesInvocationService.decodeDigitalTwinResponseToDto(FftSustainabilityAnalyticsResultsDto.class, response.getBody(), "FFT Sustainability Analytics");
+            FftSustainabilityAnalyticsResultsDto output = null;
+            if (smartServicesInvocationService.validateDigitalTwinResponse(response, "FFT Sustainability Analytics")) {
+                if (response.getBody().getOutputArguments() != null) {
+                    log.debug("Captured Output: {}", response.getBody().getOutputArguments());
+                    output = objectMapper.convertValue(
+                            response.getBody().getOutputArguments(),
+                            FftSustainabilityAnalyticsResultsDto.class
+                    );
+                }
+            }
 
             return output;
         }, "extractFftSustainabilityAnalytics");
