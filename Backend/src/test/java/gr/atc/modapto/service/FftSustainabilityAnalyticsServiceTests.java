@@ -1,9 +1,12 @@
 package gr.atc.modapto.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.atc.modapto.dto.dt.DtInputDto;
 import gr.atc.modapto.dto.dt.DtResponseDto;
 import gr.atc.modapto.dto.serviceInvocations.FftSustainabilityAnalyticsInputDto;
 import gr.atc.modapto.dto.serviceInvocations.GlobalRequestDto;
 import gr.atc.modapto.dto.serviceResults.fft.FftSustainabilityAnalyticsResultsDto;
+import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.exception.CustomExceptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +36,10 @@ class FftSustainabilityAnalyticsServiceTests {
     @Mock
     private ExceptionHandlerService exceptionHandlerService;
 
+    // Mock ObjectMapper
+    @Mock
+    private ObjectMapper objectMapper;
+
     @InjectMocks
     private FftSustainabilityAnalyticsService fftSustainabilityAnalyticsService;
 
@@ -45,6 +52,7 @@ class FftSustainabilityAnalyticsServiceTests {
 
         sampleDto = createSampleDto();
 
+        // Mock exceptionHandlerService to execute the supplier directly
         lenient().when(exceptionHandlerService.handleOperation(any(Supplier.class), anyString())).thenAnswer(invocation -> {
             try {
                 Supplier<FftSustainabilityAnalyticsResultsDto> supplier = invocation.getArgument(0);
@@ -53,6 +61,10 @@ class FftSustainabilityAnalyticsServiceTests {
                 throw e;
             }
         });
+
+        // Default mock for invokeSmartService to prevent NullPointerException
+        lenient().when(smartServicesInvocationService.invokeSmartService(any(), any(), any(DtInputDto.class), any(ModaptoHeader.class)))
+                .thenReturn(ResponseEntity.ok(DtResponseDto.builder().success(false).build()));
     }
 
     @Nested
@@ -63,10 +75,12 @@ class FftSustainabilityAnalyticsServiceTests {
         @DisplayName("Retrieve latest results : Success")
         void givenExistingAnalyticsResults_whenRetrieveLatestSustainabilityAnalyticsResults_thenReturnsLatestResult() {
             // Given
-            when(smartServicesInvocationService.formulateAndImplementSyncSmartServiceRequest(any(), any(), any()))
+            // Mock invokeSmartService to return response with outputArguments
+            when(smartServicesInvocationService.invokeSmartService(any(), any(), any(DtInputDto.class), eq(ModaptoHeader.SYNC)))
                     .thenReturn(ResponseEntity.ok(DtResponseDto.builder().success(true).outputArguments(sampleDto).build()));
             when(smartServicesInvocationService.validateDigitalTwinResponse(any(), anyString())).thenReturn(true);
-            when(smartServicesInvocationService.decodeDigitalTwinResponseToDto(eq(FftSustainabilityAnalyticsResultsDto.class), any(), anyString()))
+            // Mock ObjectMapper.convertValue to convert outputArguments to DTO
+            when(objectMapper.convertValue(any(Object.class), any(Class.class)))
                     .thenReturn(sampleDto);
 
             // When
@@ -79,16 +93,17 @@ class FftSustainabilityAnalyticsServiceTests {
             assertThat(result.getTimestampStart()).isEqualTo(sampleDto.getTimestampStart());
             assertThat(result.getTimestampStop()).isEqualTo(sampleDto.getTimestampStop());
             assertThat(result.getMeasurementState()).isEqualTo(sampleDto.getMeasurementState());
-            verify(smartServicesInvocationService).formulateAndImplementSyncSmartServiceRequest(any(), any(), any());
+            verify(smartServicesInvocationService).invokeSmartService(any(), any(), any(DtInputDto.class), eq(ModaptoHeader.SYNC));
             verify(smartServicesInvocationService).validateDigitalTwinResponse(any(), anyString());
-            verify(smartServicesInvocationService).decodeDigitalTwinResponseToDto(eq(FftSustainabilityAnalyticsResultsDto.class), any(), anyString());
+            verify(objectMapper).convertValue(any(Object.class), any(Class.class));
         }
 
         @Test
         @DisplayName("Retrieve latest results : No results found")
         void givenNoAnalyticsResults_whenRetrieveLatestSustainabilityAnalyticsResults_thenThrowsResourceNotFoundException() {
             // Given
-            when(smartServicesInvocationService.formulateAndImplementSyncSmartServiceRequest(any(), any(), any()))
+            // Mock invokeSmartService to return response with failure
+            when(smartServicesInvocationService.invokeSmartService(any(), any(), any(DtInputDto.class), eq(ModaptoHeader.SYNC)))
                     .thenReturn(ResponseEntity.ok(DtResponseDto.builder().success(false).build()));
             when(smartServicesInvocationService.validateDigitalTwinResponse(any(), anyString())).thenThrow(new CustomExceptions.DtmServerErrorException("DTM service execution failed"));
 
@@ -97,9 +112,9 @@ class FftSustainabilityAnalyticsServiceTests {
                     .isInstanceOf(CustomExceptions.DtmServerErrorException.class)
                     .hasMessageContaining("DTM service execution failed");
 
-            verify(smartServicesInvocationService).formulateAndImplementSyncSmartServiceRequest(any(), any(), any());
+            verify(smartServicesInvocationService).invokeSmartService(any(), any(), any(DtInputDto.class), eq(ModaptoHeader.SYNC));
             verify(smartServicesInvocationService).validateDigitalTwinResponse(any(), anyString());
-            verify(smartServicesInvocationService, never()).decodeDigitalTwinResponseToDto(any(), any(), anyString());
+            verify(objectMapper, never()).convertValue(any(Object.class), any(Class.class));
         }
     }
 
@@ -112,10 +127,12 @@ class FftSustainabilityAnalyticsServiceTests {
         void givenExistingModuleResults_whenRetrieveLatestSustainabilityAnalyticsResultsByModuleId_thenReturnsLatestResult() {
             // Given
             String moduleId = "fft_module_1";
-            when(smartServicesInvocationService.formulateAndImplementSyncSmartServiceRequest(any(), eq(moduleId), any()))
+            // Mock invokeSmartService with specific moduleId
+            when(smartServicesInvocationService.invokeSmartService(any(), eq(moduleId), any(DtInputDto.class), eq(ModaptoHeader.SYNC)))
                     .thenReturn(ResponseEntity.ok(DtResponseDto.builder().success(true).outputArguments(sampleDto).build()));
             when(smartServicesInvocationService.validateDigitalTwinResponse(any(), anyString())).thenReturn(true);
-            when(smartServicesInvocationService.decodeDigitalTwinResponseToDto(eq(FftSustainabilityAnalyticsResultsDto.class), any(), anyString()))
+            // Mock ObjectMapper.convertValue
+            when(objectMapper.convertValue(any(Object.class), any(Class.class)))
                     .thenReturn(sampleDto);
 
             // When
@@ -128,9 +145,9 @@ class FftSustainabilityAnalyticsServiceTests {
             assertThat(result.getTimestampStart()).isEqualTo(sampleDto.getTimestampStart());
             assertThat(result.getTimestampStop()).isEqualTo(sampleDto.getTimestampStop());
             assertThat(result.getMeasurementState()).isEqualTo(sampleDto.getMeasurementState());
-            verify(smartServicesInvocationService).formulateAndImplementSyncSmartServiceRequest(any(), eq(moduleId), any());
+            verify(smartServicesInvocationService).invokeSmartService(any(), eq(moduleId), any(DtInputDto.class), eq(ModaptoHeader.SYNC));
             verify(smartServicesInvocationService).validateDigitalTwinResponse(any(), anyString());
-            verify(smartServicesInvocationService).decodeDigitalTwinResponseToDto(eq(FftSustainabilityAnalyticsResultsDto.class), any(), anyString());
+            verify(objectMapper).convertValue(any(Object.class), any(Class.class));
         }
 
         @Test
@@ -138,7 +155,8 @@ class FftSustainabilityAnalyticsServiceTests {
         void givenNoModuleResults_whenRetrieveLatestSustainabilityAnalyticsResultsByModuleId_thenThrowsResourceNotFoundException() {
             // Given
             String moduleId = "non_existing_module";
-            when(smartServicesInvocationService.formulateAndImplementSyncSmartServiceRequest(any(), eq(moduleId), any()))
+            // Mock invokeSmartService to return failure response
+            when(smartServicesInvocationService.invokeSmartService(any(), eq(moduleId), any(DtInputDto.class), eq(ModaptoHeader.SYNC)))
                     .thenReturn(ResponseEntity.ok(DtResponseDto.builder().success(false).build()));
             when(smartServicesInvocationService.validateDigitalTwinResponse(any(), anyString())).thenThrow(new CustomExceptions.DtmServerErrorException("DTM service execution failed"));
 
@@ -147,9 +165,9 @@ class FftSustainabilityAnalyticsServiceTests {
                     .isInstanceOf(CustomExceptions.DtmServerErrorException.class)
                     .hasMessageContaining("DTM service execution failed");
 
-            verify(smartServicesInvocationService).formulateAndImplementSyncSmartServiceRequest(any(), eq(moduleId), any());
+            verify(smartServicesInvocationService).invokeSmartService(any(), eq(moduleId), any(DtInputDto.class), eq(ModaptoHeader.SYNC));
             verify(smartServicesInvocationService).validateDigitalTwinResponse(any(), anyString());
-            verify(smartServicesInvocationService, never()).decodeDigitalTwinResponseToDto(any(), any(), anyString());
+            verify(objectMapper, never()).convertValue(any(Object.class), any(Class.class));
         }
     }
 
@@ -178,10 +196,12 @@ class FftSustainabilityAnalyticsServiceTests {
             fftSustainabilityAnalyticsService.extractFftSustainabilityAnalytics(request);
 
             // Then
-            verify(smartServicesInvocationService).formulateAndImplementSyncSmartServiceRequest(
-                    inputDto,
-                    "fft_module_1",
-                    "service_1"
+            // Verify invokeSmartService is called with correct parameters
+            verify(smartServicesInvocationService).invokeSmartService(
+                    eq("service_1"),
+                    eq("fft_module_1"),
+                    any(DtInputDto.class),
+                    eq(ModaptoHeader.SYNC)
             );
         }
     }
