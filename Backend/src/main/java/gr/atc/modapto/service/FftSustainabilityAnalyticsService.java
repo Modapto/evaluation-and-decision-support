@@ -51,7 +51,7 @@ public class FftSustainabilityAnalyticsService implements ISustainabilityAnalyti
                     dtInput,
                     ModaptoHeader.SYNC);
 
-            log.debug("Successfully invoked FFT Sustainability Analytics to produce the Histogram..Processing results..");
+            log.debug("Successfully invoked FFT Sustainability Analytics. Processing results..");
 
             FftSustainabilityAnalyticsResultsDto output = null;
             if (smartServicesInvocationService.validateDigitalTwinResponse(response, "FFT Sustainability Analytics")) {
