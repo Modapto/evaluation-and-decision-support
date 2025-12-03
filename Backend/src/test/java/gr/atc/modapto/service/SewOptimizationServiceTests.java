@@ -6,10 +6,12 @@ import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
 import gr.atc.modapto.dto.serviceResults.sew.SewOptimizationResultsDto;
 import gr.atc.modapto.exception.CustomExceptions;
+import gr.atc.modapto.model.serviceResults.SewThresholdBasedPredictiveMaintenanceResult;
 import gr.atc.modapto.model.sew.ProductionSchedule;
 import gr.atc.modapto.model.serviceResults.SewOptimizationResults;
 import gr.atc.modapto.repository.ProductionScheduleRepository;
 import gr.atc.modapto.repository.SewOptimizationResultsRepository;
+import gr.atc.modapto.repository.SewThresholdBasedPredictiveMaintenanceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +41,9 @@ class SewOptimizationServiceTests {
 
     @Mock
     private ProductionScheduleRepository productionScheduleRepository;
+
+    @Mock
+    private SewThresholdBasedPredictiveMaintenanceRepository sewThresholdBasedPredictiveMaintenanceRepository;
 
     @Mock
     private SmartServicesInvocationService smartServicesInvocationService;
@@ -444,7 +450,17 @@ class SewOptimizationServiceTests {
         @Test
         @DisplayName("Invoke optimization : Success with provided data")
         void givenInvocationDataWithProvidedData_whenInvokeOptimization_thenInvokesSmartService() throws Exception {
+            // Given
+            SewThresholdBasedPredictiveMaintenanceResult result1 = new SewThresholdBasedPredictiveMaintenanceResult();
+            result1.setTimestamp(LocalDateTime.now().minusHours(3));
+            result1.setRecommendation("Test recommendation");
+            result1.setCell("Test_Cell");
+            result1.setRecommendation("Test recommendation");
+            result1.setDuration(1);
 
+            // When
+            when(sewThresholdBasedPredictiveMaintenanceRepository.findByTimestampAfterOrderByTimestampDesc(any(LocalDateTime.class)))
+                    .thenReturn(List.of(result1));
             sewOptimizationService.invokeOptimizationOfProductionSchedules(sampleOptimizationInput);
 
             verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
@@ -454,17 +470,30 @@ class SewOptimizationServiceTests {
             );
             verify(productionScheduleRepository, never()).findById(any());
             verify(objectMapper, never()).valueToTree(any());
+            verify(sewThresholdBasedPredictiveMaintenanceRepository).findByTimestampAfterOrderByTimestampDesc(any());
         }
 
         @Test
         @DisplayName("Invoke optimization : Success with empty input retrieves from DB")
         void givenInvocationDataWithEmptyInput_whenInvokeOptimization_thenRetrievesFromDbAndInvokes() throws Exception {
             sampleOptimizationInput.setInput(new HashMap<>());
+            SewThresholdBasedPredictiveMaintenanceResult result1 = new SewThresholdBasedPredictiveMaintenanceResult();
+            result1.setTimestamp(LocalDateTime.now().minusHours(3));
+            result1.setRecommendation("Test recommendation");
+            result1.setCell("Test_Cell");
+            result1.setDuration(1);
+            SewThresholdBasedPredictiveMaintenanceResult result2 = new SewThresholdBasedPredictiveMaintenanceResult();
+            result2.setTimestamp(LocalDateTime.now().minusHours(3));
+            result2.setRecommendation("non");
+            result2.setCell("Test_Cell");
+            result2.setDuration(0);
+
             when(productionScheduleRepository.findById("latest-production-schedule"))
                     .thenReturn(Optional.of(sampleScheduleEntity));
             when(modelMapper.map(sampleScheduleEntity, SewProductionScheduleDto.class))
                     .thenReturn(sampleScheduleDto);
-            JsonNode jsonData = objectMapper.createObjectNode();
+            when(sewThresholdBasedPredictiveMaintenanceRepository.findByTimestampAfterOrderByTimestampDesc(any(LocalDateTime.class)))
+                    .thenReturn(List.of(result1, result2));
 
             sewOptimizationService.invokeOptimizationOfProductionSchedules(sampleOptimizationInput);
 
@@ -475,6 +504,10 @@ class SewOptimizationServiceTests {
                     eq("hffs"),
                     eq("SEW Optimization of Production Schedules")
             );
+            verify(sewThresholdBasedPredictiveMaintenanceRepository).findByTimestampAfterOrderByTimestampDesc(any());
+            assertThat(sampleOptimizationInput.getMaintenance()).hasSize(1);
+            assertThat(sampleOptimizationInput.getMaintenance().getFirst().getCell()).isEqualTo("Test_Cell");
+            assertThat(sampleOptimizationInput.getMaintenance().getFirst().getRecommendation()).isEqualTo("Test recommendation");
         }
 
         @Test

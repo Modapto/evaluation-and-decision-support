@@ -28,11 +28,23 @@ public class SewThresholdBasedPredictiveMaintenanceResult {
     @Field(type = FieldType.Keyword)
     private String smartServiceId;
 
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Text)
     private String recommendation;
 
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Text)
     private String details;
+
+    @Field(type = FieldType.Text)
+    private String cell;
+
+    @Field(type = FieldType.Integer)
+    private Integer duration;
+
+    @Field(type = FieldType.Text)
+    private String moduleIdentifier;
+
+    @Field(type = FieldType.Text)
+    private String subElementIdentifier;
 
     @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
     private LocalDateTime timestamp;

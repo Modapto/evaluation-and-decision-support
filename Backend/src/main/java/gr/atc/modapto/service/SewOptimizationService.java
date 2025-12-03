@@ -1,8 +1,14 @@
 package gr.atc.modapto.service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import gr.atc.modapto.dto.serviceResults.sew.MaintenanceRecommendationDTO;
+import gr.atc.modapto.model.serviceResults.SewThresholdBasedPredictiveMaintenanceResult;
+import gr.atc.modapto.repository.SewThresholdBasedPredictiveMaintenanceRepository;
 import org.modelmapper.MappingException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -29,11 +35,15 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
 
     private final static String MAPPING_ERROR = "Unable to parse SEW Optimization Results to DTO - Error: ";
 
+    private final static String NON_RECOMMENDATION = "non";
+
     private final static String PROD_SCHEDULE_ID = "latest-production-schedule";
 
     private final SewOptimizationResultsRepository sewOptimizationResultsRepository;
 
     private final ProductionScheduleRepository productionScheduleRepository;
+
+    private final SewThresholdBasedPredictiveMaintenanceRepository thresholdBasedPredictiveMaintenanceRepository;
 
     private final SmartServicesInvocationService smartServicesInvocationService;
 
@@ -41,12 +51,13 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
 
     private final ModelMapper modelMapper;
 
-    public SewOptimizationService(SewOptimizationResultsRepository sewOptimizationResultsRepository, ExceptionHandlerService exceptionHandler, ProductionScheduleRepository productionScheduleRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService) {
+    public SewOptimizationService(SewThresholdBasedPredictiveMaintenanceRepository thresholdBasedPredictiveMaintenanceRepository, SewOptimizationResultsRepository sewOptimizationResultsRepository, ExceptionHandlerService exceptionHandler, ProductionScheduleRepository productionScheduleRepository, ModelMapper modelMapper, SmartServicesInvocationService smartServicesInvocationService) {
         this.sewOptimizationResultsRepository = sewOptimizationResultsRepository;
         this.productionScheduleRepository = productionScheduleRepository;
         this.modelMapper = modelMapper;
         this.smartServicesInvocationService = smartServicesInvocationService;
         this.exceptionHandler = exceptionHandler;
+        this.thresholdBasedPredictiveMaintenanceRepository = thresholdBasedPredictiveMaintenanceRepository;
     }
 
     /**
@@ -137,6 +148,27 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
             }
             invocationData.setInput(data);
             log.debug("No Prod. Schedule data provided. Using the latest stored Prod. Schedule");
+        }
+
+        // Try to retrieve Maintenance Suggestions within 24 hours
+        try {
+            LocalDateTime twentyFourHoursAgo = LocalDateTime.now().minusHours(24);
+            List<SewThresholdBasedPredictiveMaintenanceResult> maintenanceRecommendations = thresholdBasedPredictiveMaintenanceRepository.findByTimestampAfterOrderByTimestampDesc(twentyFourHoursAgo);
+            List<MaintenanceRecommendationDTO> maintenanceResults = maintenanceRecommendations.stream()
+                    .filter(result -> result.getRecommendation() != null &&
+                            !result.getRecommendation().toLowerCase().contains(NON_RECOMMENDATION))
+                    .map(result -> new MaintenanceRecommendationDTO(
+                            result.getDuration(),
+                            result.getCell(),
+                            result.getRecommendation(),
+                            result.getTimestamp()
+                    ))
+                    .toList();
+            invocationData.setMaintenance(new ArrayList<>(maintenanceResults));
+            log.debug("Maintenance: {}", maintenanceResults);
+        } catch (MappingException e){
+            log.error("Mapping exception converting maintenance recommendations to DTO - Error: {}", e.getMessage());
+            throw new ModelMappingException("Mapping exception occurred converting maintenance recommendations to DTO");
         }
 
         smartServicesInvocationService.formulateAndImplementSmartServiceRequest(invocationData, PRODUCTION_SCHEDULE_OPTIMIZATION.toString(), "SEW Optimization of Production Schedules");

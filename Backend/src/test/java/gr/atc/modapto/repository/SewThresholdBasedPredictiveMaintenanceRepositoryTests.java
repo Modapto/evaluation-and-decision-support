@@ -13,6 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -28,6 +29,7 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
 
     private SewThresholdBasedPredictiveMaintenanceResult sampleResult1;
     private SewThresholdBasedPredictiveMaintenanceResult sampleResult2;
+    private SewThresholdBasedPredictiveMaintenanceResult sampleResult3;
 
     @BeforeEach
     void setUp() {
@@ -37,15 +39,31 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
         sampleResult1.setModuleId("TEST_MODULE_1");
         sampleResult1.setSmartServiceId("THRESHOLD_SERVICE");
         sampleResult1.setRecommendation("Replace bearing in motor unit within 72 hours");
+        sampleResult1.setCell("Cell_A");
+        sampleResult1.setModuleIdentifier("Module_X");
+        sampleResult1.setDuration(2);
         sampleResult1.setDetails("Vibration levels exceeded threshold of 2.5mm/s RMS");
-        sampleResult1.setTimestamp(LocalDateTime.of(2024, 1, 15, 14, 30, 45));
+        sampleResult1.setTimestamp(LocalDateTime.now().minusHours(10));
 
         sampleResult2 = new SewThresholdBasedPredictiveMaintenanceResult();
         sampleResult2.setModuleId("TEST_MODULE_2");
         sampleResult2.setSmartServiceId("THRESHOLD_SERVICE");
         sampleResult2.setRecommendation("Schedule inspection within 48 hours");
+        sampleResult2.setCell("Cell_B");
+        sampleResult2.setModuleIdentifier("Module_Y");
+        sampleResult2.setDuration(1);
         sampleResult2.setDetails("Temperature trending upward beyond normal range");
-        sampleResult2.setTimestamp(LocalDateTime.of(2024, 1, 16, 10, 15, 30));
+        sampleResult2.setTimestamp(LocalDateTime.now().minusHours(25));
+
+        sampleResult3 = new SewThresholdBasedPredictiveMaintenanceResult();
+        sampleResult3.setModuleId("TEST_MODULE_2");
+        sampleResult3.setSmartServiceId("THRESHOLD_SERVICE");
+        sampleResult3.setRecommendation("non");
+        sampleResult3.setCell("Cell_C");
+        sampleResult3.setModuleIdentifier("Module_Z");
+        sampleResult3.setDuration(0);
+        sampleResult3.setDetails("No recommendations");
+        sampleResult3.setTimestamp(LocalDateTime.now().minusHours(15));
     }
 
     @Nested
@@ -63,7 +81,7 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
             assertThat(saved.getSmartServiceId()).isEqualTo("THRESHOLD_SERVICE");
             assertThat(saved.getRecommendation()).isEqualTo("Replace bearing in motor unit within 72 hours");
             assertThat(saved.getDetails()).isEqualTo("Vibration levels exceeded threshold of 2.5mm/s RMS");
-            assertThat(saved.getTimestamp()).isEqualTo(LocalDateTime.of(2024, 1, 15, 14, 30, 45));
+            assertThat(saved.getCell()).isEqualTo("Cell_A");
         }
 
         @Test
@@ -138,6 +156,22 @@ class SewThresholdBasedPredictiveMaintenanceRepositoryTests extends SetupTestCon
             assertThat(found).isPresent();
             assertThat(found.get().getModuleId()).isEqualTo("TEST_MODULE_1");
             assertThat(found.get().getRecommendation()).isEqualTo("Replace bearing in motor unit within 72 hours");
+        }
+    }
+
+    @Nested
+    @DisplayName("Retrieve results within 24 Hours")
+    class DataRetrievalWithin24Hours{
+        @Test
+        @DisplayName("Save and Retrieve Applicable Results within 24 Hours : Success")
+        void givenResultData_whenRetrieveWithin24Hours_thenReturnOnlyApplicable() {
+            repository.saveAll(List.of(sampleResult1, sampleResult2, sampleResult3));
+
+            List<SewThresholdBasedPredictiveMaintenanceResult> resultsWithin24Hours = repository.findByTimestampAfterOrderByTimestampDesc(LocalDateTime.now().minusHours(24));
+
+            assertThat(resultsWithin24Hours).isNotNull();
+            assertThat(resultsWithin24Hours).isNotEmpty();
+            assertThat(resultsWithin24Hours).size().isEqualTo(2);
         }
     }
 

@@ -420,6 +420,9 @@ class PredictiveMaintenanceServiceTests {
                     .id("test-id")
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
+                    .duration(1)
+                    .recommendation("Implement maintenance")
+                    .cell("X")
                     .build();
             when(thresholdMaintenanceResponseProcessor.processResponse(any(), anyString(), anyString()))
                     .thenReturn(expectedOutput);
@@ -433,6 +436,8 @@ class PredictiveMaintenanceServiceTests {
             assertThat(result).isNotNull();
             assertThat(result.getModuleId()).isEqualTo("TEST_MODULE");
             assertThat(result.getSmartServiceId()).isEqualTo("THRESHOLD_SERVICE");
+            assertThat(result.getDuration()).isEqualTo(1);
+            assertThat(result.getRecommendation()).isEqualTo("Implement maintenance");
             verify(maintenanceDataRepository).findAll(any(Pageable.class));
             verify(smartServicesInvocationService).invokeSmartService(eq("THRESHOLD_SERVICE"), eq("TEST_MODULE"), any(DtInputDto.class), any(ModaptoHeader.class));
             verify(thresholdMaintenanceResponseProcessor).processResponse(mockResponse, "TEST_MODULE", "THRESHOLD_SERVICE");

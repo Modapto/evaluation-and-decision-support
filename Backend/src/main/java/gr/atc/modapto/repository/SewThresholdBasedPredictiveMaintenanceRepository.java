@@ -4,10 +4,16 @@ import gr.atc.modapto.model.serviceResults.SewThresholdBasedPredictiveMaintenanc
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface SewThresholdBasedPredictiveMaintenanceRepository extends ElasticsearchRepository<SewThresholdBasedPredictiveMaintenanceResult, String> {
 
     Optional<SewThresholdBasedPredictiveMaintenanceResult> findFirstByModuleIdOrderByTimestampDesc(String moduleId);
+
+    List<SewThresholdBasedPredictiveMaintenanceResult> findByTimestampAfterOrderByTimestampDesc(
+            LocalDateTime timestamp
+    );
 }

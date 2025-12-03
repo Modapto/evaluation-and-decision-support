@@ -640,6 +640,10 @@ class PredictiveMaintenanceControllerTests {
                     .moduleId("TEST_MODULE")
                     .smartServiceId("THRESHOLD_SERVICE")
                     .recommendation("Replace bearing in motor unit within 72 hours")
+                    .cell("Cell_A")
+                    .moduleIdentifier("Module_X")
+                    .subElementIdentifier("Sub_Element_Y")
+                    .duration(1)
                     .details("Vibration levels exceeded threshold")
                     .build();
 
@@ -655,6 +659,10 @@ class PredictiveMaintenanceControllerTests {
                     .andExpect(jsonPath("$.data.id").value("test-id"))
                     .andExpect(jsonPath("$.data.moduleId").value("TEST_MODULE"))
                     .andExpect(jsonPath("$.data.smartServiceId").value("THRESHOLD_SERVICE"))
+                    .andExpect(jsonPath("$.data.cell").value("Cell_A"))
+                    .andExpect(jsonPath("$.data.module_id").value("Module_X"))
+                    .andExpect(jsonPath("$.data.sub_element_id").value("Sub_Element_Y"))
+                    .andExpect(jsonPath("$.data.duration").value(1))
                     .andExpect(jsonPath("$.data.recommendation").value("Replace bearing in motor unit within 72 hours"))
                     .andExpect(jsonPath("$.message").value("Predictive Maintenance service for Threshold-Based Maintenance completed successfully"));
 

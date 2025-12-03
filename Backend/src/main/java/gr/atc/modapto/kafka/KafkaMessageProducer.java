@@ -20,5 +20,4 @@ public class KafkaMessageProducer {
         log.debug("Sent message to topic {}: {}", topic, message);
         kafkaTemplate.send(topic, message);
     }
-    
 }

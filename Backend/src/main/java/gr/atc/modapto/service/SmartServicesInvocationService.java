@@ -11,6 +11,7 @@ import static gr.atc.modapto.exception.CustomExceptions.*;
 import gr.atc.modapto.dto.dt.SmartServiceRequest;
 import gr.atc.modapto.dto.dt.SmartServiceResponse;
 import gr.atc.modapto.dto.serviceInvocations.CrfInvocationInputDto;
+import gr.atc.modapto.dto.serviceInvocations.FftSustainabilityAnalyticsInputDto;
 import gr.atc.modapto.enums.ModaptoHeader;
 import gr.atc.modapto.service.interfaces.IModaptoModuleService;
 import gr.atc.modapto.service.processors.NoOpResponseProcessor;

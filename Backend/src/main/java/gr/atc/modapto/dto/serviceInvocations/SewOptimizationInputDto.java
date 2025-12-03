@@ -1,5 +1,6 @@
 package gr.atc.modapto.dto.serviceInvocations;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import gr.atc.modapto.dto.serviceResults.sew.MaintenanceRecommendationDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -50,6 +52,9 @@ public class SewOptimizationInputDto {
 
     @Schema(description = "Production Schedules for SEW Case", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private Map<String,SewProductionScheduleDto.DailyDataDto> input;
+
+    @Schema(description = "Maintenance Recommendations from Threshold Predictive Maintenance (Last 24 hours)", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private List<MaintenanceRecommendationDTO> maintenance;
 
     @Data
     @AllArgsConstructor
