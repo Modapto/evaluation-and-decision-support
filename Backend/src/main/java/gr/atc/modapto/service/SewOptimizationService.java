@@ -161,6 +161,7 @@ public class SewOptimizationService implements IProductionScheduleOptimizationSe
                             result.getDuration(),
                             result.getCell(),
                             result.getRecommendation(),
+                            result.getModuleId(),
                             result.getTimestamp()
                     ))
                     .toList();

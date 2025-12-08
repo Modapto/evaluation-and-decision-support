@@ -1,6 +1,5 @@
 package gr.atc.modapto.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.atc.modapto.dto.serviceInvocations.SewOptimizationInputDto;
 import gr.atc.modapto.dto.serviceInvocations.SewProductionScheduleDto;
@@ -457,12 +456,14 @@ class SewOptimizationServiceTests {
             result1.setCell("Test_Cell");
             result1.setRecommendation("Test recommendation");
             result1.setDuration(1);
+            result1.setModuleId("TEST_MODULE_001");
 
             // When
             when(sewThresholdBasedPredictiveMaintenanceRepository.findByTimestampAfterOrderByTimestampDesc(any(LocalDateTime.class)))
                     .thenReturn(List.of(result1));
             sewOptimizationService.invokeOptimizationOfProductionSchedules(sampleOptimizationInput);
 
+            // Then
             verify(smartServicesInvocationService).formulateAndImplementSmartServiceRequest(
                     eq(sampleOptimizationInput),
                     eq("hffs"),
@@ -471,6 +472,11 @@ class SewOptimizationServiceTests {
             verify(productionScheduleRepository, never()).findById(any());
             verify(objectMapper, never()).valueToTree(any());
             verify(sewThresholdBasedPredictiveMaintenanceRepository).findByTimestampAfterOrderByTimestampDesc(any());
+            assertThat(sampleOptimizationInput.getMaintenance()).hasSize(1);
+            assertThat(sampleOptimizationInput.getMaintenance().getFirst().getModuleID()).isEqualTo("TEST_MODULE_001");
+            assertThat(sampleOptimizationInput.getMaintenance().getFirst().getCell()).isEqualTo("Test_Cell");
+            assertThat(sampleOptimizationInput.getMaintenance().getFirst().getRecommendation()).isEqualTo("Test recommendation");
+            assertThat(sampleOptimizationInput.getMaintenance().getFirst().getDuration()).isEqualTo(1);
         }
 
         @Test
@@ -482,11 +488,13 @@ class SewOptimizationServiceTests {
             result1.setRecommendation("Test recommendation");
             result1.setCell("Test_Cell");
             result1.setDuration(1);
+            result1.setModuleId("MODULE_A");
             SewThresholdBasedPredictiveMaintenanceResult result2 = new SewThresholdBasedPredictiveMaintenanceResult();
             result2.setTimestamp(LocalDateTime.now().minusHours(3));
             result2.setRecommendation("non");
             result2.setCell("Test_Cell");
             result2.setDuration(0);
+            result2.setModuleId("MODULE_B");
 
             when(productionScheduleRepository.findById("latest-production-schedule"))
                     .thenReturn(Optional.of(sampleScheduleEntity));
@@ -508,6 +516,7 @@ class SewOptimizationServiceTests {
             assertThat(sampleOptimizationInput.getMaintenance()).hasSize(1);
             assertThat(sampleOptimizationInput.getMaintenance().getFirst().getCell()).isEqualTo("Test_Cell");
             assertThat(sampleOptimizationInput.getMaintenance().getFirst().getRecommendation()).isEqualTo("Test recommendation");
+            assertThat(sampleOptimizationInput.getMaintenance().getFirst().getModuleID()).isEqualTo("MODULE_A");
         }
 
         @Test

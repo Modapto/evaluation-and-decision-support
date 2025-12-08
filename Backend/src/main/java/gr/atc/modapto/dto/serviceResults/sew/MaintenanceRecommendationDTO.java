@@ -13,5 +13,6 @@ public class MaintenanceRecommendationDTO {
     private Integer duration;
     private String cell;
     private String recommendation;
+    private String moduleID;
     private LocalDateTime timestamp;
 }
