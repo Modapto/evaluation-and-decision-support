@@ -22,9 +22,12 @@ public class SewSimulationResultsDto extends BaseEventResultsDto {
     @JsonProperty("timestamp")
     private String timestamp;
 
-    @JsonProperty("module")
-    private String productionModule;
+    @JsonProperty("moduleId")
+    private String moduleId;
 
-    @JsonProperty("simulationData")
-    private Object simulationData;
+    @JsonProperty("smartServiceId")
+    private String smartServiceId;
+
+    @JsonProperty("data")
+    private Object data;
 }

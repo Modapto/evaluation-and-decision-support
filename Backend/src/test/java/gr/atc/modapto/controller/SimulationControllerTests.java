@@ -213,7 +213,7 @@ class SimulationControllerTests {
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
-                    .simulationData(createSampleSimulationData())
+                    .data(createSampleSimulationData())
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
@@ -235,7 +235,7 @@ class SimulationControllerTests {
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("2")
                     .timestamp("2024-01-16T12:00:00.000Z")
-                    .simulationData(createSampleSimulationData())
+                    .data(createSampleSimulationData())
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResults()).thenReturn(mockResult);
 
@@ -268,7 +268,7 @@ class SimulationControllerTests {
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00.000Z")
-                    .simulationData(createSampleSimulationData())
+                    .data(createSampleSimulationData())
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);
 
@@ -290,7 +290,7 @@ class SimulationControllerTests {
             SewSimulationResultsDto mockResult = SewSimulationResultsDto.builder()
                     .id("2")
                     .timestamp("2024-01-16T12:00:00.000Z")
-                    .simulationData(createSampleSimulationData())
+                    .data(createSampleSimulationData())
                     .build();
             when(sewSimulationService.retrieveLatestSimulationResultsByModule(moduleId)).thenReturn(mockResult);
 

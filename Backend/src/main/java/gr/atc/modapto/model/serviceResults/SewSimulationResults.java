@@ -20,9 +20,12 @@ public class SewSimulationResults {
     @Field(name = "timestamp", type = FieldType.Keyword)
     private String timestamp;
 
-    @Field(name = "simulationData", type = FieldType.Flattened)
-    private Object simulationData;
+    @Field(name = "data", type = FieldType.Flattened)
+    private Object data;
 
     @Field(name = "moduleId", type = FieldType.Keyword)
     private String moduleId;
+
+    @Field(name = "smartServiceId", type = FieldType.Keyword)
+    private String smartServiceId;
 }

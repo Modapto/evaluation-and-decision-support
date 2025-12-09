@@ -59,7 +59,7 @@ class SewSimulationServiceTests {
 
         Object simulationData = new Object();
 
-        sampleEntity = new SewSimulationResults("1", sampleTimestamp, simulationData, "test_module");
+        sampleEntity = new SewSimulationResults("1", sampleTimestamp, simulationData, "test_module", "test_service");
 
         sampleDto = createSampleDto();
     }
@@ -337,6 +337,6 @@ class SewSimulationServiceTests {
      */
     private SewSimulationResultsDto createSampleDto() {
         Object simulationData = new Object();
-        return SewSimulationResultsDto.builder().id("1").timestamp(sampleTimestamp).simulationData(simulationData).build();
+        return SewSimulationResultsDto.builder().id("1").timestamp(sampleTimestamp).data(simulationData).build();
     }
 }

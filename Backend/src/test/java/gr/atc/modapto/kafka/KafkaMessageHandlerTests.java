@@ -154,7 +154,7 @@ class KafkaMessageHandlerTests {
             SewSimulationResultsDto simulationResult = SewSimulationResultsDto.builder()
                     .id("1")
                     .timestamp("2024-01-15T10:30:00")
-                    .simulationData(createSampleSimulationData())
+                    .data(createSampleSimulationData())
                     .build();
 
             JsonNode resultNode = objectMapper.valueToTree(simulationResult);
