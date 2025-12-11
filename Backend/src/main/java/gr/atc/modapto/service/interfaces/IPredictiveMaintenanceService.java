@@ -41,4 +41,6 @@ public interface IPredictiveMaintenanceService {
     Page<MaintenanceDataDto> retrievePaginatedUncompletedProcessDrifts(Pageable pageable);
 
     void completeProcessDrift(String processDriftId, LocalDateTime endDatetime);
+
+    void deleteAllMaintenanceData();
 }

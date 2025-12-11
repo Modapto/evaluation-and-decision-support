@@ -567,4 +567,12 @@ public class PredictiveMaintenanceService implements IPredictiveMaintenanceServi
 
         kafkaMessageProducer.sendMessage(event.getTopic(), event);
     }
+
+    /**
+     * Delete all Maintenance Data from the database
+     */
+    @Override
+    public void deleteAllMaintenanceData() {
+        maintenanceDataRepository.deleteAll();
+    }
 }

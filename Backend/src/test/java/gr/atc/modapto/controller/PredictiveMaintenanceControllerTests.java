@@ -1304,6 +1304,40 @@ class PredictiveMaintenanceControllerTests {
         }
     }
 
+    @Nested
+    @DisplayName("Delete All Maintenance Data")
+    class DeleteAllMaintenanceData {
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("Delete all maintenance data : Success")
+        void givenAdminUser_whenDeleteAllMaintenanceData_thenReturnsSuccess() throws Exception {
+            // Given
+            doNothing().when(predictiveMaintenanceService).deleteAllMaintenanceData();
+
+            // When & Then
+            mockMvc.perform(delete("/api/eds/maintenance/data")
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.message").value("All Maintenance Data deleted successfully"));
+
+            verify(predictiveMaintenanceService).deleteAllMaintenanceData();
+        }
+
+        @Test
+        @DisplayName("Delete all maintenance data without authentication : Fails with 401")
+        void givenNoAuthentication_whenDeleteAllMaintenanceData_thenReturnsUnauthorized() throws Exception {
+            // When & Then
+            mockMvc.perform(delete("/api/eds/maintenance/data")
+                            .with(csrf()))
+                    .andExpect(status().isUnauthorized());
+
+            // Verify service was never called
+            verify(predictiveMaintenanceService, never()).deleteAllMaintenanceData();
+        }
+    }
+
     private List<MaintenanceDataDto> createMockMaintenanceData() {
         return Arrays.asList(
                 MaintenanceDataDto.builder()

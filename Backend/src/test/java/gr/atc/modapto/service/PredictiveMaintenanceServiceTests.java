@@ -1149,6 +1149,37 @@ class PredictiveMaintenanceServiceTests {
         }
     }
 
+    @Nested
+    @DisplayName("Delete All Maintenance Data")
+    class DeleteAllMaintenanceData {
+
+        @Test
+        @DisplayName("Delete all maintenance data : Success")
+        void givenMaintenanceDataExists_whenDeleteAllMaintenanceData_thenDeletesAllData() {
+            // Given
+            doNothing().when(maintenanceDataRepository).deleteAll();
+
+            // When
+            predictiveMaintenanceService.deleteAllMaintenanceData();
+
+            // Then
+            verify(maintenanceDataRepository).deleteAll();
+        }
+
+        @Test
+        @DisplayName("Delete all maintenance data : Database delete operation called once")
+        void whenDeleteAllMaintenanceData_thenRepositoryDeleteAllCalledOnce() {
+            // Given
+            doNothing().when(maintenanceDataRepository).deleteAll();
+
+            // When
+            predictiveMaintenanceService.deleteAllMaintenanceData();
+
+            // Then
+            verify(maintenanceDataRepository, times(1)).deleteAll();
+        }
+    }
+
     // Helper methods
 
     private MaintenanceData createMaintenanceData(String id, String stage, String cell, String component, String tsRequestCreation) {

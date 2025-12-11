@@ -12,6 +12,7 @@ import gr.atc.modapto.service.interfaces.IPredictiveMaintenanceService;
 import gr.atc.modapto.service.interfaces.IScheduledTaskService;
 import gr.atc.modapto.util.PaginationUtils;
 import gr.atc.modapto.validation.ValidExcelFile;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -68,6 +69,25 @@ public class PredictiveMaintenanceController {
         predictiveMaintenanceService.storeCorimData(file);
         return new ResponseEntity<>(
                 BaseResponse.success(null, "Corim file uploaded successfully"),
+                HttpStatus.OK);
+    }
+
+    /**
+     * Delete all Maintenance Data stored in PKB
+     *
+     * @return Message of success
+     */
+    @Operation(summary = "Delete all Maintenance Data stored in PKB", security = @SecurityRequirement(name = "bearerToken"))
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All Maintenance Data deleted successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized request. Check token and try again.")
+    })
+    @Hidden
+    @DeleteMapping("/data")
+    public ResponseEntity<BaseResponse<String>> deleteAllMaintenanceData() {
+        predictiveMaintenanceService.deleteAllMaintenanceData();
+        return new ResponseEntity<>(
+                BaseResponse.success(null, "All Maintenance Data deleted successfully"),
                 HttpStatus.OK);
     }
 
