@@ -47,7 +47,7 @@ public class SewThresholdBasedPredictiveMaintenanceOutputDto {
     private String moduleIdentifier;
 
     @JsonProperty("sub_element_id")
-    @JsonAlias({"Sub Element ID", "sub_element_id"})
+    @JsonAlias({"Sub Element ID", "Sub element ID", "sub_element_id"})
     private String subElementIdentifier;
 
     @Schema(description = "Detailed analysis and supporting information", 
